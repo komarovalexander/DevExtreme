@@ -487,15 +487,10 @@ QUnit.test("setViewport position. DataSource with too many items", function(asse
 
     assert.roughEqual(this.scrollController.getVirtualContentSize(), CONTENT_HEIGHT_LIMIT + this.contentSize, 1);
 
-    if(browser.msie || browser.mozilla) {
-        assert.strictEqual(this.scrollController.beginPageIndex(), mockDataSource.pageCount() / 2);
-        assert.strictEqual(this.scrollController.endPageIndex(), mockDataSource.pageCount() / 2 + 1);
-    } else {
-        assert.strictEqual(this.scrollController.beginPageIndex(), mockDataSource.pageCount() / 2 - 1);
-        assert.strictEqual(this.scrollController.endPageIndex(), mockDataSource.pageCount() / 2);
-    }
+    assert.strictEqual(this.scrollController.beginPageIndex(), mockDataSource.pageCount() / 2);
+    assert.strictEqual(this.scrollController.endPageIndex(), mockDataSource.pageCount() / 2 + 1);
 
-    assert.strictEqual(this.scrollController.getContentOffset(), browser.msie ? 2000000 : (browser.mozilla ? 4000000 : 7499999));
+    assert.strictEqual(this.scrollController.getContentOffset(), browser.msie ? 2000000 : (browser.mozilla ? 4000000 : 7500000));
     assert.ok(mockDataSource.load.called);
 
     assert.strictEqual(this.externalDataChangedHandler.callCount, 2);

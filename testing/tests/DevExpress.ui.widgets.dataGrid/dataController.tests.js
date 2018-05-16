@@ -2294,7 +2294,7 @@ QUnit.test("first render", function(assert) {
 });
 
 QUnit.test("scroll to before second render page", function(assert) {
-    this.dataController.setViewportPosition(49);
+    this.dataController.setViewportPosition(40);
 
     assert.strictEqual(this.dataController.pageIndex(), 0);
     assert.strictEqual(this.dataController.items().length, 15);

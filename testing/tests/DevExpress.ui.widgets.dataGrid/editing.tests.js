@@ -10200,7 +10200,7 @@ QUnit.test("Change position of the inserted row when virtual scrolling", functio
 
     // assert
     items = this.dataController.items();
-    assert.equal(this.dataController.pageIndex(), 23, "page index");
+    assert.equal(this.dataController.pageIndex(), 24, "page index");
     assert.equal(items.length, 8, "count items");
 
     // act
