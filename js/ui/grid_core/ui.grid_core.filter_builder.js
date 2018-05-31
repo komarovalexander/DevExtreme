@@ -1,12 +1,14 @@
 "use strict";
 
-var $ = require("../../core/renderer"),
-    modules = require("./ui.grid_core.modules"),
-    extend = require("../../core/utils/extend").extend,
-    FilterBuilder = require("./../filter_builder"),
-    messageLocalization = require("../../localization/message"),
-    ScrollView = require("./../scroll_view"),
-    Popup = require("./../popup");
+import $ from "../../core/renderer";
+import modules from "./ui.grid_core.modules";
+import { extend } from "../../core/utils/extend";
+import FilterBuilder from "./../filter_builder";
+import messageLocalization from "../../localization/message";
+import ScrollView from "./../scroll_view";
+import Popup from "./../popup";
+
+const DEFAULT_DATA_TYPE = "string";
 
 var FilterBuilderView = modules.View.inherit({
     _renderCore: function() {
@@ -63,7 +65,9 @@ var FilterBuilderView = modules.View.inherit({
         fields = fields.filter(item => item.allowFiltering && item.filterOperations)
         .map(item => {
             var column = extend(true, {}, item);
-            ["anyof", "noneof"].forEach(item => column.filterOperations.indexOf(item) === -1 && column.filterOperations.push(item));
+            customOperations.forEach(item => column.filterOperations.indexOf(item.name) === -1
+                && item.dataTypes && item.dataTypes.indexOf(column.dataType || DEFAULT_DATA_TYPE) !== -1
+                && column.filterOperations.push(item.name));
             return column;
         });
 

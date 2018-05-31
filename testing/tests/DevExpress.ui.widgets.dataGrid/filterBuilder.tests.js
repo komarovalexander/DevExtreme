@@ -131,4 +131,24 @@ QUnit.module("Common", {
         // assert
         assert.ok($(".dx-popup-content .dx-filterbuilder-item-operation").length, 1);
     });
+
+    QUnit.test("the customOperation is available in built-in filterBuilder using dataTypes array", function(assert) {
+        // arrange, act
+        this.initFilterBuilderView({
+            columns: [{ dataField: "field", filterOperations: [">"] }],
+            filterValue: ["field", "weekends"],
+            filterBuilderPopup: { visible: true },
+            filterBuilder: {
+                customOperations: [{
+                    name: "weekends",
+                    caption: "Weekends",
+                    dataTypes: ["string"],
+                    hasValue: false
+                }]
+            }
+        });
+
+        // assert
+        assert.ok($(".dx-popup-content .dx-filterbuilder-item-operation").text(), "Weekends");
+    });
 });
