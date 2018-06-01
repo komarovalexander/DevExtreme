@@ -8,8 +8,6 @@ import messageLocalization from "../../localization/message";
 import ScrollView from "./../scroll_view";
 import Popup from "./../popup";
 
-const DEFAULT_DATA_TYPE = "string";
-
 var FilterBuilderView = modules.View.inherit({
     _renderCore: function() {
         this._updatePopupOptions();
@@ -56,26 +54,23 @@ var FilterBuilderView = modules.View.inherit({
         }));
     },
 
-    _getPopupContentTemplate: function(contentElement) {
-        var $contentElement = $(contentElement),
-            $filterBuilderContainer = $("<div>").appendTo($contentElement),
-            fields = this.getController("columns").getFilteringColumns(),
-            customOperations = this.getController("filterSync").getCustomFilterOperations();
-
-        fields = fields.filter(item => item.filterOperations)
-        .map(item => {
-            var column = extend(true, {}, item);
-            customOperations.forEach(item => column.filterOperations.indexOf(item.name) === -1
-                && item.dataTypes && item.dataTypes.indexOf(column.dataType || DEFAULT_DATA_TYPE) !== -1
-                && column.filterOperations.push(item.name));
+    _getFilterBuilderFields: function() {
+        return this.getController("columns").getColumns().map(item => {
+            let column = extend(true, {}, item);
+            column.filterOperations = column.filterOperations !== column.defaultFilterOperations ? column.filterOperations : null;
             return column;
         });
+    },
+
+    _getPopupContentTemplate: function(contentElement) {
+        var $contentElement = $(contentElement),
+            $filterBuilderContainer = $("<div>").appendTo($(contentElement));
 
         this._filterBuilder = this._createComponent($filterBuilderContainer, FilterBuilder, extend({
             value: this.option("filterValue"),
-            fields: fields
+            fields: this._getFilterBuilderFields(),
         }, this.option("filterBuilder"), {
-            customOperations: customOperations
+            customOperations: this.getController("filterSync").getCustomFilterOperations()
         }));
 
         this._createComponent($contentElement, ScrollView, { direction: "both" });
