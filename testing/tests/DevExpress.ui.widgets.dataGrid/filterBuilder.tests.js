@@ -132,6 +132,7 @@ QUnit.module("Common", {
         assert.ok($(".dx-popup-content .dx-filterbuilder-item-operation").length, 1);
     });
 
+    // T640912
     QUnit.test("the customOperation is available in built-in filterBuilder using dataTypes array", function(assert) {
         // arrange, act
         this.initFilterBuilderView({
@@ -150,5 +151,35 @@ QUnit.module("Common", {
 
         // assert
         assert.ok($(".dx-popup-content .dx-filterbuilder-item-operation").text(), "Weekends");
+    });
+
+    // T639390
+    QUnit.test("init filterbuilder in datagrid with banded columns", function(assert) {
+        // arrange, act
+        this.initFilterBuilderView({
+            columns: [{
+                caption: "Banded column",
+                columns: [{
+                    caption: "Banded column item",
+                    dataField: "field",
+                    filterOperations: ["="]
+                }]
+            }, {
+                caption: "Banded column 2",
+                columns: [{
+                    caption: "Inner banded column",
+                    columns: [{
+                        caption: "Banded column item 2",
+                        dataField: "field2",
+                        filterOperations: ["="]
+                    }]
+                }]
+            }],
+            filterValue: [["field", "=", "a"], "and", ["field2", "=", "b"]],
+            filterBuilderPopup: { visible: true },
+        });
+
+        // assert
+        assert.ok($(".dx-popup-content .dx-filterbuilder-item-operation").length, 1);
     });
 });
