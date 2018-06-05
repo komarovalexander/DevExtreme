@@ -163,7 +163,7 @@ module.exports = {
                     var that = this,
                         $container = that.element();
 
-                    if(that._tableElement && !that._dataController.isLoaded() && !that._hasRowElements) {
+                    if(that._tableElement && !that._dataController.isLoaded() && that._dataController.getDataSource() && !that._hasRowElements) {
                         return;
                     }
 
@@ -181,7 +181,7 @@ module.exports = {
                 _renderRows: function() {
                     var that = this;
 
-                    if(that._dataController.isLoaded() || that._hasRowElements) {
+                    if(that._dataController.isLoaded() || !that._dataController.getDataSource() || that._hasRowElements) {
                         that.callBase.apply(that, arguments);
                         that._hasRowElements = true;
                     }
