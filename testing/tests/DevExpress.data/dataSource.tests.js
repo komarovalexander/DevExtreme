@@ -1645,3 +1645,22 @@ QUnit.test("StoreLoadOptionAccessors: null and undefined (based on T304670)", fu
     assert.equal(ds.requireTotalCount(null), false);
     assert.equal(ds.requireTotalCount(), false);
 });
+
+QUnit.module("init", function() {
+    QUnit.test("calls before load", function(assert) {
+        var loadSpy = sinon.spy(),
+            initResult = $.Deferred(),
+            source = new DataSource({
+                init: function() {
+                    return initResult.promise();
+                },
+                load: loadSpy
+            });
+
+        source.load();
+        assert.equal(loadSpy.callCount, 0);
+
+        initResult.resolve();
+        assert.equal(loadSpy.callCount, 1);
+    });
+});

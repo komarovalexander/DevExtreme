@@ -278,6 +278,13 @@ var DataSource = Class.inherit({
         this._loadQueue = this._createLoadQueue();
 
         /**
+        * @name DataSourceOptions.init
+        * @type function
+        * @type_function_return Promise<any>
+        */
+        options.init && this._loadQueue.add(options.init.bind(this));
+
+        /**
         * @name DataSourceOptions.searchValue
         * @type any
         * @default null
