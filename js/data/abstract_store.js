@@ -281,6 +281,12 @@ var Store = Class.inherit({
 
     _updateImpl: abstract,
 
+    notifyBatch: function(batchData) {
+        return this._addFailHandlers(this._notifyBatchImpl(batchData));
+    },
+
+    _notifyBatchImpl: abstract,
+
     /**
     * @name StoreMethods.remove
     * @publicName remove(key)

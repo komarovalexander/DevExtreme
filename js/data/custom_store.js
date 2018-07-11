@@ -14,6 +14,7 @@ var $ = require("../core/renderer"),
 
 var TOTAL_COUNT = "totalCount",
     LOAD = "load",
+    NOTIFY = "notify",
     BY_KEY = "byKey",
     INSERT = "insert",
     UPDATE = "update",
@@ -365,6 +366,14 @@ var CustomStore = Store.inherit({
          * @type_function_return Promise<void>
          */
         this._removeFunc = options[REMOVE];
+
+        /**
+         * @name CustomStoreOptions.notify
+         * @type function
+         * @type_function_param1 batchData:Array<any>:
+         * @type_function_return Promise<void>
+         */
+        this._notifyFunc = options[NOTIFY];
     },
 
     createQuery: function() {
@@ -392,6 +401,10 @@ var CustomStore = Store.inherit({
         }
 
         return d.promise();
+    },
+
+    _notifyBatchImpl: function(batchData) {
+        return trivialPromise(isFunction(this._notifyFunc) && this._notifyFunc(batchData));
     },
 
     _loadImpl: function(options) {

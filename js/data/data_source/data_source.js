@@ -64,7 +64,7 @@ function normalizeDataSourceOptions(options, normalizationOptions) {
     function createCustomStoreFromLoadFunc() {
         var storeConfig = {};
 
-        iteratorUtils.each(["useDefaultSearch", "key", "load", "loadMode", "cacheRawData", "byKey", "lookup", "totalCount", "insert", "update", "remove"], function() {
+        iteratorUtils.each(["useDefaultSearch", "key", "load", "notify", "loadMode", "cacheRawData", "byKey", "lookup", "totalCount", "insert", "update", "remove"], function() {
             storeConfig[this] = options[this];
             delete options[this];
         });
@@ -310,6 +310,13 @@ var DataSource = Class.inherit({
         * @default undefined
         */
         this._paginate = options.paginate;
+
+        /**
+        * @name DataSourceOptions.notifyShapeUpdate
+        * @type Boolean
+        * @default true
+        */
+        this.notifyShapeUpdate = __isDefined(options.notifyShapeUpdate) ? options.notifyShapeUpdate : true;
 
         iteratorUtils.each(
             [
@@ -776,7 +783,7 @@ var DataSource = Class.inherit({
     * @publicName load()
     * @return Promise<any>
     */
-    load: function() {
+    load: function(options) {
         var that = this,
             d = new Deferred(),
             loadOperation;
@@ -795,7 +802,7 @@ var DataSource = Class.inherit({
 
         this._scheduleLoadCallbacks(d);
         this._scheduleFailCallbacks(d);
-        this._scheduleChangedCallbacks(d);
+        (options && options.skipChanged) || this._scheduleChangedCallbacks(d);
 
         loadOperation = this._createLoadOperation(d);
 
@@ -812,6 +819,30 @@ var DataSource = Class.inherit({
 
         return d.promise({
             operationId: loadOperation.operationId
+        });
+    },
+
+    /**
+    * @name DataSourceMethods.notifyBatch
+    * @publicName notifyBatch(batchData)
+    */
+    notifyBatch: function(batchData) {
+        when(this.store().notifyBatch(batchData)).done(() => {
+            if(this.notifyShapeUpdate) {
+                this.reload({ skipChanged: true }).done(() => {
+                    this.fireEvent("changed", [batchData]);
+                });
+            } else {
+                let deferreds = [];
+                batchData.forEach(item => {
+                    switch(item.type) {
+                        case "update": deferreds.push(dataUtils.updateArrayItem(this.store(), this.items(), item.key, item.data)); break;
+                    }
+                });
+                when.apply(when, deferreds).done(() => {
+                    this.fireEvent("changed", [batchData]);
+                });
+            }
         });
     },
 
@@ -834,14 +865,14 @@ var DataSource = Class.inherit({
      * @publicName reload()
      * @return Promise<any>
      */
-    reload: function() {
+    reload: function(options) {
         var store = this.store();
         if(store instanceof CustomStore) {
             store.clearRawDataCache();
         }
 
         this._init();
-        return this.load();
+        return this.load(options);
     },
 
     /**

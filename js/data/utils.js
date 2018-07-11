@@ -6,6 +6,8 @@ var isFunction = require("../core/utils/type").isFunction,
     windowUtils = require("../core/utils/window"),
     window = windowUtils.getWindow(),
     map = require("../core/utils/iterator").map,
+    errors = require("./errors").errors,
+    objectUtils = require("../core/utils/object"),
     toComparable = require("../core/utils/data").toComparable,
     Deferred = require("../core/utils/deferred").Deferred;
 
@@ -228,6 +230,67 @@ var isUnaryOperation = function(crit) {
     return crit[0] === "!" && Array.isArray(crit[1]);
 };
 
+var trivialPromise = function() {
+    var d = new Deferred();
+    return d.resolve.apply(d, arguments).promise();
+};
+
+var rejectedPromise = function() {
+    var d = new Deferred();
+    return d.reject.apply(d, arguments).promise();
+};
+
+var hasKey = function(target, keyOrKeys) {
+    var key,
+        keys = typeof keyOrKeys === "string" ? keyOrKeys.split() : keyOrKeys.slice();
+
+    while(keys.length) {
+        key = keys.shift();
+        if(key in target) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+var updateArrayItem = function(store, array, key, data, checkErrors) {
+    var target,
+        keyExpr = store.key(),
+        extendComplexObject = true;
+
+    if(keyExpr) {
+        if(checkErrors && hasKey(data, keyExpr) && !keysEqual(keyExpr, key, store.keyOf(data))) {
+            return rejectedPromise(errors.Error("E4017"));
+        }
+
+        let index = indexByKey(store, array, key);
+        if(index < 0) {
+            if(checkErrors) {
+                return rejectedPromise(errors.Error("E4009"));
+            } else {
+                return trivialPromise(key, data);
+            }
+        }
+
+        target = array[index];
+    } else {
+        target = key;
+    }
+
+    objectUtils.deepExtendArraySafe(target, data, extendComplexObject);
+    return trivialPromise(key, data);
+};
+
+var indexByKey = function(store, array, key) {
+    for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
+        if(keysEqual(store.key(), store.keyOf(array[i]), key)) {
+            return i;
+        }
+    }
+    return -1;
+};
+
 /**
 * @name Utils
 */
@@ -239,7 +302,10 @@ var utils = {
     errorMessageFromXhr: errorMessageFromXhr,
     aggregators: aggregators,
 
-    keysEqual: keysEqual,
+    indexByKey: indexByKey,
+    trivialPromise: trivialPromise,
+    rejectedPromise: rejectedPromise,
+    updateArrayItem: updateArrayItem,
 
     isDisjunctiveOperator: isDisjunctiveOperator,
     isConjunctiveOperator: isConjunctiveOperator,
