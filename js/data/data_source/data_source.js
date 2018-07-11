@@ -827,10 +827,12 @@ var DataSource = Class.inherit({
     * @publicName notifyBatch(batchData)
     */
     notifyBatch: function(batchData) {
+        let d = new Deferred();
         when(this.store().notifyBatch(batchData)).done(() => {
             if(this.notifyShapeUpdate) {
                 this.reload({ skipChanged: true }).done(() => {
                     this.fireEvent("changed", [batchData]);
+                    d.resolve();
                 });
             } else {
                 let deferreds = [];
@@ -841,9 +843,11 @@ var DataSource = Class.inherit({
                 });
                 when.apply(when, deferreds).done(() => {
                     this.fireEvent("changed", [batchData]);
+                    d.resolve();
                 });
             }
         });
+        return d.promise();
     },
 
     _createLoadOperation: function(deferred) {

@@ -302,6 +302,7 @@ var utils = {
     errorMessageFromXhr: errorMessageFromXhr,
     aggregators: aggregators,
 
+    keysEqual: keysEqual,
     indexByKey: indexByKey,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
