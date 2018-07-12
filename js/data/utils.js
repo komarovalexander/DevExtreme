@@ -1,6 +1,9 @@
 "use strict";
 
-var isFunction = require("../core/utils/type").isFunction,
+var typeUtils = require("../core/utils/type"),
+    isFunction = typeUtils.isFunction,
+    extend = require("../core/utils/extend").extend,
+    Guid = require("../core/guid"),
     domAdapter = require("../core/dom_adapter"),
     ready = require("../core/utils/ready_callbacks").add,
     windowUtils = require("../core/utils/window"),
@@ -282,6 +285,37 @@ var updateArrayItem = function(store, array, key, data, checkErrors) {
     return trivialPromise(key, data);
 };
 
+var insertItemInArray = function(store, array, data, checkErrors) {
+    var keyExpr = store.key(),
+        keyValue,
+        obj;
+
+    if(typeUtils.isPlainObject(data)) {
+        obj = extend({}, data);
+    } else {
+        obj = data;
+    }
+
+    if(keyExpr) {
+        keyValue = store.keyOf(obj);
+        if(keyValue === undefined || typeof keyValue === "object" && typeUtils.isEmptyObject(keyValue)) {
+            if(Array.isArray(keyExpr)) {
+                throw errors.Error("E4007");
+            }
+            keyValue = obj[keyExpr] = String(new Guid());
+        } else {
+            if(array[indexByKey(store, array, keyValue)] !== undefined) {
+                return rejectedPromise(errors.Error("E4008"));
+            }
+        }
+    } else {
+        keyValue = obj;
+    }
+
+    array.push(obj);
+    return trivialPromise(data, keyValue);
+};
+
 var indexByKey = function(store, array, key) {
     for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
         if(keysEqual(store.key(), store.keyOf(array[i]), key)) {
@@ -307,6 +341,7 @@ var utils = {
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
     updateArrayItem: updateArrayItem,
+    insertItemInArray: insertItemInArray,
 
     isDisjunctiveOperator: isDisjunctiveOperator,
     isConjunctiveOperator: isConjunctiveOperator,

@@ -1,9 +1,6 @@
 "use strict";
 
-import { extend } from "../core/utils/extend";
-import typeUtils from "../core/utils/type";
-import Guid from "../core/guid";
-import { trivialPromise, rejectedPromise, updateArrayItem, indexByKey } from "./utils";
+import { trivialPromise, rejectedPromise, updateArrayItem, indexByKey, insertItemInArray } from "./utils";
 import Query from "./query";
 import { errors } from "./errors";
 import Store from "./abstract_store";
@@ -59,43 +56,18 @@ var ArrayStore = Store.inherit({
     },
 
     _insertImpl: function(values) {
-        var keyExpr = this.key(),
-            keyValue,
-            obj;
-
-        if(typeUtils.isPlainObject(values)) {
-            obj = extend({}, values);
-        } else {
-            obj = values;
-        }
-
-        if(keyExpr) {
-            keyValue = this.keyOf(obj);
-            if(keyValue === undefined || typeof keyValue === "object" && typeUtils.isEmptyObject(keyValue)) {
-                if(Array.isArray(keyExpr)) {
-                    throw errors.Error("E4007");
-                }
-                keyValue = obj[keyExpr] = String(new Guid());
-            } else {
-                if(this._array[indexByKey(this, this._array, keyValue)] !== undefined) {
-                    return rejectedPromise(errors.Error("E4008"));
-                }
-            }
-        } else {
-            keyValue = obj;
-        }
-
-        this._array.push(obj);
-        return trivialPromise(values, keyValue);
+        const checkErrors = true;
+        return insertItemInArray(this, this._array, values, checkErrors);
     },
 
     _notifyBatchImpl: function(batchData) {
         batchData.forEach(item => {
             switch(item.type) {
                 case "update": this.update(item.key, item.data); break;
+                case "insert": this.insert(item.data); break;
             }
         });
-        return trivialPromise(this._array, batchData);
+        return trivialPromise();
     },
 
     _updateImpl: function(key, values) {

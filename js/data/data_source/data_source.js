@@ -802,7 +802,7 @@ var DataSource = Class.inherit({
 
         this._scheduleLoadCallbacks(d);
         this._scheduleFailCallbacks(d);
-        (options && options.skipChanged) || this._scheduleChangedCallbacks(d);
+        this._scheduleChangedCallbacks(d);
 
         loadOperation = this._createLoadOperation(d);
 
@@ -830,21 +830,18 @@ var DataSource = Class.inherit({
         let d = new Deferred();
         when(this.store().notifyBatch(batchData)).done(() => {
             if(this.notifyShapeUpdate) {
-                this.reload({ skipChanged: true }).done(() => {
-                    this.fireEvent("changed", [batchData]);
-                    d.resolve();
-                });
+                this._clearRawData();
+                this._isLoaded = false;
+                this.load().done(d.resolve).fail(d.reject);
             } else {
-                let deferreds = [];
                 batchData.forEach(item => {
                     switch(item.type) {
-                        case "update": deferreds.push(dataUtils.updateArrayItem(this.store(), this.items(), item.key, item.data)); break;
+                        case "update": dataUtils.updateArrayItem(this.store(), this.items(), item.key, item.data); break;
+                        case "insert": dataUtils.insertItemInArray(this.store(), this.items(), item.data); break;
                     }
                 });
-                when.apply(when, deferreds).done(() => {
-                    this.fireEvent("changed", [batchData]);
-                    d.resolve();
-                });
+                this.fireEvent("changed", [batchData]);
+                d.resolve();
             }
         });
         return d.promise();
@@ -864,19 +861,22 @@ var DataSource = Class.inherit({
         };
     },
 
+    _clearRawData: function() {
+        var store = this.store();
+        if(store instanceof CustomStore) {
+            store.clearRawDataCache();
+        }
+    },
+
     /**
      * @name DataSourceMethods.reload
      * @publicName reload()
      * @return Promise<any>
      */
     reload: function(options) {
-        var store = this.store();
-        if(store instanceof CustomStore) {
-            store.clearRawDataCache();
-        }
-
+        this._clearRawData();
         this._init();
-        return this.load(options);
+        return this.load();
     },
 
     /**
