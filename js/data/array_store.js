@@ -1,6 +1,6 @@
 "use strict";
 
-import { trivialPromise, rejectedPromise, updateArrayItem, indexByKey, insertItemInArray } from "./utils";
+import { rejectedPromise, trivialPromise } from "./utils";
 import Query from "./query";
 import { errors } from "./errors";
 import Store from "./abstract_store";
@@ -46,7 +46,7 @@ var ArrayStore = Store.inherit({
     },
 
     _byKeyImpl: function(key) {
-        var index = indexByKey(this, this._array, key);
+        var index = this.arrayHelper().indexByKey(this._array, key);
 
         if(index === -1) {
             return rejectedPromise(errors.Error("E4009"));
@@ -56,31 +56,21 @@ var ArrayStore = Store.inherit({
     },
 
     _insertImpl: function(values) {
-        const checkErrors = true;
-        return insertItemInArray(this, this._array, values, checkErrors);
+        return this.arrayHelper().insertItemToArray(this._array, values);
     },
 
     _notifyBatchImpl: function(batchData) {
-        batchData.forEach(item => {
-            switch(item.type) {
-                case "update": this.update(item.key, item.data); break;
-                case "insert": this.insert(item.data); break;
-            }
-        });
+        this.arrayHelper().changeArrayByBatch(this._array, batchData);
         return trivialPromise();
     },
 
     _updateImpl: function(key, values) {
         const checkErrors = true;
-        return updateArrayItem(this, this._array, key, values, checkErrors);
+        return this.arrayHelper().updateArrayItem(this._array, key, values, checkErrors);
     },
 
     _removeImpl: function(key) {
-        var index = indexByKey(this, this._array, key);
-        if(index > -1) {
-            this._array.splice(index, 1);
-        }
-        return trivialPromise(key);
+        return this.arrayHelper().removeItemFromArray(this._array, key);
     },
 
     /**

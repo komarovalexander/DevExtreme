@@ -822,6 +822,10 @@ var DataSource = Class.inherit({
         });
     },
 
+    _arrayHelper: function() {
+        return this.store.arrayHelper();
+    },
+
     /**
     * @name DataSourceMethods.notifyBatch
     * @publicName notifyBatch(batchData)
@@ -830,17 +834,11 @@ var DataSource = Class.inherit({
         let d = new Deferred();
         when(this.store().notifyBatch(batchData)).done(() => {
             if(this.notifyShapeUpdate) {
-                this._clearRawData();
                 this._isLoaded = false;
                 this.load().done(d.resolve).fail(d.reject);
             } else {
-                batchData.forEach(item => {
-                    switch(item.type) {
-                        case "update": dataUtils.updateArrayItem(this.store(), this.items(), item.key, item.data); break;
-                        case "insert": dataUtils.insertItemInArray(this.store(), this.items(), item.data); break;
-                    }
-                });
-                this.fireEvent("changed", [batchData]);
+                this._arrayHelper().changeArrayByBatch(this.__rawData, batchData);
+                this.fireEvent("changed", [{ changes: batchData }]);
                 d.resolve();
             }
         });

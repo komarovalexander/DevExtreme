@@ -243,87 +243,101 @@ var rejectedPromise = function() {
     return d.reject.apply(d, arguments).promise();
 };
 
-var hasKey = function(target, keyOrKeys) {
-    var key,
-        keys = typeof keyOrKeys === "string" ? keyOrKeys.split() : keyOrKeys.slice();
+function ArrayHelper(keyExpr, keyGetter) {
+    var hasKey = function(target, keyOrKeys) {
+        var key,
+            keys = typeof keyOrKeys === "string" ? keyOrKeys.split() : keyOrKeys.slice();
 
-    while(keys.length) {
-        key = keys.shift();
-        if(key in target) {
-            return true;
-        }
-    }
-
-    return false;
-};
-
-var updateArrayItem = function(store, array, key, data, checkErrors) {
-    var target,
-        keyExpr = store.key(),
-        extendComplexObject = true;
-
-    if(keyExpr) {
-        if(checkErrors && hasKey(data, keyExpr) && !keysEqual(keyExpr, key, store.keyOf(data))) {
-            return rejectedPromise(errors.Error("E4017"));
-        }
-
-        let index = indexByKey(store, array, key);
-        if(index < 0) {
-            if(checkErrors) {
-                return rejectedPromise(errors.Error("E4009"));
-            } else {
-                return trivialPromise(key, data);
+        while(keys.length) {
+            key = keys.shift();
+            if(key in target) {
+                return true;
             }
         }
 
-        target = array[index];
-    } else {
-        target = key;
-    }
+        return false;
+    };
 
-    objectUtils.deepExtendArraySafe(target, data, extendComplexObject);
-    return trivialPromise(key, data);
-};
-
-var insertItemInArray = function(store, array, data, checkErrors) {
-    var keyExpr = store.key(),
-        keyValue,
-        obj;
-
-    if(typeUtils.isPlainObject(data)) {
-        obj = extend({}, data);
-    } else {
-        obj = data;
-    }
-
-    if(keyExpr) {
-        keyValue = store.keyOf(obj);
-        if(keyValue === undefined || typeof keyValue === "object" && typeUtils.isEmptyObject(keyValue)) {
-            if(Array.isArray(keyExpr)) {
-                throw errors.Error("E4007");
+    this.changeArrayByBatch = function(array, batchData) {
+        batchData.forEach(item => {
+            switch(item.type) {
+                case "update": this.updateArrayItem(array, item.key, item.data); break;
+                case "insert": this.insertItemToArray(array, item.data); break;
+                case "remove": this.removeItemFromArray(array, item.key); break;
             }
-            keyValue = obj[keyExpr] = String(new Guid());
+        });
+    };
+
+    this.updateArrayItem = function(array, key, data, checkErrors) {
+        var target,
+            extendComplexObject = true;
+
+        if(keyExpr) {
+            if(checkErrors && hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyGetter(data))) {
+                return rejectedPromise(errors.Error("E4017"));
+            }
+
+            let index = this.indexByKey(array, key);
+            if(index < 0) {
+                if(checkErrors) {
+                    return rejectedPromise(errors.Error("E4009"));
+                } else {
+                    return trivialPromise(key, data);
+                }
+            }
+
+            target = array[index];
         } else {
-            if(array[indexByKey(store, array, keyValue)] !== undefined) {
-                return rejectedPromise(errors.Error("E4008"));
+            target = key;
+        }
+
+        objectUtils.deepExtendArraySafe(target, data, extendComplexObject);
+        return trivialPromise(key, data);
+    };
+
+    this.insertItemToArray = function(array, data) {
+        var keyValue,
+            obj;
+
+        obj = typeUtils.isPlainObject(data) ? extend({}, data) : data;
+
+        if(keyExpr) {
+            keyValue = keyGetter(obj);
+            if(keyValue === undefined || typeof keyValue === "object" && typeUtils.isEmptyObject(keyValue)) {
+                if(Array.isArray(keyExpr)) {
+                    throw errors.Error("E4007");
+                }
+                keyValue = obj[keyExpr] = String(new Guid());
+            } else {
+                if(array[this.indexByKey(array, keyValue)] !== undefined) {
+                    return rejectedPromise(errors.Error("E4008"));
+                }
+            }
+        } else {
+            keyValue = obj;
+        }
+
+        array.push(obj);
+        return trivialPromise(data, keyValue);
+    };
+
+    this.removeItemFromArray = function(array, key) {
+        var index = this.indexByKey(array, key);
+        if(index > -1) {
+            array.splice(index, 1);
+        }
+        return trivialPromise(key);
+    };
+
+    this.indexByKey = function(array, key) {
+        for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
+            if(keysEqual(keyExpr, keyGetter(array[i]), key)) {
+                return i;
             }
         }
-    } else {
-        keyValue = obj;
-    }
-
-    array.push(obj);
-    return trivialPromise(data, keyValue);
-};
-
-var indexByKey = function(store, array, key) {
-    for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
-        if(keysEqual(store.key(), store.keyOf(array[i]), key)) {
-            return i;
-        }
-    }
-    return -1;
-};
+        return -1;
+    };
+}
 
 /**
 * @name Utils
@@ -337,11 +351,9 @@ var utils = {
     aggregators: aggregators,
 
     keysEqual: keysEqual,
-    indexByKey: indexByKey,
+    ArrayHelper: ArrayHelper,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
-    updateArrayItem: updateArrayItem,
-    insertItemInArray: insertItemInArray,
 
     isDisjunctiveOperator: isDisjunctiveOperator,
     isConjunctiveOperator: isConjunctiveOperator,

@@ -158,6 +158,13 @@ var Store = Class.inherit({
         return this._keyGetter(obj);
     },
 
+    arrayHelper: function() {
+        if(!this._arrayHelper) {
+            this._arrayHelper = new dataUtils.ArrayHelper(this.key(), this.keyOf.bind(this));
+        }
+        return this._arrayHelper;
+    },
+
     _requireKey: function() {
         if(!this.key()) {
             throw errorsModule.errors.Error("E4005");
