@@ -837,7 +837,7 @@ var DataSource = Class.inherit({
                 this._isLoaded = false;
                 this.load().done(d.resolve).fail(d.reject);
             } else {
-                this._arrayHelper().changeArrayByBatch(this.__rawData, batchData);
+                this._arrayHelper().changeArrayByBatch(this.items(), batchData);
                 this.fireEvent("changed", [{ changes: batchData }]);
                 d.resolve();
             }

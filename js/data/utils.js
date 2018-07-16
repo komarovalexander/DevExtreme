@@ -273,7 +273,7 @@ function ArrayHelper(keyExpr, keyGetter) {
             extendComplexObject = true;
 
         if(keyExpr) {
-            if(checkErrors && hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyGetter(data))) {
+            if(hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyGetter(data))) {
                 return rejectedPromise(errors.Error("E4017"));
             }
 
