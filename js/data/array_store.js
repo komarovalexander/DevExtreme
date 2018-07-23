@@ -4,6 +4,7 @@ import { rejectedPromise, trivialPromise } from "./utils";
 import Query from "./query";
 import { errors } from "./errors";
 import Store from "./abstract_store";
+import { arrayHelper } from "./utils";
 
 /**
 * @name ArrayStore
@@ -46,7 +47,7 @@ var ArrayStore = Store.inherit({
     },
 
     _byKeyImpl: function(key) {
-        var index = this.arrayHelper().indexByKey(this._array, key);
+        var index = arrayHelper.indexByKey(this._array, key, this.key(), this.keyOf.bind(this));
 
         if(index === -1) {
             return rejectedPromise(errors.Error("E4009"));
@@ -56,21 +57,21 @@ var ArrayStore = Store.inherit({
     },
 
     _insertImpl: function(values) {
-        return this.arrayHelper().insertItemToArray(this._array, values);
+        return arrayHelper.insertItemToArray(this._array, values, this.key(), this.keyOf.bind(this));
     },
 
     _notifyBatchImpl: function(batchData) {
-        this.arrayHelper().changeArrayByBatch(this._array, batchData);
+        arrayHelper.changeArrayByBatch(this._array, batchData, this.key(), this.keyOf.bind(this));
         return trivialPromise();
     },
 
     _updateImpl: function(key, values) {
         const checkErrors = true;
-        return this.arrayHelper().updateArrayItem(this._array, key, values, checkErrors);
+        return arrayHelper.updateArrayItem(this._array, key, values, this.key(), this.keyOf.bind(this), checkErrors);
     },
 
     _removeImpl: function(key) {
-        return this.arrayHelper().removeItemFromArray(this._array, key);
+        return arrayHelper.removeItemFromArray(this._array, key, this.key(), this.keyOf.bind(this));
     },
 
     /**

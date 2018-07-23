@@ -18,6 +18,7 @@ var $ = require("../../core/renderer"),
     ListItem = require("./item"),
     Button = require("../button"),
     eventUtils = require("../../events/utils"),
+    dataUtils = require("../../data/utils"),
     themes = require("../themes"),
     windowUtils = require("../../core/utils/window"),
     ScrollView = require("../scroll_view"),
@@ -674,12 +675,20 @@ var ListBase = CollectionWidget.inherit({
         }
     },
 
-    _dataSourceChangedHandler: function(newItems) {
-        if(!this._shouldAppendItems() && windowUtils.hasWindow()) {
-            this._scrollView && this._scrollView.scrollTo(0);
-        }
+    _dataSourceChangedHandler: function(newItems, e) {
+        if(e && e.changes) {
+            var store = this.getDataSource().store();
+            dataUtils.arrayHelper.changeArrayByBatch(this.option("items"), e.changes, store.key(), store.keyOf.bind(store));
+            this._renderedItemsCount = 0;
+            this._clean();
+            this._refreshContentForPagination();
+        } else {
+            if(!this._shouldAppendItems() && windowUtils.hasWindow()) {
+                this._scrollView && this._scrollView.scrollTo(0);
+            }
 
-        this.callBase(newItems);
+            this.callBase(newItems);
+        }
     },
 
     _refreshContent: function() {

@@ -822,10 +822,6 @@ var DataSource = Class.inherit({
         });
     },
 
-    _arrayHelper: function() {
-        return this.store.arrayHelper();
-    },
-
     /**
     * @name DataSourceMethods.notifyBatch
     * @publicName notifyBatch(batchData)
@@ -837,7 +833,7 @@ var DataSource = Class.inherit({
                 this._isLoaded = false;
                 this.load().done(d.resolve).fail(d.reject);
             } else {
-                this._arrayHelper().changeArrayByBatch(this.items(), batchData);
+                dataUtils.arrayHelper.changeArrayByBatch(this.items(), batchData, this.key(), this.store().keyOf.bind(this.store()));
                 this.fireEvent("changed", [{ changes: batchData }]);
                 d.resolve();
             }

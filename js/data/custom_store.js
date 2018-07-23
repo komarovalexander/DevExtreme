@@ -397,7 +397,7 @@ var CustomStore = Store.inherit({
 
     _notifyBatchImpl: function(batchData) {
         if(this.__rawData) {
-            this.arrayHelper().changeArrayByBatch(this.__rawData, batchData);
+            dataUtils.arrayHelper.changeArrayByBatch(this.__rawData, batchData, this.key(), this.keyOf.bind(this));
             return trivialPromise();
         }
         return trivialPromise();
