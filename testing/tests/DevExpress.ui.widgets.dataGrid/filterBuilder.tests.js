@@ -148,7 +148,6 @@ QUnit.module("Common", {
         assert.ok($(".dx-popup-content .dx-filterbuilder-item-operation").length, 1);
     });
 
-
     QUnit.test("the 'any of' operation is available in filterBuilderPopup if filterOperations are not set", function(assert) {
         // arrange, act
         this.initFilterBuilderView({
@@ -166,6 +165,19 @@ QUnit.module("Common", {
         this.initFilterBuilderView({
             columns: [{ dataField: "field", dataType: "string", defaultFilterOperations: ["="] }],
             filterValue: ["field", "anyof", ["a"]],
+            filterBuilderPopup: { visible: true },
+        });
+
+        // assert
+        assert.equal($(".dx-popup-content .dx-filterbuilder-item-operation").length, 1);
+    });
+
+    // T651579
+    QUnit.test("filter value with name in identifier shows in filterBuilder", function(assert) {
+        // arrange, act
+        this.initFilterBuilderView({
+            columns: [{ name: "field", allowFiltering: true }],
+            filterValue: ["field", "=", 1],
             filterBuilderPopup: { visible: true },
         });
 
@@ -265,6 +277,23 @@ QUnit.module("Common", {
         assert.deepEqual(filterBuilderFields.length, 1);
         assert.deepEqual(filterBuilderFields[0].dataField, "field");
     });
+
+    // T653737
+    QUnit.test("Filter builder doesn't throw errors when boolean data type columns are used", function(assert) {
+        var handlerInit = sinon.spy();
+        this.initFilterBuilderView({
+            columns: [
+                { dataField: "field", dataType: "boolean", filterOperations: [] }
+            ],
+            filterBuilder: {
+                onInitialized: handlerInit
+            },
+            filterBuilderPopup: { visible: true },
+            filterValue: ["field", "=", true]
+        });
+
+        assert.equal(handlerInit.called, 1);
+    });
 });
 
 QUnit.module("Real dataGrid", {
@@ -300,5 +329,23 @@ QUnit.module("Real dataGrid", {
 
         // assert
         assert.equal($(".dx-popup-content .dx-filterbuilder-item-value-text").text(), "text");
+    });
+
+    // T657917
+    QUnit.test("The value for the 'Is any of' operation is changed when filterBuilderPopup has closeOnOutsideClick=true", function(assert) {
+        this.initDataGrid({
+            columns: [{ dataField: "field", dataType: "string", defaultFilterOperations: ["anyof"] }],
+            filterBuilderPopup: {
+                visible: true,
+                closeOnOutsideClick: true
+            },
+            filterValue: ["field", "anyof", ["text"]],
+        });
+        $(".dx-popup-content .dx-filterbuilder-item-value-text").trigger("dxclick");
+        this.clock.tick();
+        $(".dx-header-filter-menu.dx-popup").dxPopup("instance").hide();
+
+        // assert
+        assert.equal(this.dataGrid.option("filterBuilderPopup.visible"), true);
     });
 });

@@ -984,15 +984,21 @@ var FilterBuilder = Widget.inherit({
                 $container.empty();
                 removeEvents();
                 return that._createValueText(item, field, $container);
+            },
+            closeEditor = function() {
+                that._updateConditionValue(item, value, function() {
+                    createValueText();
+                });
             };
 
         var options = {
             value: value === "" ? null : value,
             filterOperation: utils.getOperationValue(item),
-            isValueChanged: true,
+            updateValueImmediately: true,
             setValue: function(data) {
                 value = data === null ? "" : data;
             },
+            closeEditor: closeEditor,
             text: $container.text()
         };
 
@@ -1004,10 +1010,8 @@ var FilterBuilder = Widget.inherit({
 
         var documentClickHandler = function(e) {
             if(!isFocusOnEditorParts(e.target)) {
-                utils.setFocusToBody();
-                that._updateConditionValue(item, value, function() {
-                    createValueText();
-                });
+                eventsEngine.trigger($editor.find("input"), "change");
+                closeEditor();
             }
         };
         eventsEngine.on(document, "dxpointerdown", documentClickHandler);

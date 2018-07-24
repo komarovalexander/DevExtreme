@@ -214,6 +214,7 @@ var VirtualScrollingDataSourceAdapterExtender = (function() {
                     that.pageIndex(0);
                     dataSource.pageIndex(0);
                     storeLoadOptions.pageIndex = 0;
+                    options.pageIndex = 0;
                     storeLoadOptions.skip = 0;
                 } else {
                     dataSource.pageIndex(that.pageIndex());
@@ -396,12 +397,21 @@ var VirtualScrollingRowsViewExtender = (function() {
                     var $bottomRow = that._createEmptyRow().addClass("dx-virtual-row");
                     $bottomRow.appendTo($body.last()).css("height", bottom);
                 }
+
+                !isRender && that._updateScrollTopPosition(top);
             } else {
                 commonUtils.deferUpdate(function() {
                     that._updateContentPositionCore();
                 });
             }
         },
+
+        _updateScrollTopPosition: function(top) {
+            if(this._scrollTop < top && !this._isScrollByEvent && this._dataController.pageIndex() > 0) {
+                this.scrollTo({ top: top, left: this._scrollLeft });
+            }
+        },
+
         _updateContentPositionCore: function() {
             var that = this,
                 contentElement,
@@ -441,9 +451,7 @@ var VirtualScrollingRowsViewExtender = (function() {
                         that._renderVirtualTableContent(virtualTable, contentHeight);
                     }
 
-                    if(that._scrollTop < top && !that._isScrollByEvent && that._dataController.pageIndex() > 0) {
-                        that.scrollTo({ top: top, left: that._scrollLeft });
-                    }
+                    that._updateScrollTopPosition(top);
                 });
             }
         },
