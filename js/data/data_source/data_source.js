@@ -829,7 +829,7 @@ var DataSource = Class.inherit({
     notifyBatch: function(batchData) {
         let d = new Deferred();
         when(this.store().notifyBatch(batchData)).done(() => {
-            if(this.notifyShapeUpdate) {
+            if(this.notifyShapeUpdate || this.paginate()) {
                 this._isLoaded = false;
                 this.load().done(d.resolve).fail(d.reject);
             } else {
@@ -837,7 +837,7 @@ var DataSource = Class.inherit({
                 this.fireEvent("changed", [{ changes: batchData }]);
                 d.resolve();
             }
-        });
+        }).fail(d.reject);
         return d.promise();
     },
 
@@ -855,20 +855,17 @@ var DataSource = Class.inherit({
         };
     },
 
-    _clearRawData: function() {
-        var store = this.store();
-        if(store instanceof CustomStore) {
-            store.clearRawDataCache();
-        }
-    },
-
     /**
      * @name DataSourceMethods.reload
      * @publicName reload()
      * @return Promise<any>
      */
     reload: function(options) {
-        this._clearRawData();
+        var store = this.store();
+        if(store instanceof CustomStore) {
+            store.clearRawDataCache();
+        }
+
         this._init();
         return this.load();
     },
