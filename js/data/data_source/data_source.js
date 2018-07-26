@@ -64,7 +64,7 @@ function normalizeDataSourceOptions(options, normalizationOptions) {
     function createCustomStoreFromLoadFunc() {
         var storeConfig = {};
 
-        iteratorUtils.each(["useDefaultSearch", "key", "load", "notify", "loadMode", "cacheRawData", "byKey", "lookup", "totalCount", "insert", "update", "remove"], function() {
+        iteratorUtils.each(["useDefaultSearch", "key", "load", "loadMode", "cacheRawData", "byKey", "lookup", "totalCount", "insert", "update", "remove"], function() {
             storeConfig[this] = options[this];
             delete options[this];
         });
@@ -783,7 +783,7 @@ var DataSource = Class.inherit({
     * @publicName load()
     * @return Promise<any>
     */
-    load: function(options) {
+    load: function() {
         var that = this,
             d = new Deferred(),
             loadOperation;
