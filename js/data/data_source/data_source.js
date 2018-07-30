@@ -829,14 +829,27 @@ var DataSource = Class.inherit({
     notifyBatch: function(batchData) {
         let d = new Deferred();
         when(this.store().notifyBatch(batchData)).done(() => {
-            if(this.notifyShapeUpdate || this.paginate()) {
+            /**
+            this._isLoaded = false;
+            this.load().done(d.resolve).fail(d.reject); */
+            // if(this.notifyShapeUpdate || (this.paginate() && batchData.some(b => b.type !== "update"))) {
+            if(this.notifyShapeUpdate) {
+                this._isLoaded = false;
+                this.load().done(d.resolve).fail(d.reject);
+            } else {
+                // if paging  => ignore inserts and removes
+                dataUtils.arrayHelper.changeArrayByBatch(this.items(), batchData, this.key(), this.store().keyOf.bind(this.store()));
+                this.fireEvent("changed", [{ changes: batchData }]);
+                d.resolve();
+            }
+            /* if(this.notifyShapeUpdate || this.paginate()) {
                 this._isLoaded = false;
                 this.load().done(d.resolve).fail(d.reject);
             } else {
                 dataUtils.arrayHelper.changeArrayByBatch(this.items(), batchData, this.key(), this.store().keyOf.bind(this.store()));
                 this.fireEvent("changed", [{ changes: batchData }]);
                 d.resolve();
-            }
+            }*/
         }).fail(d.reject);
         return d.promise();
     },
