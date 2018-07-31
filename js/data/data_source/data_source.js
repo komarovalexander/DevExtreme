@@ -851,7 +851,7 @@ var DataSource = Class.inherit({
      * @publicName reload()
      * @return Promise<any>
      */
-    reload: function(options) {
+    reload: function() {
         var store = this.store();
         if(store instanceof CustomStore) {
             store.clearRawDataCache();

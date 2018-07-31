@@ -1,18 +1,18 @@
 "use strict";
 
-var typeUtils = require("../core/utils/type"),
-    isFunction = typeUtils.isFunction,
-    extend = require("../core/utils/extend").extend,
-    Guid = require("../core/guid"),
-    domAdapter = require("../core/dom_adapter"),
-    ready = require("../core/utils/ready_callbacks").add,
-    windowUtils = require("../core/utils/window"),
-    window = windowUtils.getWindow(),
-    map = require("../core/utils/iterator").map,
-    errors = require("./errors").errors,
-    objectUtils = require("../core/utils/object"),
-    toComparable = require("../core/utils/data").toComparable,
-    Deferred = require("../core/utils/deferred").Deferred;
+import typeUtils, { isFunction } from "../core/utils/type";
+import Guid from "../core/guid";
+import domAdapter from "../core/dom_adapter";
+import { add as ready } from "../core/utils/ready_callbacks";
+import { extend } from "../core/utils/extend";
+import windowUtils from "../core/utils/window";
+import { map } from "../core/utils/iterator";
+import { errors } from "./errors";
+import objectUtils from "../core/utils/object";
+import { toComparable } from "../core/utils/data";
+import { Deferred } from "../core/utils/deferred";
+
+var window = windowUtils.getWindow();
 
 var XHR_ERROR_UNLOAD = "DEVEXTREME_XHR_ERROR_UNLOAD";
 
