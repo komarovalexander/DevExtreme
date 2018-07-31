@@ -108,10 +108,7 @@ var SelectBox = DropDownList.inherit({
             },
             escape: function() {
                 parent.escape.apply(this, arguments);
-                if(!this._isEditable() && this._list) {
-                    this._focusListElement(null);
-                    this._updateField(this.option("selectedItem"));
-                }
+                this._cancelEditing();
             },
             enter: function(e) {
                 if(this._input().val() === "" && this.option("value") && this.option("allowClearing")) {
@@ -211,6 +208,11 @@ var SelectBox = DropDownList.inherit({
 
             tooltipEnabled: false,
             openOnFieldClick: true,
+
+            /**
+             * @name dxSelectBoxOptions.showDropDownButton
+             * @inheritdoc
+             */
             showDropDownButton: true,
 
             displayCustomValue: false,
@@ -303,6 +305,18 @@ var SelectBox = DropDownList.inherit({
 
     _popupWrapperClass: function() {
         return this.callBase() + " " + SELECTBOX_POPUP_WRAPPER_CLASS;
+    },
+
+    _cancelEditing: function() {
+        if(!this.option("searchEnabled") && this._list) {
+            this._focusListElement(null);
+            this._updateField(this.option("selectedItem"));
+        }
+    },
+
+    _closeOutsideDropDownHandler: function(e) {
+        this._cancelEditing();
+        return this.callBase(e);
     },
 
     _renderOpenedState: function() {
@@ -427,9 +441,7 @@ var SelectBox = DropDownList.inherit({
     },
 
     _items: function() {
-        var items = this._list
-            ? this.option("items")
-            : this._dataSource.items();
+        var items = this._getPlainItems(!this._list && this._dataSource.items());
 
         var availableItems = new dataQuery(items).filter("disabled", "<>", true).toArray();
 

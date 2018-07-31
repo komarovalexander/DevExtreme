@@ -208,6 +208,7 @@ namespace StyleCompiler
                 "spa",
                 "filterBuilder",
                 "recurrenceEditor",
+                "drawer",
                 "card"
             });
 
@@ -269,7 +270,6 @@ namespace StyleCompiler
             public string LicenseInfo = "For internal use only";
             public string[] Modules;
             public string[] SupportedThemes;
-            public string[] ExcludedColorSchemes;
             public Dictionary<string, string[]> SupportedSizeSchemes;
             public bool ForceCommonsInExternalFiles = false;
             public bool UseCommonPostfix = true;

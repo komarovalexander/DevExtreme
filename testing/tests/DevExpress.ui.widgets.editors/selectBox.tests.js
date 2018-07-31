@@ -1540,6 +1540,38 @@ QUnit.test("Enter key press prevent default when popup is opened or acceptCustom
     assert.equal(prevented, 1, "defaults prevented on enter key when acceptCustomValue is true");
 });
 
+QUnit.test("selectBox should restore old value after outside click if custom value is accepted", function(assert) {
+    var $element = $("#selectBox").dxSelectBox({
+            items: ["item 1", "item 2"],
+            value: "item 1",
+            acceptCustomValue: true,
+            opened: true
+        }),
+        $input = $element.find(toSelector(TEXTEDITOR_INPUT_CLASS)),
+        keyboard = keyboardMock($input);
+
+    keyboard.press("down");
+    $(document).trigger("dxpointerdown");
+
+    assert.equal($input.val(), "item 1", "value has been reverted");
+});
+
+QUnit.test("selectBox should restore old value after esc if custom value is accepted", function(assert) {
+    var $element = $("#selectBox").dxSelectBox({
+            items: ["item 1", "item 2"],
+            value: "item 1",
+            acceptCustomValue: true,
+            opened: true
+        }),
+        $input = $element.find(toSelector(TEXTEDITOR_INPUT_CLASS)),
+        keyboard = keyboardMock($input);
+
+    keyboard.press("down");
+    keyboard.press("esc");
+
+    assert.equal($input.val(), "item 1", "value has been reverted");
+});
+
 QUnit.test("list should not be rendered on each open", function(assert) {
     var dataSourceLoadedCount = 0;
     var $selectBox = $("#selectBox").dxSelectBox({
@@ -3434,6 +3466,28 @@ QUnit.test("upArrow and downArrow on textbox change value after change dataSourc
     this.clock.tick(0);
     keyboard.keyDown("down");
     assert.strictEqual(instance.option("value"), 4, "downArrow");
+});
+
+QUnit.test("value should be correctly changed via arrow keys when grouped datasource is used", function(assert) {
+    var $element = $("#selectBox").dxSelectBox({
+            dataSource: new DataSource({
+                store: [{ id: 1, text: "item 1", Category: 1 }, { id: 2, text: "item 2", Category: 2 }],
+                key: "id",
+                group: "Category"
+            }),
+            valueExpr: "id",
+            value: 1,
+            grouped: true,
+            fieldTemplate: function(data) {
+                return $("<div>").dxTextBox({ value: data.text });
+            }
+        }),
+        $input = $element.find(toSelector(TEXTEDITOR_INPUT_CLASS)),
+        keyboard = keyboardMock($input);
+
+    keyboard.press("down");
+    $input = $element.find(toSelector(TEXTEDITOR_INPUT_CLASS));
+    assert.equal($input.val(), "item 2", "navigation is correct");
 });
 
 QUnit.test("disabled item should not be selected via keyboard if the widget is closed", function(assert) {

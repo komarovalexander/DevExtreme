@@ -325,9 +325,9 @@ var RecurrenceEditor = Editor.inherit({
 
     _renderRepeatOnLabel: function($element) {
         this._$repeatOnLabel = $("<div>")
-                        .text(messageLocalization.format("dxScheduler-recurrenceOn") + ":")
-                        .addClass(REPEAT_ON_EDITOR + LABEL_POSTFIX)
-                        .addClass(FIELD_LABEL_CLASS);
+            .text(messageLocalization.format("dxScheduler-recurrenceOn") + ":")
+            .addClass(REPEAT_ON_EDITOR + LABEL_POSTFIX)
+            .addClass(FIELD_LABEL_CLASS);
 
         $element.append(this._$repeatOnLabel);
     },
@@ -818,7 +818,8 @@ var RecurrenceEditor = Editor.inherit({
 
         this._changeRepeatCountValue();
         this._changeRepeatUntilValue();
-        this._changeCheckBoxesValue();
+        this._changeCheckBoxesValue(!!rules["byday"]);
+
         this._changeDayOfMonthValue();
         this._changeMonthOfYearValue();
     },
@@ -858,8 +859,8 @@ var RecurrenceEditor = Editor.inherit({
         return this._recurrenceRule.rules().until || this._formatUntilDate(new Date());
     },
 
-    _changeCheckBoxesValue: function() {
-        if(!this._$repeatOnWeek) {
+    _changeCheckBoxesValue: function(byDayChanged) {
+        if(!this._$repeatOnWeek || !byDayChanged) {
             return;
         }
 

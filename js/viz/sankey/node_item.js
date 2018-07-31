@@ -1,7 +1,5 @@
 "use strict";
 
-import { COLOR_MODE_SOURCE } from './constants';
-
 var states = ["normal", "hover"],
     isDefined = require("../../core/utils/type").isDefined;
 
@@ -27,7 +25,7 @@ function compileAttrs(color, itemOptions, itemBaseOptions) {
 function compileLabelAttrs(labelOptions, filter, node) {
     var _patchFontOptions = require("../core/utils").patchFontOptions;
 
-    if(labelOptions.colorMode === COLOR_MODE_SOURCE) {
+    if(labelOptions.useNodeColors) {
         labelOptions.font.color = node.color;
     }
 
@@ -95,7 +93,7 @@ Node.prototype = {
 
         if(state) {
             this.linksIn.concat(this.linksOut).forEach(adjacentLink => {
-                this.widget._links[adjacentLink.idx].setAdjacentNodeHover(true);
+                this.widget._links[adjacentLink.index].setAdjacentNodeHover(true);
             });
         } else {
             this.widget._links.forEach(function(link) {

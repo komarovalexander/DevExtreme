@@ -79,6 +79,21 @@ QUnit.test("Header scrollable shouldn't update position if date scrollable posit
     assert.equal(headerScrollable.scrollLeft(), 0, "Scroll position is OK");
 });
 
+QUnit.test("Date table should have a correct width if cell is less than 75px", function(assert) {
+    this.instance.option("crossScrollingEnabled", true);
+
+    var $element = this.instance.$element(),
+        $cells = $element.find(".dx-scheduler-date-table-cell");
+
+    $cells.css("width", 30);
+
+    domUtils.triggerHidingEvent($element);
+    domUtils.triggerShownEvent($element);
+
+    var dateTableWidth = $element.find(".dx-scheduler-date-table").outerWidth();
+    assert.equal(dateTableWidth, 1440, "Width is OK");
+});
+
 QUnit.test("Sidebar scrollable should update position if date scrollable position is changed", function(assert) {
     this.instance.option({
         crossScrollingEnabled: true,
@@ -258,7 +273,15 @@ QUnit.test("the 'getCellIndexByCoordinates' method should return right coordinat
 
     var cellIndex = this.instance.getCellIndexByCoordinates({ left: cellWidth * 15 + 0.656, top: cellHeight * 2 - 0.656 });
 
-    assert.equal(cellIndex, 111, "Cell index is OK");
+    assert.equal(cellIndex, 63, "Cell index is OK");
+
+    cellIndex = this.instance.getCellIndexByCoordinates({ left: cellWidth + 0.656, top: cellHeight - 0.656 });
+
+    assert.equal(cellIndex, 1, "Cell index is OK");
+
+    cellIndex = this.instance.getCellIndexByCoordinates({ left: cellWidth + 0.656, top: cellHeight + 0.656 });
+
+    assert.equal(cellIndex, 49, "Cell index is OK");
 });
 
 QUnit.test("Timeline should not have time panel offset", function(assert) {
