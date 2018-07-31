@@ -633,3 +633,36 @@ QUnit.test("function context is current Store's instance", function(assert) {
     store.remove();
     store.totalCount();
 });
+
+QUnit.test("connect calls once before loads", function(assert) {
+    var loadSpy = sinon.spy(),
+        connectSpy = sinon.spy(),
+        initResult = $.Deferred(),
+        store = new CustomStore({
+            connect: function() {
+                connectSpy();
+                return initResult.promise();
+            },
+            load: loadSpy
+        });
+
+    store.load();
+    store.load();
+    assert.equal(loadSpy.callCount, 0);
+
+    initResult.resolve();
+    assert.equal(loadSpy.callCount, 2);
+    assert.equal(connectSpy.callCount, 1);
+});
+
+QUnit.test("push", function(assert) {
+    var onPushSpy = sinon.spy(),
+        changes = [{ type: "remove", key: 0 }],
+        store = new CustomStore({
+            onPush: onPushSpy
+        });
+
+    store.push(changes);
+    assert.equal(onPushSpy.callCount, 1);
+    assert.equal(onPushSpy.firstCall.args[0].changes, changes);
+});

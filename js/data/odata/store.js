@@ -214,9 +214,7 @@ var ODataStore = Store.inherit({
         return query(url, queryOptions);
     },
 
-    _notifyBatchImpl: function(batchData) {
-        return new Deferred().resolve().promise();
-    },
+    _pushImpl: function(changes) { },
 
     _insertImpl: function(values) {
         this._requireKey();

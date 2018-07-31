@@ -64,7 +64,7 @@ function normalizeDataSourceOptions(options, normalizationOptions) {
     function createCustomStoreFromLoadFunc() {
         var storeConfig = {};
 
-        iteratorUtils.each(["useDefaultSearch", "key", "load", "loadMode", "cacheRawData", "byKey", "lookup", "totalCount", "insert", "update", "remove"], function() {
+        iteratorUtils.each(["useDefaultSearch", "key", "load", "connect", "loadMode", "cacheRawData", "byKey", "lookup", "totalCount", "insert", "update", "remove"], function() {
             storeConfig[this] = options[this];
             delete options[this];
         });
@@ -212,6 +212,8 @@ var DataSource = Class.inherit({
         * @type Store|StoreOptions|Array<any>|any
         */
         this._store = options.store;
+        this._onPushHandler = this._onPush.bind(this);
+        this._store.on("push", this._onPushHandler);
 
         /**
         * @name DataSourceOptions.sort
@@ -276,13 +278,6 @@ var DataSource = Class.inherit({
 
         this._loadingCount = 0;
         this._loadQueue = this._createLoadQueue();
-
-        /**
-        * @name DataSourceOptions.init
-        * @type function
-        * @type_function_return Promise<any>
-        */
-        options.init && this._loadQueue.add(options.init.bind(this));
 
         /**
         * @name DataSourceOptions.searchValue
@@ -375,6 +370,7 @@ var DataSource = Class.inherit({
     * @publicName dispose()
     */
     dispose: function() {
+        this._store.off("push", this._onPushHandler);
         this._disposeEvents();
 
         delete this._store;
@@ -822,36 +818,18 @@ var DataSource = Class.inherit({
         });
     },
 
-    /**
-    * @name DataSourceMethods.notifyBatch
-    * @publicName notifyBatch(batchData)
-    */
-    notifyBatch: function(batchData) {
-        let d = new Deferred();
-        when(this.store().notifyBatch(batchData)).done(() => {
-            /**
+    _onPush: function(e) {
+        if(this.notifyShapeUpdate) {
             this._isLoaded = false;
-            this.load().done(d.resolve).fail(d.reject); */
-            // if(this.notifyShapeUpdate || (this.paginate() && batchData.some(b => b.type !== "update"))) {
-            if(this.notifyShapeUpdate) {
-                this._isLoaded = false;
-                this.load().done(d.resolve).fail(d.reject);
-            } else {
-                // if paging  => ignore inserts and removes
-                dataUtils.arrayHelper.changeArrayByBatch(this.items(), batchData, this.key(), this.store().keyOf.bind(this.store()));
-                this.fireEvent("changed", [{ changes: batchData }]);
-                d.resolve();
+            this.load();
+        } else {
+            let changes = e.changes;
+            if(this.paginate()) {
+                changes = changes.filter(item => item.type === "update");
             }
-            /* if(this.notifyShapeUpdate || this.paginate()) {
-                this._isLoaded = false;
-                this.load().done(d.resolve).fail(d.reject);
-            } else {
-                dataUtils.arrayHelper.changeArrayByBatch(this.items(), batchData, this.key(), this.store().keyOf.bind(this.store()));
-                this.fireEvent("changed", [{ changes: batchData }]);
-                d.resolve();
-            }*/
-        }).fail(d.reject);
-        return d.promise();
+            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.key(), this.store().keyOf.bind(this.store()));
+            this.fireEvent("changed", [{ changes: changes }]);
+        }
     },
 
     _createLoadOperation: function(deferred) {

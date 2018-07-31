@@ -395,12 +395,10 @@ var CustomStore = Store.inherit({
         return d.promise();
     },
 
-    _notifyBatchImpl: function(batchData) {
+    _pushImpl: function(changes) {
         if(this.__rawData) {
-            dataUtils.arrayHelper.changeArrayByBatch(this.__rawData, batchData, this.key(), this.keyOf.bind(this));
-            return trivialPromise();
+            dataUtils.arrayHelper.changeArrayByBatch(this.__rawData, changes, this.key(), this.keyOf.bind(this));
         }
-        return trivialPromise();
     },
 
     _loadImpl: function(options) {

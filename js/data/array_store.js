@@ -60,9 +60,8 @@ var ArrayStore = Store.inherit({
         return arrayHelper.insertItemToArray(this._array, values, this.key(), this.keyOf.bind(this));
     },
 
-    _notifyBatchImpl: function(batchData) {
-        arrayHelper.changeArrayByBatch(this._array, batchData, this.key(), this.keyOf.bind(this));
-        return trivialPromise();
+    _pushImpl: function(changes) {
+        arrayHelper.changeArrayByBatch(this._array, changes, this.key(), this.keyOf.bind(this));
     },
 
     _updateImpl: function(key, values) {

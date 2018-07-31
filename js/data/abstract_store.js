@@ -1,17 +1,16 @@
 "use strict";
 
-var Class = require("../core/class"),
-    abstract = Class.abstract,
-    EventsMixin = require("../core/events_mixin"),
-    each = require("../core/utils/iterator").each,
-    errorsModule = require("./errors"),
-    dataUtils = require("./utils"),
-    compileGetter = require("../core/utils/data").compileGetter,
-    storeHelper = require("./store_helper"),
-    queryByOptions = storeHelper.queryByOptions,
-    Deferred = require("../core/utils/deferred").Deferred,
+import Class, { abstract } from "../core/class";
+import EventsMixin from "../core/events_mixin";
+import { each } from "../core/utils/iterator";
+import errorsModule from "./errors";
+import dataUtils from "./utils";
+import { compileGetter } from "../core/utils/data";
+import { queryByOptions } from "./store_helper";
+import { Deferred } from "../core/utils/deferred";
+import { isFunction } from "../core/utils/type";
 
-    storeImpl = {};
+var storeImpl = {};
 
 /**
 * @name Store
@@ -81,6 +80,13 @@ var Store = Class.inherit({
                 "onUpdating",
 
                 /**
+                 * @name StoreOptions.onPush
+                 * @type function
+                 * @action
+                 */
+                "onPush",
+
+                /**
                  * @name StoreOptions.onRemoved
                  * @type function
                  * @type_function_param1 key:object|string|number
@@ -129,6 +135,13 @@ var Store = Class.inherit({
         this._errorHandler = options.errorHandler;
 
         this._useDefaultSearch = true;
+
+        /**
+        * @name StoreOptions.connect
+        * @type function
+        * @type_function_return Promise<any>
+        */
+        this._connectPromise = isFunction(options.connect) ? options.connect() : undefined;
     },
 
     _customLoadOptions: function() {
@@ -175,14 +188,27 @@ var Store = Class.inherit({
     * @return Promise<any>
     */
     load: function(options) {
-        var that = this;
+        if(this._connectPromise) {
+            let d = new Deferred();
+            this._connectPromise.done(()=> {
+                this._connectPromise = null;
+                this._load(options)
+                    .done(d.resolve)
+                    .fail(d.reject);
+            }).fail(d.reject);
+            return d.promise();
+        } else {
+            return this._load(options);
+        }
+    },
 
+    _load: function(options) {
         options = options || {};
 
         this.fireEvent("loading", [options]);
 
-        return this._withLock(this._loadImpl(options)).done(function(result) {
-            that.fireEvent("loaded", [result, options]);
+        return this._withLock(this._loadImpl(options)).done((result) => {
+            this.fireEvent("loaded", [result, options]);
         });
     },
 
@@ -281,11 +307,16 @@ var Store = Class.inherit({
 
     _updateImpl: abstract,
 
-    notifyBatch: function(batchData) {
-        return this._addFailHandlers(this._notifyBatchImpl(batchData));
+    /**
+    * @name StoreMethods.push
+    * @publicName push(changes)
+    */
+    push: function(changes) {
+        this._pushImpl(changes);
+        this.fireEvent("push", [{ changes }]);
     },
 
-    _notifyBatchImpl: abstract,
+    _pushImpl: abstract,
 
     /**
     * @name StoreMethods.remove
