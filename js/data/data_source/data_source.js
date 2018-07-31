@@ -313,6 +313,13 @@ var DataSource = Class.inherit({
         */
         this.reshapeAfterPush = __isDefined(options.reshapeAfterPush) ? options.reshapeAfterPush : false;
 
+        /**
+        * @name DataSourceOptions.pushTimeout
+        * @type number
+        * @default undefined
+        */
+        this._throttle = new dataUtils.Throttle(options.pushTimeout);
+
         iteratorUtils.each(
             [
                 /**
@@ -818,18 +825,24 @@ var DataSource = Class.inherit({
         });
     },
 
-    _onPush: function(e) {
+    _onPushImpl: function(e) {
         if(this.reshapeAfterPush) {
             this._isLoaded = false;
-            this.load();
+            this._throttle.execute(this.load.bind(this));
         } else {
             let changes = e.changes;
             if(this.paginate()) {
                 changes = changes.filter(item => item.type === "update");
             }
-            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.key(), this.store().keyOf.bind(this.store()));
-            this.fireEvent("changed", [{ changes: changes }]);
+            this._throttle.execute((throttleChanges) => {
+                dataUtils.arrayHelper.changeArrayByBatch(this.items(), throttleChanges, this.key(), this.store().keyOf.bind(this.store()));
+                this.fireEvent("changed", [{ changes: throttleChanges }]);
+            }, changes);
         }
+    },
+
+    _onPush: function(e) {
+        this._onPushImpl(e);
     },
 
     _createLoadOperation: function(deferred) {

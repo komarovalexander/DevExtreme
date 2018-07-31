@@ -339,6 +339,40 @@ function ArrayHelper() {
     };
 }
 
+function Throttle(pushTimeout) {
+    var execute;
+    if(pushTimeout) {
+        let pushTimeoutCache,
+            pushTimeoutId,
+            init = function() {
+                pushTimeoutCache = [],
+                pushTimeoutId = undefined;
+            };
+        init();
+        execute = function(fn, changes) {
+            if(!pushTimeout) {
+                fn(changes);
+            }
+
+            if(!pushTimeoutId) {
+                pushTimeoutId = setTimeout(() => {
+                    fn(pushTimeoutCache);
+                    init();
+                }, pushTimeout);
+            }
+            if(Array.isArray(changes)) {
+                pushTimeoutCache.push(...changes);
+            }
+        };
+    } else {
+        execute = function(fn, changes) {
+            fn(changes);
+        };
+    }
+
+    this.execute = execute;
+}
+
 /**
 * @name Utils
 */
@@ -352,6 +386,7 @@ var utils = {
 
     keysEqual: keysEqual,
     arrayHelper: new ArrayHelper(),
+    Throttle: Throttle,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
 

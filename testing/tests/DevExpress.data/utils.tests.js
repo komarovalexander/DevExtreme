@@ -5,6 +5,7 @@ var Guid = require("core/guid"),
     keysEqual = dataUtils.keysEqual,
     processRequestResultLock = dataUtils.processRequestResultLock,
     b64 = dataUtils.base64_encode,
+    Throttle = dataUtils.Throttle,
     odataUtils = require("data/odata/utils");
 
 QUnit.module("keysEqual");
@@ -104,4 +105,37 @@ QUnit.test("encode", function(assert) {
     assert.equal(b64("DevExpress"), "RGV2RXhwcmVzcw==");
     assert.equal(b64("\u0401"), "0IE=");
     assert.equal(b64([65]), "QQ==");
+});
+
+QUnit.module("Throttle", {
+    beforeEach: function() {
+        this.clock = sinon.useFakeTimers();
+    },
+    afterEach: function() {
+        this.clock.restore();
+    }
+}, function() {
+    QUnit.test("execute", function(assert) {
+        var spy = sinon.spy(),
+            throttle = new Throttle(100);
+        for(var i = 0; i < 10; i++) {
+            throttle.execute(spy, [i]);
+        }
+        assert.equal(spy.callCount, 0);
+        this.clock.tick(100);
+        assert.equal(spy.callCount, 1);
+        assert.equal(spy.firstCall.args[0].length, 10);
+    });
+
+    QUnit.test("execute without timeout", function(assert) {
+        var spy = sinon.spy(),
+            throttle = new Throttle();
+        for(var i = 0; i < 10; i++) {
+            throttle.execute(spy, [i]);
+        }
+        assert.equal(spy.callCount, 10);
+        this.clock.tick(100);
+        assert.equal(spy.callCount, 10);
+        assert.equal(spy.firstCall.args[0].length, 1);
+    });
 });
