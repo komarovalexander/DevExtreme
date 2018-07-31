@@ -307,11 +307,11 @@ var DataSource = Class.inherit({
         this._paginate = options.paginate;
 
         /**
-        * @name DataSourceOptions.notifyShapeUpdate
+        * @name DataSourceOptions.reshapeAfterPush
         * @type Boolean
-        * @default true
+        * @default false
         */
-        this.notifyShapeUpdate = __isDefined(options.notifyShapeUpdate) ? options.notifyShapeUpdate : true;
+        this.reshapeAfterPush = __isDefined(options.reshapeAfterPush) ? options.reshapeAfterPush : false;
 
         iteratorUtils.each(
             [
@@ -819,7 +819,7 @@ var DataSource = Class.inherit({
     },
 
     _onPush: function(e) {
-        if(this.notifyShapeUpdate) {
+        if(this.reshapeAfterPush) {
             this._isLoaded = false;
             this.load();
         } else {

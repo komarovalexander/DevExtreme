@@ -1,15 +1,15 @@
 "use strict";
 
-var $ = require("jquery"),
-    noop = require("core/utils/common").noop,
-    typeUtils = require("core/utils/type"),
-    executeAsyncMock = require("../../helpers/executeAsyncMock.js"),
-    ajaxMock = require("../../helpers/ajaxMock.js"),
-    DataSource = require("data/data_source/data_source").DataSource,
-    Store = require("data/abstract_store"),
-    ArrayStore = require("data/array_store"),
-    ODataStore = require("data/odata/store"),
-    AggregateCalculator = require("ui/data_grid/aggregate_calculator");
+import $ from "jquery";
+import { noop } from "core/utils/common";
+import typeUtils from "core/utils/type";
+import executeAsyncMock from "../../helpers/executeAsyncMock.js";
+import ajaxMock from "../../helpers/ajaxMock.js";
+import { DataSource } from "data/data_source/data_source";
+import Store from "data/abstract_store";
+import ArrayStore from "data/array_store";
+import ODataStore from "data/odata/store";
+import AggregateCalculator from "ui/data_grid/aggregate_calculator";
 
 var TEN_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -1644,4 +1644,61 @@ QUnit.test("StoreLoadOptionAccessors: null and undefined (based on T304670)", fu
     assert.equal(ds.requireTotalCount(undefined), false);
     assert.equal(ds.requireTotalCount(null), false);
     assert.equal(ds.requireTotalCount(), false);
+});
+
+QUnit.module("live update", {
+    beforeEach: function() {
+        this.loadSpy = sinon.spy();
+        var itemRemove = { field: 1 },
+            itemUpdate = { field: 2 };
+        this.insertChange = { type: "insert", data: { field: 3 } };
+        this.removeChange = { type: "remove", key: itemRemove };
+        this.updateChange = { type: "update", key: itemUpdate, data: { field: 4 } };
+        this.changes = [this.insertChange, this.removeChange, this.updateChange];
+
+        this.initDataSource = function(options) {
+            return new DataSource($.extend({
+                load: () => {
+                    this.loadSpy();
+                    return [itemRemove, itemUpdate];
+                }
+            }, options));
+        };
+    }
+}, function() {
+    QUnit.test("reshapeAfterPush is enabled", function(assert) {
+        var dataSource = this.initDataSource({
+            reshapeAfterPush: true
+        });
+        assert.equal(this.loadSpy.callCount, 0);
+
+        dataSource.store().push(this.changes);
+        assert.equal(this.loadSpy.callCount, 1);
+    });
+
+    QUnit.test("reshapeAfterPush is disabled", function(assert) {
+        var dataSource = this.initDataSource();
+        dataSource.store().push(this.changes);
+        assert.equal(this.loadSpy.callCount, 0);
+    });
+
+    QUnit.test("all changes contain in changed event when reshapeAfterPush and paginate are disabled", function(assert) {
+        var dataSource = this.initDataSource({
+            paginate: false
+        });
+        var changedSpy = sinon.spy();
+        dataSource.on("changed", changedSpy);
+        dataSource.store().push(this.changes);
+        assert.equal(changedSpy.firstCall.args[0].changes.length, 3);
+    });
+
+    QUnit.test("skip changes with types 'insert' and 'remove' in changed event when reshapeAfterPush is disabled and paginate is enabled", function(assert) {
+        var dataSource = this.initDataSource({
+            paginate: true
+        });
+        var changedSpy = sinon.spy();
+        dataSource.on("changed", changedSpy);
+        dataSource.store().push(this.changes);
+        assert.equal(changedSpy.firstCall.args[0].changes.length, 1);
+    });
 });
