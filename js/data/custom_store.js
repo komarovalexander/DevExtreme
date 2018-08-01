@@ -365,7 +365,6 @@ var CustomStore = Store.inherit({
          * @type_function_return Promise<void>
          */
         this._removeFunc = options[REMOVE];
-
     },
 
     createQuery: function() {

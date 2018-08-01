@@ -350,10 +350,6 @@ function Throttle(pushTimeout) {
             };
         init();
         execute = function(fn, changes) {
-            if(!pushTimeout) {
-                fn(changes);
-            }
-
             if(!pushTimeoutId) {
                 pushTimeoutId = setTimeout(() => {
                     fn(pushTimeoutCache);
