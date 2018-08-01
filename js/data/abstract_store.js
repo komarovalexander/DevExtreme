@@ -141,7 +141,7 @@ var Store = Class.inherit({
         * @type function
         * @type_function_return Promise<any>
         */
-        this._connectPromise = isFunction(options.connect) ? options.connect() : undefined;
+        this._connectPromise = isFunction(options.connect) ? options.connect.call(this) : undefined;
     },
 
     _customLoadOptions: function() {
