@@ -743,7 +743,7 @@ var DropDownList = DropDownEditor.inherit({
         }
     },
 
-    _dataSourceChangedHandler: function(newItems, changes) {
+    _dataSourceChangedHandler: function(newItems) {
         if(this._dataSource.pageIndex() === 0) {
             this.option().items = newItems;
         } else {

@@ -604,12 +604,6 @@ var CollectionWidget = Widget.inherit({
         this._startIndexForAppendedItems = null;
     },
 
-    _refreshContentForPagination: function() {
-        this._forgetNextPageLoading();
-        this._refreshContent();
-        this._renderFocusTarget();
-    },
-
     _dataSourceChangedHandler: function(newItems) {
         var items = this.option("items");
         if(this._initialized && items && this._shouldAppendItems()) {
@@ -618,7 +612,9 @@ var CollectionWidget = Widget.inherit({
                 this.option().items = items.concat(newItems.slice(this._startIndexForAppendedItems));
             }
 
-            this._refreshContentForPagination();
+            this._forgetNextPageLoading();
+            this._refreshContent();
+            this._renderFocusTarget();
         } else {
             this.option("items", newItems);
         }
