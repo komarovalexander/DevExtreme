@@ -339,25 +339,25 @@ function ArrayHelper() {
     };
 }
 
-function Throttle(pushTimeout) {
+function Throttle(pushAggregationTimeout) {
     var execute;
-    if(pushTimeout) {
-        let pushTimeoutCache,
-            pushTimeoutId,
+    if(pushAggregationTimeout) {
+        let pushAggregationTimeoutCache,
+            pushAggregationTimeoutId,
             init = function() {
-                pushTimeoutCache = [],
-                pushTimeoutId = undefined;
+                pushAggregationTimeoutCache = [],
+                pushAggregationTimeoutId = undefined;
             };
         init();
         execute = function(fn, changes) {
-            if(!pushTimeoutId) {
-                pushTimeoutId = setTimeout(() => {
-                    fn(pushTimeoutCache);
+            if(!pushAggregationTimeoutId) {
+                pushAggregationTimeoutId = setTimeout(() => {
+                    fn(pushAggregationTimeoutCache);
                     init();
-                }, pushTimeout);
+                }, pushAggregationTimeout);
             }
             if(Array.isArray(changes)) {
-                pushTimeoutCache.push(...changes);
+                pushAggregationTimeoutCache.push(...changes);
             }
         };
     } else {

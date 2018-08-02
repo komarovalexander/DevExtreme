@@ -307,18 +307,18 @@ var DataSource = Class.inherit({
         this._paginate = options.paginate;
 
         /**
-        * @name DataSourceOptions.reshapeAfterPush
+        * @name DataSourceOptions.reshapeOnPush
         * @type Boolean
         * @default false
         */
-        this.reshapeAfterPush = __isDefined(options.reshapeAfterPush) ? options.reshapeAfterPush : false;
+        this.reshapeOnPush = __isDefined(options.reshapeOnPush) ? options.reshapeOnPush : false;
 
         /**
-        * @name DataSourceOptions.pushTimeout
+        * @name DataSourceOptions.pushAggregationTimeout
         * @type number
         * @default undefined
         */
-        this._throttle = new dataUtils.Throttle(options.pushTimeout);
+        this._throttle = new dataUtils.Throttle(options.pushAggregationTimeout);
 
         iteratorUtils.each(
             [
@@ -826,7 +826,7 @@ var DataSource = Class.inherit({
     },
 
     _onPushImpl: function(e) {
-        if(this.reshapeAfterPush) {
+        if(this.reshapeOnPush) {
             this._isLoaded = false;
             this._throttle.execute(this.load.bind(this));
         } else {
