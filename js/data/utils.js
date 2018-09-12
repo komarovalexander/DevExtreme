@@ -337,30 +337,26 @@ function ArrayHelper() {
     };
 }
 
-function PushHelper(func, timeout) {
-    if(timeout) {
-        let cache,
-            timeoutId,
-            clearCache = function() {
-                cache = [],
-                timeoutId = undefined;
-            };
-        clearCache();
-
-        this.push = function(changes) {
-            if(!timeoutId) {
-                timeoutId = setTimeout(() => {
-                    func(cache);
-                    clearCache();
-                }, timeout);
-            }
-            if(Array.isArray(changes)) {
-                cache.push(...changes);
-            }
+function createAggregationFunc(func, timeout) {
+    let cache,
+        timeoutId,
+        clearCache = function() {
+            cache = [],
+            timeoutId = undefined;
         };
-    } else {
-        this.push = func;
-    }
+    clearCache();
+
+    return function(changes) {
+        if(!timeoutId) {
+            timeoutId = setTimeout(() => {
+                func(cache);
+                clearCache();
+            }, timeout);
+        }
+        if(Array.isArray(changes)) {
+            cache.push(...changes);
+        }
+    };
 }
 
 /**
@@ -376,7 +372,7 @@ var utils = {
 
     keysEqual: keysEqual,
     arrayHelper: new ArrayHelper(),
-    PushHelper: PushHelper,
+    createAggregationFunc: createAggregationFunc,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
 

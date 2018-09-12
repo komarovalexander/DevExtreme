@@ -311,15 +311,16 @@ var DataSource = Class.inherit({
         */
         this.reshapeOnPush = __isDefined(options.reshapeOnPush) ? options.reshapeOnPush : false;
 
+        let pushFunc = (changes) => {
+            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.key(), this.store().keyOf.bind(this.store()));
+            this.fireEvent("changed", [{ changes: changes }]);
+        };
         /**
         * @name DataSourceOptions.pushAggregationTimeout
         * @type number
         * @default undefined
         */
-        this._pushHelper = new dataUtils.PushHelper((changes) => {
-            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.key(), this.store().keyOf.bind(this.store()));
-            this.fireEvent("changed", [{ changes: changes }]);
-        }, options.pushAggregationTimeout);
+        this._pushFunc = options.pushAggregationTimeout ? dataUtils.createAggregationFunc(pushFunc, options.pushAggregationTimeout) : pushFunc;
 
         iteratorUtils.each(
             [
@@ -837,7 +838,7 @@ var DataSource = Class.inherit({
                 changes = changes.filter(item => item.type === "update");
             }
 
-            this._pushHelper.push(changes);
+            this._pushFunc(changes);
         }
     },
 

@@ -3,7 +3,7 @@ var Guid = require("core/guid"),
     keysEqual = dataUtils.keysEqual,
     processRequestResultLock = dataUtils.processRequestResultLock,
     b64 = dataUtils.base64_encode,
-    PushHelper = dataUtils.PushHelper,
+    createAggregationFunc = dataUtils.createAggregationFunc,
     odataUtils = require("data/odata/utils");
 
 QUnit.module("keysEqual");
@@ -115,25 +115,13 @@ QUnit.module("PushHelper", {
 }, function() {
     QUnit.test("push with timeout", function(assert) {
         var spy = sinon.spy(),
-            pushHelper = new PushHelper(spy, 100);
+            pushHelper = createAggregationFunc(spy, 100);
         for(var i = 0; i < 10; i++) {
-            pushHelper.push([i]);
+            pushHelper([i]);
         }
         assert.equal(spy.callCount, 0);
         this.clock.tick(100);
         assert.equal(spy.callCount, 1);
         assert.equal(spy.firstCall.args[0].length, 10);
-    });
-
-    QUnit.test("push without timeout", function(assert) {
-        var spy = sinon.spy(),
-            pushHelper = new PushHelper(spy);
-        for(var i = 0; i < 10; i++) {
-            pushHelper.push([i]);
-        }
-        assert.equal(spy.callCount, 10);
-        this.clock.tick(100);
-        assert.equal(spy.callCount, 10);
-        assert.equal(spy.firstCall.args[0].length, 1);
     });
 });
