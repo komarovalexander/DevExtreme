@@ -6,7 +6,6 @@ import dataUtils from "./utils";
 import { compileGetter } from "../core/utils/data";
 import { queryByOptions } from "./store_helper";
 import { Deferred } from "../core/utils/deferred";
-import { isFunction } from "../core/utils/type";
 
 var storeImpl = {};
 
@@ -133,13 +132,6 @@ var Store = Class.inherit({
         this._errorHandler = options.errorHandler;
 
         this._useDefaultSearch = true;
-
-        /**
-        * @name StoreOptions.connect
-        * @type function
-        * @type_function_return Promise<any>
-        */
-        this._connectPromise = isFunction(options.connect) ? options.connect.call(this) : undefined;
     },
 
     _customLoadOptions: function() {
@@ -186,21 +178,6 @@ var Store = Class.inherit({
     * @return Promise<any>
     */
     load: function(options) {
-        if(this._connectPromise) {
-            let d = new Deferred();
-            this._connectPromise.done(()=> {
-                this._connectPromise = null;
-                this._load(options)
-                    .done(d.resolve)
-                    .fail(d.reject);
-            }).fail(d.reject);
-            return d.promise();
-        } else {
-            return this._load(options);
-        }
-    },
-
-    _load: function(options) {
         options = options || {};
 
         this.fireEvent("loading", [options]);

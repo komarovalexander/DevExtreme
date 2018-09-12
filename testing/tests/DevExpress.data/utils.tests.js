@@ -3,7 +3,7 @@ var Guid = require("core/guid"),
     keysEqual = dataUtils.keysEqual,
     processRequestResultLock = dataUtils.processRequestResultLock,
     b64 = dataUtils.base64_encode,
-    Throttle = dataUtils.Throttle,
+    PushHelper = dataUtils.PushHelper,
     odataUtils = require("data/odata/utils");
 
 QUnit.module("keysEqual");
@@ -105,7 +105,7 @@ QUnit.test("encode", function(assert) {
     assert.equal(b64([65]), "QQ==");
 });
 
-QUnit.module("Throttle", {
+QUnit.module("PushHelper", {
     beforeEach: function() {
         this.clock = sinon.useFakeTimers();
     },
@@ -113,11 +113,11 @@ QUnit.module("Throttle", {
         this.clock.restore();
     }
 }, function() {
-    QUnit.test("execute", function(assert) {
+    QUnit.test("push with timeout", function(assert) {
         var spy = sinon.spy(),
-            throttle = new Throttle(100);
+            pushHelper = new PushHelper(spy, 100);
         for(var i = 0; i < 10; i++) {
-            throttle.execute(spy, [i]);
+            pushHelper.push([i]);
         }
         assert.equal(spy.callCount, 0);
         this.clock.tick(100);
@@ -125,11 +125,11 @@ QUnit.module("Throttle", {
         assert.equal(spy.firstCall.args[0].length, 10);
     });
 
-    QUnit.test("execute without timeout", function(assert) {
+    QUnit.test("push without timeout", function(assert) {
         var spy = sinon.spy(),
-            throttle = new Throttle();
+            pushHelper = new PushHelper(spy);
         for(var i = 0; i < 10; i++) {
-            throttle.execute(spy, [i]);
+            pushHelper.push([i]);
         }
         assert.equal(spy.callCount, 10);
         this.clock.tick(100);

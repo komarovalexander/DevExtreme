@@ -337,34 +337,30 @@ function ArrayHelper() {
     };
 }
 
-function Throttle(pushAggregationTimeout) {
-    var execute;
-    if(pushAggregationTimeout) {
-        let pushAggregationTimeoutCache,
-            pushAggregationTimeoutId,
-            init = function() {
-                pushAggregationTimeoutCache = [],
-                pushAggregationTimeoutId = undefined;
+function PushHelper(func, timeout) {
+    if(timeout) {
+        let cache,
+            timeoutId,
+            clearCache = function() {
+                cache = [],
+                timeoutId = undefined;
             };
-        init();
-        execute = function(fn, changes) {
-            if(!pushAggregationTimeoutId) {
-                pushAggregationTimeoutId = setTimeout(() => {
-                    fn(pushAggregationTimeoutCache);
-                    init();
-                }, pushAggregationTimeout);
+        clearCache();
+
+        this.push = function(changes) {
+            if(!timeoutId) {
+                timeoutId = setTimeout(() => {
+                    func(cache);
+                    clearCache();
+                }, timeout);
             }
             if(Array.isArray(changes)) {
-                pushAggregationTimeoutCache.push(...changes);
+                cache.push(...changes);
             }
         };
     } else {
-        execute = function(fn, changes) {
-            fn(changes);
-        };
+        this.push = func;
     }
-
-    this.execute = execute;
 }
 
 /**
@@ -380,7 +376,7 @@ var utils = {
 
     keysEqual: keysEqual,
     arrayHelper: new ArrayHelper(),
-    Throttle: Throttle,
+    PushHelper: PushHelper,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
 

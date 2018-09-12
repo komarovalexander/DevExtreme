@@ -316,7 +316,10 @@ var DataSource = Class.inherit({
         * @type number
         * @default undefined
         */
-        this._throttle = new dataUtils.Throttle(options.pushAggregationTimeout);
+        this._pushHelper = new dataUtils.PushHelper((changes) => {
+            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.key(), this.store().keyOf.bind(this.store()));
+            this.fireEvent("changed", [{ changes: changes }]);
+        }, options.pushAggregationTimeout);
 
         iteratorUtils.each(
             [
@@ -823,24 +826,19 @@ var DataSource = Class.inherit({
         });
     },
 
-    _onPushImpl: function(e) {
+    _onPush: function(e) {
         if(this.reshapeOnPush) {
             this._isLoaded = false;
-            this._throttle.execute(this.load.bind(this));
+            this.load();
         } else {
             let changes = e.changes;
+
             if(this.paginate()) {
                 changes = changes.filter(item => item.type === "update");
             }
-            this._throttle.execute((throttleChanges) => {
-                dataUtils.arrayHelper.changeArrayByBatch(this.items(), throttleChanges, this.key(), this.store().keyOf.bind(this.store()));
-                this.fireEvent("changed", [{ changes: throttleChanges }]);
-            }, changes);
-        }
-    },
 
-    _onPush: function(e) {
-        this._onPushImpl(e);
+            this._pushHelper.push(changes);
+        }
     },
 
     _createLoadOperation: function(deferred) {

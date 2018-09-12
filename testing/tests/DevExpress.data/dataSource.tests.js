@@ -1665,7 +1665,7 @@ QUnit.module("live update", {
         };
     }
 }, function() {
-    QUnit.test("reshapeOnPush is enabled", function(assert) {
+    QUnit.test("load is called when reshapeOnPush is enabled", function(assert) {
         var dataSource = this.initDataSource({
             reshapeOnPush: true
         });
@@ -1675,13 +1675,13 @@ QUnit.module("live update", {
         assert.equal(this.loadSpy.callCount, 1);
     });
 
-    QUnit.test("reshapeOnPush is disabled", function(assert) {
+    QUnit.test("load isn't called when reshapeOnPush is disabled", function(assert) {
         var dataSource = this.initDataSource();
         dataSource.store().push(this.changes);
         assert.equal(this.loadSpy.callCount, 0);
     });
 
-    QUnit.test("all changes contain in changed event when reshapeOnPush and paginate are disabled", function(assert) {
+    QUnit.test("pass changes in changed event when reshapeOnPush and paginate are disabled", function(assert) {
         var dataSource = this.initDataSource({
             paginate: false
         });
@@ -1691,7 +1691,7 @@ QUnit.module("live update", {
         assert.equal(changedSpy.firstCall.args[0].changes.length, 3);
     });
 
-    QUnit.test("skip changes with types 'insert' and 'remove' in changed event when reshapeOnPush is disabled and paginate is enabled", function(assert) {
+    QUnit.test("skip changes with types 'insert' and 'remove' when reshapeOnPush is disabled and paginate is enabled", function(assert) {
         var dataSource = this.initDataSource({
             paginate: true
         });
