@@ -1,5 +1,3 @@
-"use strict";
-
 var Class = require("../../core/class"),
     compileGetter = require("../../core/utils/data").compileGetter,
     isFunction = require("../../core/utils/type").isFunction,
@@ -131,7 +129,7 @@ module.exports = Class.inherit({
             finalizeFn = this._finalize.bind(this, this._groupAggregates);
 
         function aggregator(node) {
-            node.aggregates = seedFn();
+            node.aggregates = seedFn(currentLevel - 1);
 
             if(currentLevel === maxLevel) {
                 stepFn(node, node.aggregates);
@@ -149,11 +147,11 @@ module.exports = Class.inherit({
         }
     },
 
-    _seed: function(aggregates) {
+    _seed: function(aggregates, groupIndex) {
         return map(aggregates, function(aggregate) {
             var aggregator = aggregate.aggregator,
                 seed = "seed" in aggregator
-                    ? (isFunction(aggregator.seed) ? aggregator.seed() : aggregator.seed)
+                    ? (isFunction(aggregator.seed) ? aggregator.seed(groupIndex) : aggregator.seed)
                     : NaN;
 
             return seed;

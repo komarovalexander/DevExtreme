@@ -1,5 +1,3 @@
-"use strict";
-
 require("ui/data_grid/ui.data_grid");
 
 var $ = require("jquery"),
@@ -224,6 +222,35 @@ QUnit.module("Filter Panel", {
         assert.expect(1);
         this.filterPanelView.getFilterText(filter, [{ name: "anyof", caption: "Any of" }]).done(function(result) {
             assert.equal(result, "[Field] Any of('1', '2')");
+        });
+    });
+
+    // T663205
+    QUnit.test("from anyof build-in operation and lookup", function(assert) {
+        // arrange
+        var filter = ["field", "anyof", [1, 2]];
+        this.initFilterPanelView({
+            filterValue: filter,
+            headerFilter: {
+                texts: {}
+            },
+            columns: [{
+                dataField: "field",
+                lookup: {
+                    dataSource: [
+                        { id: 1, text: "Text 1" },
+                        { id: 2, text: "Text 2" }
+                    ],
+                    valueExpr: "id",
+                    displayExpr: "text"
+                }
+            }]
+        });
+
+        // act
+        assert.expect(1);
+        this.filterPanelView.getFilterText(filter, this.filterSyncController.getCustomFilterOperations()).done(function(result) {
+            assert.equal(result, "[Field] Is any of('Text 1', 'Text 2')");
         });
     });
 

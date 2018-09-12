@@ -1,5 +1,3 @@
-"use strict";
-
 var ajax = require("core/utils/ajax");
 var extend = require("core/utils/extend").extend;
 var $ = require("jquery");
@@ -41,7 +39,7 @@ exports.setup = function(options) {
         timers.push(setTimeout(function() {
             if(response.status === 404 || jQueryTextStatus === "parsererror") {
                 response.error = jQueryTextStatus ? {} : { message: response.statusText };
-                deferred.rejectWith(response, [ response, jQueryTextStatus || "error"]);
+                deferred.rejectWith(response, [ response, jQueryTextStatus || "error", mockOptions]);
             } else {
                 deferred.resolveWith(response, [response.responseText, "success"]);
             }

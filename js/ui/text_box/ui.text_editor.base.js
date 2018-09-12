@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     eventsEngine = require("../../events/core/events_engine"),
@@ -269,7 +267,7 @@ var TextEditorBase = Editor.inherit({
             text: undefined,
 
             valueFormat: function(value) {
-                return value;
+                return isDefined(value) && value !== false ? value : "";
             },
 
             /**
@@ -284,10 +282,12 @@ var TextEditorBase = Editor.inherit({
     },
 
     _defaultOptionsRules: function() {
+        var themeName = themes.current();
+
         return this.callBase().concat([
             {
                 device: function() {
-                    return themes.isAndroid5();
+                    return themes.isAndroid5(themeName);
                 },
                 options: {
                     validationMessageOffset: { v: -8 }
@@ -295,7 +295,7 @@ var TextEditorBase = Editor.inherit({
             },
             {
                 device: function() {
-                    return themes.isMaterial();
+                    return themes.isMaterial(themeName);
                 },
                 options: {
                     stylingMode: "standard"
@@ -550,7 +550,7 @@ var TextEditorBase = Editor.inherit({
         var $input = this._input();
         e.stopPropagation();
 
-        this._valueChangeEventHandler(e);
+        this._saveValueChangeEvent(e);
         this.reset();
 
         !focused($input) && eventsEngine.trigger($input, "focus");
@@ -783,7 +783,13 @@ var TextEditorBase = Editor.inherit({
     },
 
     reset: function() {
-        this.option("value", "");
+        var defaultOptions = this._getDefaultOptions();
+        if(this.option("value") === defaultOptions.value) {
+            this.option("text", "");
+            this._renderValue();
+        } else {
+            this.option("value", defaultOptions.value);
+        }
     },
 
     on: function(eventName, eventHandler) {

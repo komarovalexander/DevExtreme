@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     fx = require("animation/fx"),
     support = require("core/utils/support"),
@@ -437,6 +435,17 @@ QUnit.test("focusing empty tab should not cause infinite loop", function(assert)
         items: []
     });
     tabPanel.focus();
+});
+
+QUnit.test("click on dxTabPanel should not scroll page to the tabs", function(assert) {
+    var $tabPanel = $("<div>").appendTo("#qunit-fixture"),
+        tabPanel = new TabPanel($tabPanel, {
+            items: [{ title: "item 1" }]
+        }),
+        tabNativeFocus = sinon.spy(tabPanel._tabs, "focus");
+
+    $tabPanel.trigger("focusin");
+    assert.equal(tabNativeFocus.callCount, 0, "native focus should not be triggered");
 });
 
 

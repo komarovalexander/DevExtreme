@@ -1,8 +1,8 @@
-"use strict";
-
 var isDefined = require("../../core/utils/type").isDefined,
     adjust = require("../../core/utils/math").adjust,
     round = Math.round;
+
+function getValue(value) { return value; }
 
 module.exports = {
     translate: function(category, directionOffset) {
@@ -15,7 +15,7 @@ module.exports = {
             stickInterval = that._options.stick ? 0 : 0.5;
 
         if(isDefined(specialValue)) {
-            return specialValue;
+            return round(specialValue);
         }
 
         // Q522516
@@ -26,37 +26,6 @@ module.exports = {
 
         stickDelta = categoryIndex + stickInterval - startPointIndex + directionOffset * 0.5;
         return round(that._calculateProjection(canvasOptions.interval * stickDelta));
-    },
-
-    untranslate: function(pos, directionOffset, enableOutOfCanvas) {
-        var that = this,
-            canvasOptions = that._canvasOptions,
-            startPoint = canvasOptions.startPoint,
-            categories = that.visibleCategories || that._categories,
-            categoriesLength = categories.length,
-            result = 0,
-            stickInterval = that._options.stick ? 0.5 : 0;
-
-        if(!enableOutOfCanvas && (pos < startPoint || pos > canvasOptions.endPoint)) {
-            return null;
-        }
-
-        directionOffset = directionOffset || 0;
-        result = round(((pos - startPoint) / canvasOptions.interval) + stickInterval - 0.5 - directionOffset * 0.5);
-
-        if(categoriesLength === result) {
-            result--;
-        }
-
-        if(result === -1) {
-            result = 0;
-        }
-
-        if(canvasOptions.invert) {
-            result = categoriesLength - result - 1;
-        }
-
-        return categories[result];
     },
 
     getInterval: function() {
@@ -142,9 +111,7 @@ module.exports = {
         return isDefined(value) ? this._categoriesToPoints[value.valueOf()] >= 0 : false;
     },
 
-    getCorrectValue: function(value) {
-        return value;
-    },
+    getCorrectValue: getValue,
 
     to: function(value, direction) {
         var canvasOptions = this._canvasOptions,
@@ -154,10 +121,10 @@ module.exports = {
         return round(this._calculateProjection(canvasOptions.interval * stickDelta));
     },
 
-    from: function(position, direction) {
+    from: function(position, direction = 0) {
         var canvasOptions = this._canvasOptions,
             startPoint = canvasOptions.startPoint,
-            categories = this._categories,
+            categories = this.visibleCategories || this._categories,
             categoriesLength = categories.length,
             stickInterval = this._options.stick ? 0.5 : 0,
             // It is strange - while "businessRange.invert" check is required in "to" here it is not.
@@ -165,10 +132,10 @@ module.exports = {
             // And check that translator.untranslate(translator.translate(x, -1), -1) does not equal x - is it really supposed to be so?
             result = round(((position - startPoint) / canvasOptions.interval) + stickInterval - 0.5 - /* (businessRange.invert ? -1 : +1) * */direction * 0.5);
 
-        if(categoriesLength === result) {
-            result--;
+        if(result >= categoriesLength) {
+            result = categoriesLength - 1;
         }
-        if(result === -1) {
+        if(result < 0) {
             result = 0;
         }
         if(canvasOptions.invert) {
@@ -180,6 +147,8 @@ module.exports = {
     _add: function() {
         return NaN;
     },
+
+    _toValue: getValue,
 
     isValueProlonged: true
 };

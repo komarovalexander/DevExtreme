@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     windowUtils = require("./utils/window"),
     navigator = windowUtils.getNavigator(),
@@ -452,7 +450,7 @@ if(!devices.isForced() && devices.current().platform === "win") {
 }
 
 /**
- * @name devices
+ * @const devices
  * @type DevicesObject
  * @namespace DevExpress
  * @hidden

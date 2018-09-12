@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     eventsEngine = require("../../events/core/events_engine"),
@@ -8,6 +6,7 @@ var $ = require("../../core/renderer"),
     extend = require("../../core/utils/extend").extend,
     windowUtils = require("../../core/utils/window"),
     iteratorUtils = require("../../core/utils/iterator"),
+    isDefined = require("../../core/utils/type").isDefined,
     translator = require("../../animation/translator"),
     Class = require("../../core/class"),
     Animator = require("./animator"),
@@ -603,6 +602,19 @@ var SimulatedStrategy = Class.inherit({
         };
     },
 
+    _applyScaleRatio: function(targetLocation) {
+        for(var direction in this._scrollers) {
+            var prop = this._getPropByDirection(direction);
+
+            if(isDefined(targetLocation[prop])) {
+                var scroller = this._scrollers[direction];
+
+                targetLocation[prop] *= scroller._getScaleRatio();
+            }
+        }
+        return targetLocation;
+    },
+
     _isAnyThumbScrolling: function($target) {
         var result = false;
         this._eventHandler("isThumbScrolling", $target).done(function(isThumbScrollingVertical, isThumbScrollingHorizontal) {
@@ -769,6 +781,10 @@ var SimulatedStrategy = Class.inherit({
 
     _dimensionByProp: function(prop) {
         return (prop === "left") ? "width" : "height";
+    },
+
+    _getPropByDirection: function(direction) {
+        return direction === HORIZONTAL ? "left" : "top";
     },
 
     _scrollToHome: function() {

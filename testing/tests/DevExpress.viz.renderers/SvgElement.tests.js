@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     typeUtils = require("core/utils/type"),
     rendererModule = require("viz/core/renderers/renderer"),
@@ -1583,6 +1581,14 @@ function checkDashStyle(assert, elem, result, style, value) {
         assert.strictEqual(this.rect.element.setAttribute.callCount, 1);
         assert.deepEqual(this.rect.element.setAttribute.firstCall.args[0], "style");
         assert.deepEqual(this.rect.element.setAttribute.firstCall.args[1], "font-size:13px;cursor:pointer;");
+    });
+
+    QUnit.test("Compose styles, set zero value", function(assert) {
+        // act
+        this.rect.css({ "font-size": 0, opacity: 0 });
+
+        // assert
+        assert.deepEqual(this.rect.element.setAttribute.lastCall.args, ["style", "font-size:0px;opacity:0;"]);
     });
 
     QUnit.test("Merge existing styles with new ones", function(assert) {

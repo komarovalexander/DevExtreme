@@ -1,11 +1,10 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     modules = require("./ui.grid_core.modules"),
     commonUtils = require("../../core/utils/common"),
     windowUtils = require("../../core/utils/window"),
     each = require("../../core/utils/iterator").each,
     typeUtils = require("../../core/utils/type"),
+    gridCoreUtils = require("./ui.grid_core.utils"),
     messageLocalization = require("../../localization/message"),
     when = require("../../core/utils/deferred").when,
     domAdapter = require("../../core/dom_adapter"),
@@ -51,6 +50,24 @@ var getContainerHeight = function($container) {
         paddingBottom = parseFloat($container.css("paddingBottom"));
 
     return clientHeight - paddingTop - paddingBottom;
+};
+
+var calculateFreeWidth = function(that, widths) {
+    var contentWidth = that._rowsView.contentWidth(),
+        totalWidth = that._getTotalWidth(widths, contentWidth);
+
+    return contentWidth - totalWidth;
+};
+
+var calculateFreeWidthWithCurrentMinWidth = function(that, columnIndex, currentMinWidth, widths) {
+    return calculateFreeWidth(that, widths.map(function(width, index) {
+        return index === columnIndex ? currentMinWidth : width;
+    }));
+};
+
+var restoreFocus = function(focusedElement, selectionRange) {
+    focusedElement.focus();
+    gridCoreUtils.setSelectionRange(focusedElement, selectionRange);
 };
 
 var ResizingController = modules.ViewController.inherit({
@@ -186,6 +203,7 @@ var ResizingController = modules.ViewController.inherit({
             isColumnWidthsCorrected = false,
             resultWidths = [],
             focusedElement,
+            selectionRange,
             normalizeWidthsByExpandColumns = function() {
                 var expandColumnWidth;
 
@@ -220,6 +238,7 @@ var ResizingController = modules.ViewController.inherit({
 
         if(needBestFit) {
             focusedElement = domAdapter.getActiveElement();
+            selectionRange = gridCoreUtils.getSelectionRange(focusedElement);
             that._toggleBestFitMode(true);
             resetBestFitMode = true;
         }
@@ -238,7 +257,7 @@ var ResizingController = modules.ViewController.inherit({
 
             each(visibleColumns, function(index) {
                 if(this.width !== "auto") {
-                    if(this.width) {
+                    if(typeUtils.isDefined(this.width)) {
                         resultWidths[index] = this.width;
                     } else if(!columnAutoWidth) {
                         resultWidths[index] = undefined;
@@ -250,7 +269,11 @@ var ResizingController = modules.ViewController.inherit({
                 that._toggleBestFitMode(false);
                 resetBestFitMode = false;
                 if(focusedElement && focusedElement !== domAdapter.getActiveElement()) {
-                    browser.msie ? setTimeout(function() { focusedElement.focus(); }) : focusedElement.focus();
+                    if(browser.msie) {
+                        setTimeout(function() { restoreFocus(focusedElement, selectionRange); });
+                    } else {
+                        restoreFocus(focusedElement, selectionRange);
+                    }
                 }
             }
 
@@ -280,11 +303,10 @@ var ResizingController = modules.ViewController.inherit({
     },
 
     _getAverageColumnsWidth: function(resultWidths) {
-        var contentWidth = this._rowsView.contentWidth(),
-            totalWidth = this._getTotalWidth(resultWidths, contentWidth),
+        var freeWidth = calculateFreeWidth(this, resultWidths),
             columnCountWithoutWidth = resultWidths.filter(function(width) { return width === undefined; }).length;
 
-        return (contentWidth - totalWidth) / columnCountWithoutWidth;
+        return freeWidth / columnCountWithoutWidth;
     },
 
     _correctColumnWidths: function(resultWidths, visibleColumns) {
@@ -302,18 +324,27 @@ var ResizingController = modules.ViewController.inherit({
             var index = i,
                 column = visibleColumns[index],
                 isHiddenColumn = resultWidths[index] === HIDDEN_COLUMNS_WIDTH,
-                width = resultWidths[index];
+                width = resultWidths[index],
+                minWidth = column.minWidth;
 
-            if(width === undefined && column.minWidth) {
-                averageColumnsWidth = that._getAverageColumnsWidth(resultWidths);
-                width = averageColumnsWidth;
+            if(minWidth) {
+                if(width === undefined) {
+                    averageColumnsWidth = that._getAverageColumnsWidth(resultWidths);
+                    width = averageColumnsWidth;
+                } else if(isPercentWidth(width)) {
+                    var freeWidth = calculateFreeWidthWithCurrentMinWidth(that, index, minWidth, resultWidths);
+
+                    if(freeWidth < 0) {
+                        width = -1;
+                    }
+                }
             }
-            if(width < column.minWidth && !isHiddenColumn) {
-                resultWidths[index] = column.minWidth;
+            if(width < minWidth && !isHiddenColumn) {
+                resultWidths[index] = minWidth;
                 isColumnWidthsCorrected = true;
                 i = -1;
             }
-            if(!column.width) {
+            if(!typeUtils.isDefined(column.width)) {
                 hasAutoWidth = true;
             }
             if(isPercentWidth(column.width)) {
@@ -332,11 +363,8 @@ var ResizingController = modules.ViewController.inherit({
                 totalWidth = that._getTotalWidth(resultWidths, contentWidth);
 
             if(totalWidth < contentWidth) {
-                lastColumnIndex = resultWidths.length - 1;
-                var hasResizableColumns = visibleColumns.some(column => column && !column.command && !column.fixed && column.allowResizing !== false);
-                while(lastColumnIndex >= 0 && visibleColumns[lastColumnIndex] && (visibleColumns[lastColumnIndex].command || resultWidths[lastColumnIndex] === HIDDEN_COLUMNS_WIDTH || visibleColumns[lastColumnIndex].fixed || (hasResizableColumns && visibleColumns[lastColumnIndex].allowResizing === false))) {
-                    lastColumnIndex--;
-                }
+                lastColumnIndex = gridCoreUtils.getLastResizableColumnIndex(visibleColumns);
+
                 if(lastColumnIndex >= 0) {
                     resultWidths[lastColumnIndex] = "auto";
                     isColumnWidthsCorrected = true;
@@ -378,8 +406,13 @@ var ResizingController = modules.ViewController.inherit({
                 }
                 resultSizes[i] += diffElement;
                 if(onePixelElementsCount > 0) {
-                    resultSizes[i]++;
-                    onePixelElementsCount--;
+                    if(onePixelElementsCount < 1) {
+                        resultSizes[i] += onePixelElementsCount;
+                        onePixelElementsCount = 0;
+                    } else {
+                        resultSizes[i]++;
+                        onePixelElementsCount--;
+                    }
                 }
             }
         }
@@ -393,7 +426,7 @@ var ResizingController = modules.ViewController.inherit({
         for(i = 0; i < widths.length; i++) {
             width = widths[i];
             if(width && width !== HIDDEN_COLUMNS_WIDTH) {
-                result += isPercentWidth(width) ? (parseInt(width) * groupWidth / 100) : parseInt(width);
+                result += isPercentWidth(width) ? (parseFloat(width) * groupWidth / 100) : parseFloat(width);
             }
         }
 
@@ -542,6 +575,7 @@ var ResizingController = modules.ViewController.inherit({
                 this.resize();
                 /* falls through */
             case "legacyRendering":
+            case "renderAsync":
                 args.handled = true;
                 return;
             default:
@@ -685,7 +719,13 @@ module.exports = {
              * @default false
              */
             showBorders: false,
-            legacyRendering: false
+            /**
+             * @name GridBaseOptions.renderAsync
+             * @type boolean
+             * @default false
+             */
+            renderAsync: false,
+            legacyRendering: false,
         };
     },
     controllers: {

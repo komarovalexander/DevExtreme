@@ -1,5 +1,3 @@
-"use strict";
-
 var _extend = require("../../core/utils/extend").extend,
     inArray = require("../../core/utils/array").inArray,
     _each = require("../../core/utils/iterator").each,
@@ -126,6 +124,22 @@ function getMinMaxAggregator(compare) {
             [series.getArgumentField()]: intervalStart
         });
     };
+}
+
+function checkFields(data, fieldsToCheck, skippedFields) {
+    let allFieldsIsValid = true;
+
+    for(let field in fieldsToCheck) {
+        const isArgument = field === "argument";
+        if((isArgument || field === "size") ? !_isDefined(data[field]) : data[field] === undefined) {
+            const selector = fieldsToCheck[field];
+            if(!isArgument) {
+                skippedFields[selector] = (skippedFields[selector] || 0) + 1;
+            }
+            allFieldsIsValid = false;
+        }
+    }
+    return allFieldsIsValid;
 }
 
 var baseScatterMethods = {
@@ -283,8 +297,10 @@ var baseScatterMethods = {
         };
     },
 
-    _checkData: function(data) {
-        return _isDefined(data.argument) && data.value !== undefined && data.value === data.value;
+    _checkData: function(data, skippedFields, fieldsToCheck) {
+        fieldsToCheck = fieldsToCheck || { value: this.getValueFields()[0] };
+        fieldsToCheck.argument = this.getArgumentField();
+        return checkFields(data, fieldsToCheck, skippedFields || {}) && data.value === data.value;
     },
 
     getErrorBarRangeCorrector: function() {

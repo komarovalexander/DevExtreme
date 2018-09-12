@@ -1,5 +1,3 @@
-"use strict";
-
 import { renderValueText } from "../filter_builder/filter_builder";
 
 var $ = require("../../core/renderer"),
@@ -76,7 +74,7 @@ function baseOperation(grid) {
                     .appendTo(container),
                 column = extend(true, {}, grid.columnOption(conditionInfo.field.dataField));
 
-            renderValueText(div, conditionInfo.value);
+            renderValueText(div, conditionInfo.text && conditionInfo.text.split("|"));
 
             var setValue = function(value) {
                 conditionInfo.setValue(value);

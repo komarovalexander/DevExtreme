@@ -1,5 +1,3 @@
-"use strict";
-
 QUnit.testStart(function() {
     var markup =
         '<div>\
@@ -1653,11 +1651,9 @@ QUnit.test("Form has 2 columns in material theme", function(assert) {
 
     var form = $("#container").find(".dx-form").dxForm("instance");
     var colWidth = form.option("colCount");
-    var screenByWidth = form.option("screenByWidth");
 
     // assert
     assert.equal(colWidth, 2);
-    assert.ok(screenByWidth);
 
     themes.isMaterial = origIsMaterial;
 });
@@ -3833,6 +3829,55 @@ QUnit.module("Validation", {
 
         // assert
         assert.ok(!$itemsContent.first().hasClass("dx-datagrid-invalid"), "invalid style should not be applied");
+    });
+
+    QUnit.testInActiveWindow("Last column should not hide after callback (T615639)", function(assert) {
+        // arrange
+        this.options = {
+            columnHidingEnabled: true,
+            columns: [
+                { dataField: "ID", width: 100 },
+                { dataField: "C1", width: 100 },
+                { dataField: "C2", width: 100 }
+            ],
+            dataSource: [{ ID: 0, C1: 1, C2: 2 }]
+        };
+        setupDataGrid(this);
+        this.rowsView.render($("#container"));
+        this.resizingController.updateDimensions();
+        this.clock.tick();
+
+        // act
+        this.rowsView.component.columnOption("C2", "sortOrder", "0");
+        this.clock.tick();
+
+        // assert
+        assert.equal(this.rowsView._adaptiveColumnsController.getHiddenColumns().length, 0, "has not hidden adaptive columns");
+    });
+
+    QUnit.testInActiveWindow("If columns has the width property then columns width before hiding should be equal to the width of the columns", function(assert) {
+        // arrange
+        this.options = {
+            columnHidingEnabled: true,
+            width: 300,
+            columns: [
+                { dataField: "ID", width: 100 },
+                { dataField: "C1", width: 100 },
+                { dataField: "C2", width: 100 }
+            ],
+            dataSource: [{ ID: 0, C1: 1, C2: 2 }]
+        };
+        setupDataGrid(this);
+        this.rowsView.render($("#container"));
+        this.resizingController.updateDimensions();
+        this.clock.tick();
+
+        // act
+        this.rowsView.component.columnOption("C2", "sortOrder", "0");
+        this.clock.tick();
+
+        // assert
+        assert.equal(this.rowsView._adaptiveColumnsController.getHiddenColumns().length, 0, "has not hidden adaptive columns");
     });
 
     QUnit.test("The onRowValidating event is not called twice if isValid is set to 'false'", function(assert) {

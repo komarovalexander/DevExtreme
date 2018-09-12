@@ -1,6 +1,7 @@
 {
     "env": {
-        "es6": true
+        "es6": true,
+        "browser": true
     },
     "parserOptions": {
         "ecmaVersion": 6,
@@ -12,10 +13,22 @@
     "plugins": [
         "spellcheck"
     ],
+    "globals": {
+        "setInterval": true,
+        "setTimeout": true,
+        "clearInterval": true,
+        "clearTimeout": true,
+        "require": true,
+        "module": true,
+        "exports": true
+    },
     "rules": {
         "block-spacing": "error",
         "comma-spacing": "error",
         "computed-property-spacing": "error",
+        "comma-style": ["error", "last"],
+        "eqeqeq": ["error", "allow-null"],
+        "strict": "error",
         "func-call-spacing": "error",
         "key-spacing": "error",
         "keyword-spacing": [
@@ -34,9 +47,17 @@
         "no-irregular-whitespace": "error",
         "no-multi-spaces": "error",
         "no-trailing-spaces": "error",
+        "no-new-func": "error",
+        "no-eval": "error",
+        "no-undef": "error",
+        "no-unused-expressions": "off",
+        "no-unused-vars": ["error", { "args": "none" }],
+        "no-extend-native": "error",
+        "no-alert": "error",
         "no-whitespace-before-property": "error",
         "object-curly-spacing": [ "error", "always" ],
         "semi-spacing": "error",
+        "semi": "error",
         "space-before-blocks": "error",
         "space-before-function-paren": [ "error", "never" ],
         "space-in-parens": "error",
@@ -124,6 +145,7 @@
                     "msie",
                     "odata",      // OData
                     "rtl",        // Right-to-Left
+                    "scss",
                     "sinon",      // JS library
                     "tspan",      // SVG element
                     "tspans",
@@ -334,6 +356,7 @@
                     "postfix",
                     "postfixes",
                     "postprocess",
+                    "pre",
                     "preload",
                     "prepend",
                     "prerender",
@@ -457,6 +480,7 @@
                     "workspace",
                     "writeable",
                     "xhr",
+                    "xlsx",
                     "xml",
                     "xmlns"
                 ]

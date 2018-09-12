@@ -1,5 +1,3 @@
-"use strict";
-
 import { COLOR_MODE_GRADIENT, COLOR_MODE_SOURCE, COLOR_MODE_TARGET } from './constants';
 
 var noop = require("../../core/utils/common").noop,
@@ -9,6 +7,46 @@ var noop = require("../../core/utils/common").noop,
     typeUtils = require("../../core/utils/type"),
     _isString = typeUtils.isString,
     _isNumber = typeUtils.isNumeric;
+
+function moveLabel(node, labelOptions, availableLabelWidth, rect) {
+    if(node.label.getBBox().width > availableLabelWidth) {
+        node.labelText.applyEllipsis(availableLabelWidth);
+    }
+
+    var bBox = node.label.getBBox(),
+        verticalOffset = labelOptions.verticalOffset,
+        horizontalOffset = labelOptions.horizontalOffset,
+        labelOffsetY = Math.round(node.rect.y + node.rect.height / 2 - bBox.y - bBox.height / 2) + verticalOffset,
+        labelOffsetX = node.rect.x + horizontalOffset + node.rect.width - bBox.x;
+
+    if(labelOffsetX + bBox.width >= rect[2] - rect[0]) {
+        labelOffsetX = node.rect.x - horizontalOffset - bBox.x - bBox.width;
+    }
+
+    if(labelOffsetY >= rect[3]) {
+        labelOffsetY = rect[3];
+    }
+
+    if(labelOffsetY - bBox.height < rect[1]) {
+        labelOffsetY = node.rect.y - bBox.y + verticalOffset;
+    }
+
+    node.labelText.attr({
+        translateX: labelOffsetX,
+        translateY: labelOffsetY
+    });
+}
+
+function getConnectedLinks(layout, nodeName, linkType) {
+    let result = [],
+        attrName = linkType === 'in' ? '_to' : '_from',
+        invertedAttrName = linkType === 'in' ? '_from' : '_to';
+
+    layout.links.map((link) => { return link[attrName]._name === nodeName; }).forEach((connected, idx) => {
+        connected && result.push({ index: idx, weight: layout.links[idx]._weight, node: layout.links[idx][invertedAttrName]._name });
+    });
+    return result;
+}
 
 var dxSankey = require("../core/base_widget").inherit({
     _rootClass: "dxs-sankey",
@@ -208,7 +246,7 @@ var dxSankey = require("../core/base_widget").inherit({
                 } else if(!_isNumber(item[weightField]) || item[weightField] <= 0) {
                     that._incidentOccurred("E2009", weightField);
                 } else {
-                    processedData.push([ item[sourceField], item[targetField], item[weightField] ]);
+                    processedData.push([item[sourceField], item[targetField], item[weightField]]);
                 }
 
             }
@@ -268,8 +306,8 @@ var dxSankey = require("../core/base_widget").inherit({
                             color: color,
                             rect: node,
                             options: nodeOptions,
-                            linksIn: that._getConnectedLinks(layout, node._name, 'in'),
-                            linksOut: that._getConnectedLinks(layout, node._name, 'out')
+                            linksIn: getConnectedLinks(layout, node._name, 'in'),
+                            linksOut: getConnectedLinks(layout, node._name, 'out')
                         });
                     that._nodes.push(nodeItem);
                     nodeIdx++;
@@ -330,7 +368,8 @@ var dxSankey = require("../core/base_widget").inherit({
             // emtpy space between cascades with 'labelOptions.horizontalOffset' subtracted
             var availableLabelWidth = (availableWidth - (nodeOptions.width + labelOptions.horizontalOffset) - (that._layoutMap.cascades.length * nodeOptions.width)) / (that._layoutMap.cascades.length - 1) - labelOptions.horizontalOffset;
             that._nodes.forEach(function(node) {
-                that._createLabel(node, labelOptions, that._shadowFilter.id, availableLabelWidth);
+                that._createLabel(node, labelOptions, that._shadowFilter.id);
+                moveLabel(node, labelOptions, availableLabelWidth, that._rect);
             });
 
             // test and handle labels overlapping here
@@ -341,46 +380,28 @@ var dxSankey = require("../core/base_widget").inherit({
                         var otherBox = otherNode.label.getBBox();
                         if(thisNode.id !== otherNode.id && defaultLayoutBuilder.overlap(thisBox, otherBox)) {
                             if(labelOptions.overlappingBehavior === 'ellipsis') {
-                                thisNode.label.applyEllipsis(otherBox.x - thisBox.x);
+                                thisNode.labelText.applyEllipsis(otherBox.x - thisBox.x);
                             } else if(labelOptions.overlappingBehavior === 'hide') {
-                                thisNode.label.remove();
+                                thisNode.labelText.remove();
                             }
                         }
                     });
                 });
             }
-
         }
-
     },
 
-    _createLabel: function(node, labelOptions, filter, availableLabelWidth) {
+    _createLabel: function(node, labelOptions, filter) {
         var textData = labelOptions.customizeText(node),
-            settings = node.getLabelAttributes(labelOptions, filter, this._rect);
+            settings = node.getLabelAttributes(labelOptions, filter);
         if(textData) {
-            node.label = this._renderer.text(textData)
+            node.label = this._renderer.g().append(this._groupLabels);
+            node.labelText = this._renderer.text(textData)
                 .attr(settings.attr)
                 .css(settings.css);
-            node.label.append(this._groupLabels);
-
-            var bBox = node.label.getBBox();
-            node.label.attr({ y: 2 * settings.attr.y - bBox.y - Math.round(bBox.height / 2) + labelOptions.verticalOffset });
-
-            if(bBox.width > availableLabelWidth) {
-                node.label.applyEllipsis(availableLabelWidth);
-            }
+            node.labelText.append(node.label);
         }
 
-    },
-
-    _getConnectedLinks: function(layout, nodeName, linkType) {
-        let result = [],
-            attrName = linkType === 'in' ? '_to' : '_from',
-            invertedAttrName = linkType === 'in' ? '_from' : '_to';
-        layout.links.map((link) => { return link[attrName]._name === nodeName; }).forEach((connected, idx) => {
-            connected && result.push({ index: idx, weight: layout.links[idx]._weight, node: layout.links[idx][invertedAttrName]._name });
-        });
-        return result;
     },
 
     _getMinSize: function() {

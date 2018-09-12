@@ -1,5 +1,3 @@
-"use strict";
-
 var eventsEngine = require("./events/core/events_engine");
 
 /**
@@ -146,6 +144,25 @@ exports.one = eventsEngine.one;
 * @param1 element:Node|Array<Node>
 * @param2 eventName:string
 * @param3 handler:function
+* @module events
+* @export off
+*/
+
+/**
+* @name eventsMethods.off
+* @publicName off(element, eventName)
+* @namespace DevExpress.events
+* @param1 element:Node|Array<Node>
+* @param2 eventName:string
+* @module events
+* @export off
+*/
+
+/**
+* @name eventsMethods.off
+* @publicName off(element)
+* @namespace DevExpress.events
+* @param1 element:Node|Array<Node>
 * @module events
 * @export off
 */

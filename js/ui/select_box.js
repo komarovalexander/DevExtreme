@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     eventsEngine = require("../events/core/events_engine"),
     commonUtils = require("../core/utils/common"),
@@ -223,10 +221,12 @@ var SelectBox = DropDownList.inherit({
     },
 
     _defaultOptionsRules: function() {
+        var themeName = themes.current();
+
         return this.callBase().concat([
             {
                 device: function() {
-                    return themes.isWin8();
+                    return themes.isWin8(themeName);
                 },
                 options: {
                     _isAdaptablePopupPosition: true,
@@ -238,7 +238,7 @@ var SelectBox = DropDownList.inherit({
             },
             {
                 device: function() {
-                    return themes.isAndroid5();
+                    return themes.isAndroid5(themeName);
                 },
                 options: {
                     _isAdaptablePopupPosition: true,
@@ -368,7 +368,7 @@ var SelectBox = DropDownList.inherit({
     },
 
     _scrollToSelectedItem: function() {
-        this._list.scrollToItem(this._list.option("selectedItem"));
+        this._list && this._list.scrollToItem(this._list.option("selectedItem"));
     },
 
     _listContentReadyHandler: function() {
@@ -557,6 +557,10 @@ var SelectBox = DropDownList.inherit({
             }
         }
 
+        if(isVisible) {
+            this._scrollToSelectedItem();
+        }
+
         this.callBase(isVisible);
     },
 
@@ -642,10 +646,11 @@ var SelectBox = DropDownList.inherit({
 
     _listItemClickHandler: function(e) {
         var previousValue = this._getCurrentValue();
+        this._focusListElement($(e.itemElement));
 
         this._saveValueChangeEvent(e.event);
 
-        if(this._wasSearch()) {
+        if(this._shouldClearFilter()) {
             this._clearFilter();
         }
 
@@ -660,13 +665,12 @@ var SelectBox = DropDownList.inherit({
         }
     },
 
-    _completeSelection: function(value) {
-        this._setValue(value);
+    _shouldClearFilter: function() {
+        return this._wasSearch();
     },
 
-    _clearValueHandler: function(e) {
-        this._saveValueChangeEvent(e);
-        this.reset();
+    _completeSelection: function(value) {
+        this._setValue(value);
     },
 
     _loadItem: function(value, cache) {
@@ -879,6 +883,11 @@ var SelectBox = DropDownList.inherit({
             default:
                 this.callBase(args);
         }
+    },
+
+    _clean: function() {
+        delete this._inkRipple;
+        this.callBase();
     }
 });
 

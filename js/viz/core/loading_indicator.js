@@ -1,5 +1,3 @@
-"use strict";
-
 var _patchFontOptions = require("./utils").patchFontOptions,
 
     STATE_HIDDEN = 0,
@@ -142,7 +140,9 @@ exports.plugin = {
             this._loadingIndicator.hide();
         },
         _onBeginUpdate: function() {
-            this._scheduleLoadingIndicatorHiding();
+            if(!this._optionChangedLocker) {
+                this._scheduleLoadingIndicatorHiding();
+            }
         }
     },
     customize: function(constructor) {

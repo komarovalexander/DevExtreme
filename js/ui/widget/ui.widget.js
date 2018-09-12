@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     errors = require("./ui.errors"),
@@ -66,7 +64,7 @@ var DX_POLYMORPH_WIDGET_TEMPLATE = new FunctionTemplate(function(options) {
  */
 
 /**
-* @name dxItem
+* @const dxItem
 * @type object
 * @section uiWidgetMarkupComponents
 */
@@ -480,9 +478,13 @@ var Widget = DOMComponent.inherit({
         this.callBase();
     },
 
+    _resetActiveState: function() {
+        this._toggleActiveState(this._eventBindingTarget(), false);
+    },
+
     _clean: function() {
         this._cleanFocusState();
-
+        this._resetActiveState();
         this.callBase();
         this.$element().empty();
     },
@@ -650,7 +652,7 @@ var Widget = DOMComponent.inherit({
         var e = options.originalEvent,
             key = options.key;
 
-        var keys = this._supportedKeys(),
+        var keys = this._supportedKeys(e),
             func = keys[key];
 
         if(func !== undefined) {

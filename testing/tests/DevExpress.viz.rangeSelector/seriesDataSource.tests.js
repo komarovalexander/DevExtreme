@@ -1,5 +1,3 @@
-"use strict";
-
 import $ from "jquery";
 import { noop } from "core/utils/common";
 import vizMocks from "../../helpers/vizMocks.js";
@@ -985,6 +983,24 @@ var checkPoints = function(assert, series, argumentArray, valueArray) {
         assert.equal(series.getPoints()[i].value, valueArray[i]);
     }
 };
+
+QUnit.test("Names to series", function(assert) {
+    var seriesDataSource = new SeriesDataSource({
+        dataSource: [
+            { x: 10, y1: 0 }
+        ],
+        chart: {
+            series: {
+                argumentField: "x",
+                valueField: "y1"
+            }
+        },
+        renderer: new vizMocks.Renderer(),
+        argumentAxis: this.argumentAxis
+    });
+
+    assert.strictEqual(seriesDataSource.getSeries()[0].name, "Series 1");
+});
 
 QUnit.module("SeriesDataSource seriesFamilies", {
     beforeEach: function() {

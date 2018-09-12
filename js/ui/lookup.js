@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     eventsEngine = require("../events/core/events_engine"),
     window = require("../core/utils/window").getWindow(),
@@ -478,6 +476,8 @@ var Lookup = DropDownList.inherit({
     },
 
     _defaultOptionsRules: function() {
+        var themeName = themes.current();
+
         return this.callBase().concat([
             {
                 device: function() {
@@ -573,7 +573,7 @@ var Lookup = DropDownList.inherit({
             },
             {
                 device: function() {
-                    return themes.isAndroid5();
+                    return themes.isAndroid5(themeName);
                 },
                 options: {
                     useInkRipple: true
@@ -581,7 +581,7 @@ var Lookup = DropDownList.inherit({
             },
             {
                 device: function() {
-                    return themes.isMaterial();
+                    return themes.isMaterial(themeName);
                 },
                 options: {
 
@@ -1176,7 +1176,8 @@ var Lookup = DropDownList.inherit({
             : this._list.option("selectedItems[0]");
     },
 
-    _resetValue: function() {
+    _resetValue: function(e) {
+        this._saveValueChangeEvent(e.event);
         this.option("value", null);
         this.option("opened", false);
     },
@@ -1211,6 +1212,7 @@ var Lookup = DropDownList.inherit({
     _clean: function() {
         this._$fieldWrapper.remove();
         this._$searchBox = null;
+        delete this._inkRipple;
         this.callBase();
     },
 

@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     pointerMock = require("../../helpers/pointerMock.js"),
     HORIZONTAL_WIDTH_LARGE = 1500,
@@ -40,6 +38,17 @@ QUnit.testStart(function() {
                 <div class="test-item">2</div>\
                 <div class="test-item">3</div>\
                 <div class="test-item">4</div>\
+            </div>\
+        </div>\
+        \
+        <div class="dx-swatch-1">\
+            <div id="swatchSortable" style="height: 300px; width: 300px" class="test-items">\
+                <div class="test-container">\
+                    <div class="test-item">1</div>\
+                    <div class="test-item">2</div>\
+                    <div class="test-item">3</div>\
+                    <div class="test-item">4</div>\
+                </div>\
             </div>\
         </div>';
 
@@ -152,15 +161,11 @@ QUnit.test("set onChanged arg's fields", function(assert) {
 QUnit.test("horizontal dragging - right", function(assert) {
     createHorizontalMarkUp(HORIZONTAL_WIDTH_LARGE);
 
-    var changedArgs,
-        $sortable = $("#sortable").dxSortable({
-            itemSelector: ".test-item",
-            direction: "horizontal",
-            itemContainerSelector: ".test-container",
-            onChanged: function(e) {
-                changedArgs = e;
-            }
-        });
+    var $sortable = $("#sortable").dxSortable({
+        itemSelector: ".test-item",
+        direction: "horizontal",
+        itemContainerSelector: ".test-container"
+    });
 
     var $item = $sortable.find(".test-item").eq(0);
     var offset = $item.offset();
@@ -541,6 +546,25 @@ QUnit.test("dragging when no itemContainer", function(assert) {
     assert.equal($items.eq(3).text(), "4", "item 3 text");
 
     assert.ok(!changedArgs, "changed not called");
+});
+
+QUnit.test("dragging with color swatch", function(assert) {
+    var $sortable = $("#swatchSortable").dxSortable({
+        itemSelector: ".test-item",
+        itemContainerSelector: ".test-container"
+    });
+
+    var $item = $sortable.find(".test-item").eq(0);
+    var offset = $item.offset();
+
+    // act
+    pointerMock($item)
+        .start()
+        .down()
+        .move(offset.left + 5, offset.top + 5);
+
+    // assert
+    assert.equal($("body > .dx-swatch-1 > .test-item.dx-drag").length, 1, "Dragging item rendered in container with swatch class");
 });
 
 

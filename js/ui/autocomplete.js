@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     noop = require("../core/utils/common").noop,
     registerComponent = require("../core/component_registrator"),
@@ -86,14 +84,9 @@ var Autocomplete = DropDownList.inherit({
             noDataText: "",
 
             /**
-             * @name dxAutocompleteOptions.dropDownButtonTemplate
-             * @hidden
-             */
-
-            /**
              * @name dxAutocompleteOptions.showDropDownButton
              * @inheritdoc
-             * @hidden
+             * @default false
              */
             showDropDownButton: false,
 
@@ -239,6 +232,11 @@ var Autocomplete = DropDownList.inherit({
 
     _renderValueEventName: function() {
         return "input keyup";
+    },
+
+    _valueChangeEventHandler: function(e) {
+        var value = this._input().val() || null;
+        return this.callBase(e, value);
     },
 
     _optionChanged: function(args) {

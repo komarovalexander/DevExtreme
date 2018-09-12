@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     eventsEngine = require("../../events/core/events_engine"),
@@ -89,6 +87,13 @@ var getWidthStyle = function(width) {
     return typeof width === "number" ? width + "px" : width;
 };
 
+var setCellWidth = function(cell, column, width) {
+    cell.style.width = cell.style.maxWidth = width;
+    if(!column.command && column.width === "auto" && width === "") {
+        cell.style.width = "1px";
+    }
+};
+
 exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
     _createScrollableOptions: function() {
         var that = this,
@@ -97,7 +102,6 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
         var options = extend({}, scrollingOptions, {
             direction: "both",
-            updateManually: true,
             bounceEnabled: false,
             useKeyboard: false
         });
@@ -131,6 +135,10 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
         var $cell = $(cell);
 
+        if(options.rowType === "data") {
+            column.id && this.setAria("describedby", column.id, $cell);
+        }
+
         if(!typeUtils.isDefined(column.groupIndex) && column.cssClass) {
             $cell.addClass(column.cssClass);
         }
@@ -146,7 +154,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
                 cell.style.minWidth = getWidthStyle(column.minWidth || column.width);
             }
             if(column.width) {
-                cell.style.width = cell.style.maxWidth = getWidthStyle(column.width);
+                setCellWidth(cell, column, getWidthStyle(column.width));
             }
         }
 
@@ -176,7 +184,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
             that.setAria("hidden", true, $table);
         }
 
-        $table.append($("<tbody>"));
+        this.setAria("role", "presentation", $("<tbody>").appendTo($table));
 
         if(isAppend) {
             return $table;
@@ -307,16 +315,45 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
     },
 
     renderDelayedTemplates: function() {
+        var delayedTemplates = this._delayedTemplates,
+            syncTemplates = delayedTemplates.filter(template => !template.async),
+            asyncTemplates = delayedTemplates.filter(template => template.async);
+
+        this._delayedTemplates = [];
+
+        this._renderDelayedTemplatesCore(syncTemplates);
+        this._renderDelayedTemplatesCoreAsync(asyncTemplates);
+    },
+
+    _renderDelayedTemplatesCoreAsync: function(templates) {
+        var that = this;
+        if(templates.length) {
+            (window.requestIdleCallback || window.setTimeout)(function() {
+                that._renderDelayedTemplatesCore(templates, true);
+            });
+        }
+    },
+
+    _renderDelayedTemplatesCore: function(templates, isAsync) {
         var templateParameters,
-            delayedTemplates = this._delayedTemplates;
+            date = new Date();
 
-        while(delayedTemplates.length) {
-            templateParameters = delayedTemplates.shift();
+        while(templates.length) {
+            templateParameters = templates.shift();
 
-            templateParameters.template.render(templateParameters.options);
+            var options = templateParameters.options,
+                model = options.model;
 
-            if(templateParameters.options.model && templateParameters.options.model.column) {
-                this._updateCell(templateParameters.options.container, templateParameters.options.model);
+            if(!isAsync || $(options.container).closest(document).length) {
+                templateParameters.template.render(options);
+
+                if(model && model.column) {
+                    this._updateCell(options.container, model);
+                }
+            }
+            if(isAsync && (new Date() - date) > 30) {
+                this._renderDelayedTemplatesCoreAsync(templates);
+                break;
             }
         }
     },
@@ -361,16 +398,25 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
     renderTemplate: function(container, template, options, allowRenderToDetachedContainer) {
         var that = this,
-            renderingTemplate = that._processTemplate(template, options);
+            renderingTemplate = that._processTemplate(template, options),
+            column = options.column,
+            isDataRow = options.rowType === "data",
+            async;
 
         if(renderingTemplate) {
             options.component = that.component;
 
-            if(renderingTemplate.allowRenderToDetachedContainer || allowRenderToDetachedContainer) {
+            async = column && (
+                (column.renderAsync && isDataRow) ||
+                that.option("renderAsync") &&
+                    (column.renderAsync !== false && (column.command || column.showEditorAlways) && isDataRow || options.rowType === "filter")
+            );
+
+            if((renderingTemplate.allowRenderToDetachedContainer || allowRenderToDetachedContainer) && !async) {
                 renderingTemplate.render({ container: container, model: options });
                 return true;
             } else {
-                that._delayedTemplates.push({ template: renderingTemplate, options: { container: container, model: options } });
+                that._delayedTemplates.push({ template: renderingTemplate, options: { container: container, model: options }, async: async });
             }
         }
 
@@ -521,7 +567,10 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
         if(gridCoreUtils.checkChanges(optionNames, ["width", "visibleWidth"])) {
             var visibleColumns = this._columnsController.getVisibleColumns();
-            var widths = iteratorUtils.map(visibleColumns, function(column) { return column.visibleWidth || column.width || "auto"; });
+            var widths = iteratorUtils.map(visibleColumns, function(column) {
+                var width = column.visibleWidth || column.width;
+                return typeUtils.isDefined(width) ? width : "auto";
+            });
 
             this.setColumnWidths(widths);
             return;
@@ -657,6 +706,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
     getColumnWidths: function($tableElement) {
         var that = this,
             result = [],
+            $rows,
             $cells;
 
         (this.option("forceApplyBindings") || noop)();
@@ -664,12 +714,13 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
         $tableElement = $tableElement || that._getTableElement();
 
         if($tableElement) {
-            $cells = $tableElement.children("tbody").children();
+            $rows = $tableElement.children("tbody").children();
 
-            for(var i = 0; i < $cells.length; i++) {
-                var $cell = $cells.eq(i);
-                if(!$cell.is("." + GROUP_ROW_CLASS) && !$cell.is("." + DETAIL_ROW_CLASS)) {
-                    $cells = $cell.children("td");
+            for(var i = 0; i < $rows.length; i++) {
+                var $row = $rows.eq(i);
+                var isRowVisible = $row.get(0).style.display !== "none" && !$row.hasClass("dx-state-invisible");
+                if(!$row.is("." + GROUP_ROW_CLASS) && !$row.is("." + DETAIL_ROW_CLASS) && isRowVisible) {
+                    $cells = $row.children("td");
                     break;
                 }
             }
@@ -678,6 +729,10 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
         }
 
         return result;
+    },
+
+    getVisibleColumnIndex: function(columnIndex, rowIndex) {
+        return columnIndex;
     },
 
     setColumnWidths: function(widths, $tableElement, columns, fixed) {
@@ -707,9 +762,10 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
                         minWidth = getWidthStyle(columns[i].minWidth || width);
                         var $rows = $rows || $tableElement.children().children(".dx-row").not("." + GROUP_ROW_CLASS).not("." + DETAIL_ROW_CLASS);
                         for(var rowIndex = 0; rowIndex < $rows.length; rowIndex++) {
-                            var cell = $rows[rowIndex].cells[i];
+                            var visibleIndex = this.getVisibleColumnIndex(i, rowIndex);
+                            var cell = $rows[rowIndex].cells[visibleIndex];
                             if(cell) {
-                                cell.style.width = cell.style.maxWidth = width;
+                                setCellWidth(cell, columns[i], width);
                                 cell.style.minWidth = minWidth;
                             }
                         }
@@ -726,7 +782,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
                 if(typeof width === "number") {
                     width = width.toFixed(3) + "px";
                 }
-                styleUtils.setWidth($cols.eq(columnIndex), width || "auto");
+                styleUtils.setWidth($cols.eq(columnIndex), typeUtils.isDefined(width) ? width : "auto");
 
                 columnIndex++;
             }

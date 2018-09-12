@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     fx = require("animation/fx"),
     translator = require("animation/translator"),
@@ -86,7 +84,21 @@ QUnit.testStart(function() {
             <div tabindex=\'-1\'></div>\
             <a href="#" class="lastTabbable">something</a>\
         </script>\
-        <input class="outsideTabbable" />';
+        <input class="outsideTabbable" />\
+        \
+        <div>\
+            <div class="dx-swatch-my-color_scheme1 some-class some-class2">\
+                <div>\
+                    <div id="swatchOverlay1"></div>\
+                </div>\
+            </div>\
+            <div class="some-class some-class2 dx-swatch-my-color_scheme2 some-class3">\
+                <div>\
+                    <div id="swatchOverlay2"></div>\
+                    <div id="swatchOverlay3"></div>\
+                </div>\
+            </div>\
+        <div>';
 
     $("#qunit-fixture").html(markup);
 });
@@ -248,6 +260,46 @@ QUnit.test("RTL markup - rtlEnabled by default", function(assert) {
     var $content = $(overlay.$content());
 
     assert.ok($content.hasClass("dx-rtl"));
+});
+
+QUnit.test("Color swatches - overlay should be rendered on viewport by default", function(assert) {
+    var overlay = $("#overlay").dxOverlay().dxOverlay("instance");
+    overlay.show();
+    var $wrapper = overlay.$content().parent();
+    assert.ok($wrapper.parent().hasClass("dx-viewport"));
+});
+
+QUnit.test("Color swatches - overlay should be rendered on the child of viewport with special class", function(assert) {
+    var containers = [];
+
+    for(var i = 1; i <= 3; i++) {
+        var overlay = $("#swatchOverlay" + i).dxOverlay().dxOverlay("instance");
+        overlay.show();
+        containers[i] = overlay.$content().parent().parent();
+    }
+
+    assert.ok(containers[1].hasClass("dx-swatch-my-color_scheme1"), "overlay's container has right class");
+    assert.ok(containers[1].parent().hasClass("dx-viewport"), "overlay's container is the viewport's child");
+
+    assert.ok(containers[2].hasClass("dx-swatch-my-color_scheme2"), "overlay's container has right class");
+    assert.ok(containers[2].parent().hasClass("dx-viewport"), "overlay's container is the viewport's child");
+
+    assert.ok(containers[3].hasClass("dx-swatch-my-color_scheme2"), "overlay's container has right class");
+    assert.ok(containers[3].parent().hasClass("dx-viewport"), "overlay's container is the viewport's child");
+
+    assert.equal($(".dx-viewport > .dx-swatch-my-color_scheme2").length, 1, "one container for different overlays from the same swatch");
+});
+
+QUnit.test("Color swatches - overlay should be rendered on the child of viewport with special class if its element attached after creation", function(assert) {
+    var detachedContainer = $("<div>");
+    var overlay = detachedContainer.dxOverlay().dxOverlay("instance");
+    detachedContainer.appendTo(".dx-swatch-my-color_scheme1 > div");
+    overlay.show();
+
+    var overlayContainer = overlay.$content().parent().parent();
+
+    assert.ok(overlayContainer.hasClass("dx-swatch-my-color_scheme1"), "overlay's container has right class");
+    assert.ok(overlayContainer.parent().hasClass("dx-viewport"), "overlay's container is the viewport's child");
 });
 
 QUnit.module("option", moduleConfig);
@@ -1314,6 +1366,20 @@ QUnit.test("contentTemplate option support dynamic change", function(assert) {
     assert.equal($.trim($overlay.dxOverlay("$content").text()), "template2", "template rerendered");
 });
 
+QUnit.test("contentTemplate option support dynamic change in a set of options", function(assert) {
+    var overlay = $("#overlay").dxOverlay({
+        contentTemplate: "template1",
+        visible: true
+    }).dxOverlay("instance");
+
+    overlay.hide();
+    overlay.option({
+        contentTemplate: "template2",
+        visible: true
+    });
+
+    assert.equal(overlay.$content().text(), "template2", "template rerendered correctly");
+});
 
 QUnit.module("defer rendering", moduleConfig);
 
@@ -1437,6 +1503,23 @@ QUnit.test("outside click should close several overlays if propagateOutsideClick
     $("body").trigger("dxpointerdown");
 
     assert.equal(overlay1.option("visible"), false, "First overlay is hidden");
+    assert.equal(overlay2.option("visible"), true, "Second overlay is visible");
+});
+
+QUnit.test("outside click should not close several overlays if other overlay content clicked", function(assert) {
+    var overlay1 = $("#overlay").dxOverlay({
+            closeOnOutsideClick: true,
+            visible: true
+        }).dxOverlay("instance"),
+        overlay2 = $("#overlay2").dxOverlay({
+            closeOnOutsideClick: true,
+            visible: true,
+            propagateOutsideClick: true
+        }).dxOverlay("instance");
+
+    $(overlay2.content()).trigger("dxpointerdown");
+
+    assert.equal(overlay1.option("visible"), true, "First overlay is visible");
     assert.equal(overlay2.option("visible"), true, "Second overlay is visible");
 });
 

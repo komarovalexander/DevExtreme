@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     noop = require("../../core/utils/common").noop,
     registerComponent = require("../../core/component_registrator"),
@@ -158,7 +156,11 @@ var SchedulerWorkSpaceMonth = SchedulerWorkSpace.inherit({
     },
 
     _getCellText: function(rowIndex, cellIndex) {
-        cellIndex = cellIndex % this._getCellCount();
+        if(this.option("groupByDate")) {
+            cellIndex = Math.floor(cellIndex / this._getGroupCount());
+        } else {
+            cellIndex = cellIndex % this._getCellCount();
+        }
 
         var date = this._getDate(rowIndex, cellIndex);
 
@@ -231,20 +233,6 @@ var SchedulerWorkSpaceMonth = SchedulerWorkSpace.inherit({
         };
     },
 
-
-    getCoordinatesByDates: function(startDate, endDate) {
-        var result = [],
-            date = new Date(startDate);
-
-        while(date <= endDate) {
-            result.push(this.getCoordinatesByDate(date));
-            date.setDate(date.getDate() + 7);
-            date = dateUtils.getFirstWeekDate(date, this.option("firstDayOfWeek") || dateLocalization.firstDayOfWeekIndex());
-        }
-
-        return result;
-    },
-
     getCellCountToLastViewDate: function(date) {
         var firstDateTime = date.getTime(),
             lastDateTime = this.getEndViewDate().getTime(),
@@ -268,6 +256,10 @@ var SchedulerWorkSpaceMonth = SchedulerWorkSpace.inherit({
 
     getWorkSpaceLeftOffset: function() {
         return 0;
+    },
+
+    applyGroupButtonOffset: function() {
+        return true;
     },
 
     _getDateTableBorderOffset: function() {

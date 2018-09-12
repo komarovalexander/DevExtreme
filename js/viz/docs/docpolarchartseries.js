@@ -1,4 +1,30 @@
 /**
+ * @name PolarChartSeries
+ * @type object
+ * @inherits dxPolarChartSeriesTypes.CommonPolarChartSeries
+ */
+var polarChartSeries = {
+    /**
+    * @name PolarChartSeries.name
+    * @type string
+    * @default undefined
+    */
+    name: undefined,
+    /**
+    * @name PolarChartSeries.tag
+    * @type any
+    * @default undefined
+    */
+    tag: undefined,
+    /**
+    * @name PolarChartSeries.type
+    * @type Enums.PolarChartSeriesType
+    * @default 'scatter'
+    */
+    type: 'scatter'
+};
+
+/**
 * @name dxPolarChartSeriesTypes
 * @type object
 */
@@ -602,37 +628,15 @@ var CommonPolarChartSeries = {
         position: 'outside',
         /**
         * @name dxPolarChartSeriesTypes.CommonPolarChartSeries.label.font
-        * @type object
+        * @type Font
+        * @default '#FFFFFF' @prop color
+        * @default 14 @prop size
         */
         font: {
-            /**
-            * @name dxPolarChartSeriesTypes.CommonPolarChartSeries.label.font.family
-            * @extends CommonVizFontFamily
-            */
             family: undefined,
-            /**
-            * @name dxPolarChartSeriesTypes.CommonPolarChartSeries.label.font.weight
-            * @type number
-            * @default 400
-            */
             weight: 400,
-            /**
-            * @name dxPolarChartSeriesTypes.CommonPolarChartSeries.label.font.color
-            * @type string
-            * @default '#FFFFFF'
-            */
             color: '#FFFFFF',
-            /**
-            * @name dxPolarChartSeriesTypes.CommonPolarChartSeries.label.font.size
-            * @type number|string
-            * @default 14
-            */
             size: 14,
-            /**
-            * @name dxPolarChartSeriesTypes.CommonPolarChartSeries.label.font.opacity
-            * @type number
-            * @default undefined
-            */
             opacity: undefined
         },
         /**

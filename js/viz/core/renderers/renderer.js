@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../../core/renderer"),
     domAdapter = require("../../../core/dom_adapter"),
     windowUtils = require("../../../core/utils/window"),
@@ -417,9 +415,7 @@ function baseCss(that, styles) {
     for(key in styles) {
         value = styles[key];
         if(_isDefined(value)) {
-            if(typeof value === "number" && !pxAddingExceptions[key]) {
-                value += "px";
-            }
+            value += typeof value === "number" && !pxAddingExceptions[key] ? "px" : "";
             elemStyles[key] = value !== "" ? value : null;
         }
     }

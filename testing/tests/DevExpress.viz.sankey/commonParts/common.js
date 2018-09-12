@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     vizMocks = require("../../../helpers/vizMocks.js"),
     rendererModule = require("viz/core/renderers/renderer"),
@@ -78,7 +76,7 @@ var environment = {
     },
 
     label: function(index) {
-        return this.labels[index];
+        return this.labels()[index].children[0];
     }
 };
 

@@ -1,6 +1,4 @@
-"use strict";
-
-import typeUtils, { isFunction } from "../core/utils/type";
+import { isFunction, isPlainObject, isEmptyObject } from "../core/utils/type";
 import Guid from "../core/guid";
 import domAdapter from "../core/dom_adapter";
 import { add as ready } from "../core/utils/ready_callbacks";
@@ -160,19 +158,19 @@ function isConjunctiveOperator(condition) {
 }
 
 var keysEqual = function(keyExpr, key1, key2) {
-    /* jshint eqeqeq:false */
-
     if(Array.isArray(keyExpr)) {
         var names = map(key1, function(v, k) { return k; }),
             name;
         for(var i = 0; i < names.length; i++) {
             name = names[i];
+            // eslint-disable-next-line eqeqeq
             if(toComparable(key1[name], true) != toComparable(key2[name], true)) {
                 return false;
             }
         }
         return true;
     }
+    // eslint-disable-next-line eqeqeq
     return toComparable(key1, true) == toComparable(key2, true);
 };
 
@@ -299,11 +297,11 @@ function ArrayHelper() {
         var keyValue,
             obj;
 
-        obj = typeUtils.isPlainObject(data) ? extend({}, data) : data;
+        obj = isPlainObject(data) ? extend({}, data) : data;
 
         if(keyExpr) {
             keyValue = keyGetter(obj);
-            if(keyValue === undefined || typeof keyValue === "object" && typeUtils.isEmptyObject(keyValue)) {
+            if(keyValue === undefined || typeof keyValue === "object" && isEmptyObject(keyValue)) {
                 if(Array.isArray(keyExpr)) {
                     throw errors.Error("E4007");
                 }

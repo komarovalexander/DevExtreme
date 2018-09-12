@@ -1,5 +1,3 @@
-"use strict";
-
 var pointerMock = require("../../helpers/pointerMock.js");
 
 var $ = require("jquery"),
@@ -1223,6 +1221,21 @@ QUnit.testStart(function() {
         assert.equal(this.instance.option("showCurrentTimeIndicator"), true, "showCurrentTimeIndicator option value is right on init");
     });
 
+    QUnit.test("groupByDate option should be passed to workSpace", function(assert) {
+        this.createInstance({
+            currentView: "week",
+            groupByDate: false
+        });
+
+        var workSpaceWeek = this.instance.getWorkSpace();
+
+        assert.equal(workSpaceWeek.option("groupByDate"), false, "workspace has correct groupByDate");
+
+        this.instance.option("groupByDate", true);
+
+        assert.equal(workSpaceWeek.option("groupByDate"), true, "workspace has correct groupByDate");
+    });
+
     QUnit.test("showCurrentTimeIndicator option should be passed to workSpace", function(assert) {
         this.createInstance({
             currentView: "week",
@@ -1437,6 +1450,29 @@ QUnit.testStart(function() {
         assert.deepEqual(workSpaceWeek.option("startDate"), date, "workspace has correct startDate");
         assert.deepEqual(header.option("startDate"), date, "header has correct startDate");
         assert.equal(navigator.option("date").getMonth(), 1, "navigator has correct date depending on startDate");
+    });
+
+    QUnit.test("view.groupByDate is passed to workspace", function(assert) {
+        this.createInstance({
+            currentView: "Week",
+            views: [{
+                type: "week",
+                name: "Week",
+                groupByDate: true
+            },
+            {
+                type: "day",
+                name: "Day",
+                groupByDate: false
+            }]
+        });
+
+        var workSpace = this.instance.getWorkSpace();
+
+        assert.ok(workSpace.option("groupByDate"), "workspace has correct groupByDate");
+        this.instance.option("currentView", "day");
+        workSpace = this.instance.getWorkSpace();
+        assert.notOk(workSpace.option("groupByDate"), "workspace has correct groupByDate");
     });
 
     QUnit.test("currentView option should be passed to header correctly", function(assert) {
@@ -1666,6 +1702,69 @@ QUnit.testStart(function() {
 
         this.instance.option("currentView", "month");
         assert.deepEqual(this.instance.option("selectedCellData"), []);
+    });
+
+    QUnit.test("Multiple reloading should be avoided after some options changing (T656320)", function(assert) {
+        var counter = 0;
+
+        this.createInstance();
+
+        this.instance.option("dataSource", new DataSource({
+            store: new CustomStore({
+                load: function() {
+                    counter++;
+                    return [];
+                }
+            })
+        }));
+        assert.equal(counter, 1, "Data source was reloaded after dataSource option changing");
+        this.instance.beginUpdate();
+        this.instance.option("startDayHour", 10);
+        this.instance.option("endDayHour", 18);
+        this.instance.endUpdate();
+        assert.equal(counter, 2, "Data source was reloaded one more time after some options changing");
+    });
+
+    QUnit.test("Multiple reloading should be avoided after some currentView options changing (T656320)", function(assert) {
+        var counter = 0,
+            resourceCounter = 0;
+
+        this.createInstance({
+            dataSource: new DataSource({
+                store: new CustomStore({
+                    load: function() {
+                        counter++;
+                        return [];
+                    }
+                })
+            }),
+            groups: ["owner.id"],
+            resources: [{
+                fieldExpr: "owner.id",
+                dataSource: new DataSource({
+                    store: new CustomStore({
+                        load: function() {
+                            var d = $.Deferred();
+                            setTimeout(function() {
+                                resourceCounter++;
+                                assert.equal(counter, resourceCounter - 1);
+                                d.resolve([]);
+                            }, 100);
+
+                            return d.promise();
+                        }
+                    })
+                })
+            }],
+        });
+        this.clock.tick(100);
+        assert.equal(resourceCounter, 1, "Resources was reloaded after dataSource option changing");
+        this.instance.beginUpdate();
+        this.instance.option("currentView", "timelineDay");
+        this.instance.option("currentView", "timelineMonth");
+        this.instance.endUpdate();
+        this.clock.tick(100);
+        assert.equal(resourceCounter, 2, "Resources was reloaded one more time after dataSource option changing");
     });
 
 })("Options");
@@ -2868,6 +2967,14 @@ QUnit.testStart(function() {
         });
     });
 
+    QUnit.test("contentReady action should rise even if dataSource isn't set", function(assert) {
+        this.createInstance({
+            onContentReady: function(e) {
+                assert.ok(true, 1, "contentReady is fired");
+            }
+        });
+    });
+
     QUnit.test("contentReady action should rise at the right time", function(assert) {
         var done = assert.async();
         this.clock.restore();
@@ -3820,21 +3927,6 @@ QUnit.testStart(function() {
         assert.notEqual(countCallTemplate2, 0, "count call second template");
     });
 
-    QUnit.test("Scheduler should have correct dayDuration by certain startDayHour and endDayHour", function(assert) {
-        this.createInstance({
-            startDayHour: 7,
-            endDayHour: 23,
-            views: [{
-                type: "workWeek",
-                startDayHour: 9,
-                endDayHour: 18
-            }],
-            currentView: "workWeek"
-        });
-
-        assert.equal(this.instance._getDayDuration(), 9, "correct dayDuration");
-    });
-
     QUnit.test("Check appointment takes all day by certain startDayHour and endDayHour", function(assert) {
         this.createInstance({
             startDayHour: 9,
@@ -3911,15 +4003,18 @@ QUnit.testStart(function() {
         assert.equal(header.option("_dropDownButtonIcon"), "chevrondown", "header has correct _dropDownButtonIcon");
     });
 
-    QUnit.test("_appointmentGroupButtonOffset option should be passed to SchedulerAppointments", function(assert) {
+    QUnit.test("_appointmentGroupButtonOffset option should be passed to SchedulerAppointments depending on the view", function(assert) {
         this.createInstance({
-            currentView: "week",
+            currentView: "month",
             showCurrentTimeIndicator: false
         });
 
         var appointments = this.instance.getAppointmentsInstance();
 
         assert.equal(appointments.option("_appointmentGroupButtonOffset"), 20, "SchedulerAppointments has correct _appointmentGroupButtonOffset");
+
+        this.instance.option("currentView", "week");
+        assert.equal(appointments.option("_appointmentGroupButtonOffset"), 0, "SchedulerAppointments has correct _appointmentGroupButtonOffset");
     });
 
 })("View with configuration");

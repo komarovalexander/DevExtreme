@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     extend = require("../../core/utils/extend").extend,
     getDefaultAlignment = require("../../core/utils/position").getDefaultAlignment,
@@ -48,6 +46,8 @@ module.exports = {
         if(!$indicatorsContainer.length) {
             $indicatorsContainer = $("<div>").addClass(COLUMN_INDICATORS_CLASS);
         }
+
+        this.setAria("role", "presentation", $indicatorsContainer);
 
         return $indicatorsContainer.css("float", options.showColumnLines && !ignoreIndicatorAlignment ? indicatorAlignment : null);
     },

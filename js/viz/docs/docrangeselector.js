@@ -1,15 +1,10 @@
 /**
 * @name dxRangeSelector
-* @inherits BaseWidget
+* @inherits BaseWidget, DataHelperMixin
 * @module viz/range_selector
 * @export default
 */
 var dxRangeSelector = {
-    /**
-    * @name dxRangeSelector.Options
-    * @namespace DevExpress.viz.rangeSelector
-    * @hidden
-    */
     /**
     * @name dxRangeSelectorOptions.scale
     * @type object
@@ -175,37 +170,15 @@ var dxRangeSelector = {
             topIndent: 7,
             /**
             * @name dxRangeSelectorOptions.scale.label.font
-            * @type object
+            * @type Font
+            * @default '#767676' @prop color
+            * @default 11 @prop size
             */
             font: {
-                /**
-                * @name dxRangeSelectorOptions.scale.label.font.color
-                * @type string
-                * @default '#767676'
-                */
                 color: '#767676',
-                /**
-                * @name dxRangeSelectorOptions.scale.label.font.size
-                * @type number|string
-                * @default 11
-                */
                 size: 11,
-                /**
-                * @name dxRangeSelectorOptions.scale.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxRangeSelectorOptions.scale.label.font.weight
-                * @type number
-                * @default 400
-                */
                 weight: 400,
-                /**
-                * @name dxRangeSelectorOptions.scale.label.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined
             },
             /**
@@ -414,37 +387,15 @@ var dxRangeSelector = {
         placeholderHeight: undefined,
         /**
         * @name dxRangeSelectorOptions.sliderMarker.font
-        * @type object
+        * @type Font
+        * @default '#FFFFFF' @prop color
+        * @default 14 @prop size
         */
         font: {
-            /**
-            * @name dxRangeSelectorOptions.sliderMarker.font.color
-            * @type string
-            * @default 'white'
-            */
             color: 'white',
-            /**
-            * @name dxRangeSelectorOptions.sliderMarker.font.size
-            * @type number|string
-            * @default 14
-            */
             size: 14,
-            /**
-            * @name dxRangeSelectorOptions.sliderMarker.font.family
-            * @extends CommonVizFontFamily
-            */
             family: undefined,
-            /**
-            * @name dxRangeSelectorOptions.sliderMarker.font.weight
-            * @type number
-            * @default 400
-            */
             weight: 400,
-            /**
-            * @name dxRangeSelectorOptions.sliderMarker.font.opacity
-            * @type number
-            * @default undefined
-            */
             opacity: undefined
         }
     },
@@ -492,7 +443,7 @@ var dxRangeSelector = {
     },
     /**
     *@name dxRangeSelectorOptions.value
-    * @type Array<number,string,Date>
+    * @type Array<number,string,Date> | VizRange
     * @fires dxRangeSelectorOptions.onValueChanged
     * @notUsedInTheme
     */
@@ -710,7 +661,7 @@ var dxRangeSelector = {
         },
         /**
         * @name dxRangeSelectorOptions.chart.series
-        * @type dxChartOptions.series|Array<dxChartOptions.series>
+        * @type ChartSeries|Array<ChartSeries>
         * @default undefined
         * @notUsedInTheme
         */
@@ -731,7 +682,7 @@ var dxRangeSelector = {
             * @name dxRangeSelectorOptions.chart.seriesTemplate.customizeSeries
             * @type function(seriesName)
             * @type_function_param1 seriesName:any
-            * @type_function_return dxChartOptions.series
+            * @type_function_return ChartSeries
             */
             customizeSeries: function() { }
         },
@@ -811,7 +762,7 @@ var dxRangeSelector = {
     /**
     * @name dxRangeSelectorMethods.setValue
     * @publicName setValue(value)
-    * @param1 value:Array<number,string,Date>
+    * @param1 value:Array<number,string,Date> | VizRange
     */
     setValue: function() { },
     /**
@@ -825,11 +776,5 @@ var dxRangeSelector = {
     * @publicName render(skipChartAnimation)
     * @param1 skipChartAnimation:boolean
     */
-    render: function(skipChartAnimation) { },
-    /**
-    * @name dxRangeSelectorMethods.getDataSource
-    * @publicName getDataSource()
-    * @return DataSource
-    */
-    getDataSource: function() { },
+    render: function(skipChartAnimation) { }
 };

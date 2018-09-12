@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     eventsEngine = require("../events/core/events_engine"),
     commonUtils = require("../core/utils/common"),
@@ -632,6 +630,7 @@ var ResponsiveBox = CollectionWidget.inherit({
 
     _dispose: function() {
         clearTimeout(this._updateTimer);
+        this._clearItemNodeTemplates();
         this._cleanUnusedRoots();
         this.callBase.apply(this, arguments);
     },

@@ -1,15 +1,10 @@
 /**
 * @name dxTreeMap
-* @inherits BaseWidget
+* @inherits BaseWidget, DataHelperMixin
 * @module viz/tree_map
 * @export default
 */
 var dxTreeMap = {
-    /**
-    * @name dxTreeMap.Options
-    * @namespace DevExpress.viz.treeMap
-    * @hidden
-    */
     /**
     * @name dxTreeMapOptions.margin
     * @hidden
@@ -181,37 +176,15 @@ var dxTreeMap = {
             visible: true,
             /**
             * @name dxTreeMapOptions.tile.label.font
-            * @type object
+            * @type Font
+            * @default '#FFFFFF' @prop color
+            * @default 300 @prop weight
             */
             font: {
-                /**
-                * @name dxTreeMapOptions.tile.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxTreeMapOptions.tile.label.font.size
-                * @type number|string
-                * @default 12
-                */
                 size: undefined,
-                /**
-                * @name dxTreeMapOptions.tile.label.font.color
-                * @type string
-                * @default "#ffffff"
-                */
                 color: undefined,
-                /**
-                * @name dxTreeMapOptions.tile.label.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined,
-                /**
-                * @name dxTreeMapOptions.tile.label.font.weight
-                * @type number
-                * @default 300
-                */
                 weight: undefined
             }
         }
@@ -324,37 +297,15 @@ var dxTreeMap = {
             visible: undefined,
             /**
             * @name dxTreeMapOptions.group.label.font
-            * @type object
+            * @type Font
+            * @default '#767676' @prop color
+            * @default 600 @prop weight
             */
             font: {
-                /**
-                * @name dxTreeMapOptions.group.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxTreeMapOptions.group.label.font.size
-                * @type number|string
-                * @default 12
-                */
                 size: undefined,
-                /**
-                * @name dxTreeMapOptions.group.label.font.color
-                * @type string
-                * @default "#767676"
-                */
                 color: undefined,
-                /**
-                * @name dxTreeMapOptions.group.label.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined,
-                /**
-                * @name dxTreeMapOptions.group.label.font.weight
-                * @type number
-                * @default 600
-                */
                 weight: undefined
             }
         },
@@ -541,11 +492,5 @@ var dxTreeMap = {
     * @publicName getCurrentNode()
     * @return dxTreeMapNode
     */
-    getCurrentNode: function() { },
-    /**
-    * @name dxTreeMapMethods.getDataSource
-    * @publicName getDataSource()
-    * @return DataSource
-    */
-    getDataSource: function() { },
+    getCurrentNode: function() { }
 };

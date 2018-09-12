@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     Guid = require("../../core/guid"),
@@ -1076,11 +1074,11 @@ var LayoutManager = Widget.inherit({
                             var valueGetter = dataUtils.compileGetter(name),
                                 dataValue = valueGetter(args.value);
 
-                            if(typeUtils.isDefined(dataValue)) {
-                                editor.option("value", dataValue);
-                            } else {
+                            if(dataValue === undefined) {
                                 editor.reset();
                                 editor.option("isValid", true);
+                            } else {
+                                editor.option("value", dataValue);
                             }
                         });
                     }

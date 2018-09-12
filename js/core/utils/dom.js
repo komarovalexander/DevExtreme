@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     windowUtils = require("./window"),
@@ -82,7 +80,6 @@ var uniqueId = (function() {
 var dataOptionsAttributeName = "data-options";
 
 var getElementOptions = function(element) {
-    /* jshint evil:true */
     var optionsString = $(element).attr(dataOptionsAttributeName) || "",
         result;
 
@@ -90,6 +87,7 @@ var getElementOptions = function(element) {
         optionsString = "{" + optionsString + "}";
     }
     try {
+        // eslint-disable-next-line no-new-func
         result = (new Function("return " + optionsString))();
     } catch(ex) {
         throw errors.Error("E3018", ex, optionsString);
@@ -132,6 +130,21 @@ var createMarkupFromString = function(str) {
     return tempElement.contents();
 };
 
+var extractTemplateMarkup = function(element) {
+    element = $(element);
+
+    var templateTag = element.length && element.filter(function isNotExecutableScript() {
+        var $node = $(this);
+        return $node.is("script[type]") && ($node.attr("type").indexOf("script") < 0);
+    });
+
+    if(templateTag.length) {
+        return templateTag.eq(0).html();
+    } else {
+        element = $("<div>").append(element);
+        return element.html();
+    }
+};
 
 var normalizeTemplateElement = function(element) {
     var $element = isDefined(element) && (element.nodeType || isRenderer(element))
@@ -170,7 +183,7 @@ var contains = function(container, element) {
     }
     element = domAdapter.isTextNode(element) ? element.parentNode : element;
 
-    return domAdapter.isDocument(container) ? container.body.contains(element) : container.contains(element);
+    return domAdapter.isDocument(container) ? container.documentElement.contains(element) : container.contains(element);
 };
 
 var getPublicElement = function($element) {
@@ -193,6 +206,7 @@ exports.triggerHidingEvent = triggerVisibilityChangeEvent("dxhiding");
 exports.triggerResizeEvent = triggerVisibilityChangeEvent("dxresize");
 exports.getElementOptions = getElementOptions;
 exports.createComponents = createComponents;
+exports.extractTemplateMarkup = extractTemplateMarkup;
 exports.normalizeTemplateElement = normalizeTemplateElement;
 exports.clearSelection = clearSelection;
 exports.uniqueId = uniqueId;

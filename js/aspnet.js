@@ -1,5 +1,3 @@
-"use strict";
-
 (function(factory) {
     /* global define, DevExpress, window */
     if(typeof define === "function" && define.amd) {
@@ -10,7 +8,8 @@
                 require("./ui/widget/ui.template_base").renderedCallbacks,
                 require("./core/guid"),
                 require("./ui/validation_engine"),
-                require("./core/utils/iterator")
+                require("./core/utils/iterator"),
+                require("./core/utils/dom").extractTemplateMarkup
             );
         });
     } else {
@@ -22,10 +21,11 @@
             ui && ui.templateRendered,
             DevExpress.data.Guid,
             DevExpress.validationEngine,
-            DevExpress.utils.iterator
+            DevExpress.utils.iterator,
+            DevExpress.utils.dom.extractTemplateMarkup
         );
     }
-})(function($, setTemplateEngine, templateRendered, Guid, validationEngine, iteratorUtils) {
+})(function($, setTemplateEngine, templateRendered, Guid, validationEngine, iteratorUtils, extractTemplateMarkup) {
     var templateCompiler = createTemplateCompiler();
 
     function createTemplateCompiler() {
@@ -63,8 +63,6 @@
         }
 
         return function(text) {
-            // jshint evil:true
-
             var bag = ["var _ = [];", "with(obj||{}) {"],
                 chunks = text.split(OPEN_TAG);
 
@@ -81,27 +79,16 @@
 
             bag.push("}", "return _.join('')");
 
+            // eslint-disable-next-line no-new-func
             return new Function("obj", bag.join(''));
         };
     }
 
     function createTemplateEngine() {
 
-        function outerHtml(element) {
-            element = $(element);
-
-            var templateTag = element.length && element[0].nodeName.toLowerCase();
-            if(templateTag === "script") {
-                return element.html();
-            } else {
-                element = $("<div>").append(element);
-                return element.html();
-            }
-        }
-
         return {
             compile: function(element) {
-                return templateCompiler(outerHtml(element));
+                return templateCompiler(extractTemplateMarkup(element));
             },
             render: function(template, data) {
                 return template(data);

@@ -1,5 +1,3 @@
-"use strict";
-
 import { isDefined } from "../../core/utils/type";
 
 var $ = require("../../core/renderer"),
@@ -162,7 +160,7 @@ var FilterPanelView = modules.View.inherit({
         }
 
         if(isDefined(value) || (customOperation && customOperation.customizeText)) {
-            let displayValue = gridUtils.getDisplayValue(field, value);
+            let displayValue = Array.isArray(value) ? value : gridUtils.getDisplayValue(field, value);
             when(utils.getCurrentValueText(field, displayValue, customOperation, FILTER_PANEL_TARGET)).done(data => {
                 let valueText = Array.isArray(data) ? `('${data.join("', '")}')` : ` '${data}'`;
                 deferred.resolve(that._getConditionText(fieldText, operationText, valueText));

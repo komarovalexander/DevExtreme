@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     Widget = require("ui/widget/ui.widget"),
     registerComponent = require("core/component_registrator"),
@@ -476,6 +474,17 @@ require("common.css!");
         assert.ok(!element.hasClass(ACTIVE_STATE_CLASS));
     });
 
+    QUnit.test("active state should be cleared after repaint", function(assert) {
+        var element = this.element.dxWidget({ activeStateEnabled: true }),
+            instance = element.dxWidget("instance");
+
+        this.mouse.active();
+
+        instance.repaint();
+
+        assert.notOk(element.hasClass(ACTIVE_STATE_CLASS));
+    });
+
     QUnit.test("widget with ui feedback support, disabled state", function(assert) {
         var el = this.element.dxWidget({
             activeStateEnabled: true,
@@ -722,7 +731,6 @@ require("common.css!");
             .trigger("dxpointerup")
             .trigger("dxclick");
     });
-
 
     QUnit.module("widget sizing render");
 
@@ -1202,6 +1210,26 @@ require("common.css!");
         } else {
             assert.notOk(isPrevented, "native focus set to widget");
         }
+    });
+
+    QUnit.test("supported keys should have an event as a parameter", function(assert) {
+        var supportedKeysHandler = sinon.stub().returns({
+                "a": function() {
+                }
+            }),
+            TestWidget = Widget.inherit({
+                NAME: "TestWidget",
+                _supportedKeys: supportedKeysHandler
+            }),
+            $element = $("#widget");
+
+        new TestWidget($element, { focusStateEnabled: true });
+
+        var kb = keyboardMock($element);
+        kb.press("a");
+
+        assert.equal(supportedKeysHandler.callCount, 1, "supportedKeys was called");
+        assert.equal(supportedKeysHandler.getCall(0).args[0].type, "keydown", "event is correct");
     });
 
     QUnit.test("focus state", function(assert) {

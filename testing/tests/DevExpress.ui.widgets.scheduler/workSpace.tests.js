@@ -1,5 +1,3 @@
-"use strict";
-
 var pointerMock = require("../../helpers/pointerMock.js"),
     keyboardMock = require("../../helpers/keyboardMock.js");
 
@@ -42,6 +40,12 @@ var stubInvokeMethod = function(instance, options) {
         }
         if(subscribe === "getTimezoneOffset") {
             return -180 * 60000;
+        }
+        if(subscribe === "getDaylightOffset") {
+            var startDate = arguments[1],
+                endDate = arguments[2];
+
+            return startDate.getTimezoneOffset() - endDate.getTimezoneOffset();
         }
         if(subscribe === "convertDateByTimezone") {
             var date = new Date(arguments[1]);
@@ -428,6 +432,148 @@ QUnit.testStart(function() {
 
 (function() {
 
+    QUnit.module("Work Space Day with grouping by date", {
+        beforeEach: function() {
+            this.instance = $("#scheduler-work-space").dxSchedulerWorkSpaceDay({
+                currentDate: new Date(2018, 2, 1),
+                groupByDate: true,
+                intervalCount: 2,
+                showCurrentTimeIndicator: false
+            }).dxSchedulerWorkSpaceDay("instance");
+
+            stubInvokeMethod(this.instance);
+
+            this.instance.option("groups", [{
+                name: "one",
+                items: [{ id: 1, text: "a" }, { id: 2, text: "b" }]
+            }]);
+        }
+    });
+
+    QUnit.test("Get date range", function(assert) {
+        assert.deepEqual(this.instance.getDateRange(), [new Date(2018, 2, 1, 0, 0), new Date(2018, 2, 2, 23, 59)], "Range is OK");
+
+        this.instance.option("intervalCount", 3);
+
+        assert.deepEqual(this.instance.getDateRange(), [new Date(2018, 2, 1, 0, 0), new Date(2018, 2, 3, 23, 59)], "Range is OK");
+    });
+
+    QUnit.test("Group header should be rendered correct, groupByDate = true", function(assert) {
+        var $groupRow = this.instance.$element().find(".dx-scheduler-group-row"),
+            $groupHeaderCells = $groupRow.find(".dx-scheduler-group-header");
+
+        assert.equal($groupHeaderCells.length, 4, "Group header cells count is OK");
+        var $groupHeaderContents = this.instance.$element().find(".dx-scheduler-group-header-content");
+
+        resizeCallbacks.fire();
+        assert.roughEqual($groupHeaderContents.eq(0).outerHeight(), 19, 5, "Group header content height is OK");
+        assert.roughEqual($groupHeaderContents.eq(3).outerHeight(), 19, 5, "Group header content height is OK");
+    });
+
+    QUnit.test("Date table cells shoud have right cellData, groupByDate = true", function(assert) {
+        this.instance.option("intervalCount", 3);
+        var $cells = this.instance.$element().find(".dx-scheduler-date-table-cell");
+
+        assert.deepEqual($cells.eq(0).data("dxCellData"), {
+            startDate: new Date(2018, 2, 1),
+            endDate: new Date(2018, 2, 1, 0, 30),
+            allDay: false,
+            groups: {
+                one: 1
+            }
+        });
+
+        assert.deepEqual($cells.eq(1).data("dxCellData"), {
+            startDate: new Date(2018, 2, 1),
+            endDate: new Date(2018, 2, 1, 0, 30),
+            allDay: false,
+            groups: {
+                one: 2
+            }
+        });
+
+        assert.deepEqual($cells.eq(2).data("dxCellData"), {
+            startDate: new Date(2018, 2, 2),
+            endDate: new Date(2018, 2, 2, 0, 30),
+            allDay: false,
+            groups: {
+                one: 1
+            }
+        });
+
+        assert.deepEqual($cells.eq(3).data("dxCellData"), {
+            startDate: new Date(2018, 2, 2),
+            endDate: new Date(2018, 2, 2, 0, 30),
+            allDay: false,
+            groups: {
+                one: 2
+            }
+        });
+
+        assert.deepEqual($cells.eq(4).data("dxCellData"), {
+            startDate: new Date(2018, 2, 3),
+            endDate: new Date(2018, 2, 3, 0, 30),
+            allDay: false,
+            groups: {
+                one: 1
+            }
+        });
+
+        assert.deepEqual($cells.eq(5).data("dxCellData"), {
+            startDate: new Date(2018, 2, 3),
+            endDate: new Date(2018, 2, 3, 0, 30),
+            allDay: false,
+            groups: {
+                one: 2
+            }
+        });
+    });
+
+    QUnit.test("Date table cells should have right cellData, groupByDate = true", function(assert) {
+        var $groupRow = this.instance.$element().find(".dx-scheduler-group-row"),
+            $groupHeaderCells = $groupRow.find(".dx-scheduler-group-header");
+
+        assert.equal($groupHeaderCells.eq(0).text(), "a", "Group header content height is OK");
+        assert.equal($groupHeaderCells.eq(1).text(), "b", "Group header content height is OK");
+        assert.equal($groupHeaderCells.eq(2).text(), "a", "Group header content height is OK");
+        assert.equal($groupHeaderCells.eq(3).text(), "b", "Group header content height is OK");
+    });
+
+    QUnit.test("Work space should find cell coordinates by date, groupByDate = true", function(assert) {
+        var $element = this.instance.$element();
+
+        this.instance.option("currentDate", new Date(2015, 2, 4));
+        var coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 4, 2, 0), 1, false);
+
+        assert.equal(coords.top, $element.find(".dx-scheduler-date-table tbody td").eq(17).position().top, "Top cell coordinates are right");
+        assert.equal(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(17).position().left, "Left cell coordinates are right");
+
+        coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 5, 2, 0), 1, false);
+
+        assert.equal(coords.top, $element.find(".dx-scheduler-date-table tbody td").eq(19).position().top, "Top cell coordinates are right");
+        assert.equal(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(19).position().left, "Left cell coordinates are right");
+    });
+
+    QUnit.test("Work space should find cell coordinates by date in allDay row, groupByDate = true", function(assert) {
+        var $element = this.instance.$element();
+
+        this.instance.option("currentDate", new Date(2015, 2, 4));
+        var coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 4, 2, 0), 1, true);
+
+        assert.equal(coords.top, 0, "Top cell coordinates are right");
+        assert.equal(coords.hMax, 998, "hMax cell coordinates are right");
+        assert.equal(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(17).position().left, "Left cell coordinates are right");
+
+        coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 5, 2, 0), 0, true);
+
+        assert.equal(coords.top, 0, "Top cell coordinates are right");
+        assert.equal(coords.hMax, 998, "hMax cell coordinates are right");
+        assert.equal(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(18).position().left, "Left cell coordinates are right");
+    });
+})("Work Space Day with grouping by date");
+
+(function() {
+
     QUnit.module("Work Space Week", {
         beforeEach: function() {
             this.instance = $("#scheduler-work-space").dxSchedulerWorkSpaceWeek({
@@ -807,6 +953,51 @@ QUnit.testStart(function() {
     });
 })("Work Space Week");
 
+
+(function() {
+
+    QUnit.module("Work Space Week with grouping by date", {
+        beforeEach: function() {
+            this.instance = $("#scheduler-work-space").dxSchedulerWorkSpaceWeek({
+                currentDate: new Date(2018, 2, 1),
+                groupByDate: true,
+                showCurrentTimeIndicator: false
+            }).dxSchedulerWorkSpaceWeek("instance");
+
+            stubInvokeMethod(this.instance);
+
+            this.instance.option("groups", [{
+                name: "one",
+                items: [{ id: 1, text: "a" }, { id: 2, text: "b" }]
+            }]);
+        }
+    });
+
+    QUnit.test("Get date range", function(assert) {
+        this.instance.option("intervalCount", 2);
+        assert.deepEqual(this.instance.getDateRange(), [new Date(2018, 1, 25, 0, 0), new Date(2018, 2, 10, 23, 59)], "Range is OK");
+
+        this.instance.option("intervalCount", 3);
+        assert.deepEqual(this.instance.getDateRange(), [new Date(2018, 1, 25, 0, 0), new Date(2018, 2, 17, 23, 59)], "Range is OK");
+    });
+
+    QUnit.test("Work space should find cell coordinates by date, groupByDate = true", function(assert) {
+        var $element = this.instance.$element();
+
+        this.instance.option("currentDate", new Date(2015, 2, 4));
+
+        var coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 4, 2, 0), 1, false);
+
+        assert.equal(coords.top, $element.find(".dx-scheduler-date-table tbody td").eq(63).position().top, "Top cell coordinates are right");
+        assert.equal(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(63).position().left, "Left cell coordinates are right");
+
+        coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 7, 1, 0), 0, false);
+
+        assert.equal(coords.top, $element.find(".dx-scheduler-date-table tbody td").eq(40).position().top, "Top cell coordinates are right");
+        assert.equal(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(40).position().left, "Left cell coordinates are right");
+    });
+})("Work Space Week with grouping by date");
+
 (function() {
 
     QUnit.module("Work Space Work Week", {
@@ -933,9 +1124,9 @@ QUnit.testStart(function() {
 
     QUnit.test("Get date range", function(assert) {
         this.instance.option("firstDayOfWeek", 1);
-        this.instance.option("currentDate", new Date(2015, 2, 16));
+        this.instance.option("currentDate", new Date(2018, 8, 5));
 
-        assert.deepEqual(this.instance.getDateRange(), [new Date(2015, 1, 23, 0, 0), new Date(2015, 3, 5, 23, 59)], "Range is OK");
+        assert.deepEqual(this.instance.getDateRange(), [new Date(2018, 7, 27, 0, 0), new Date(2018, 9, 7, 23, 59)], "Range is OK");
     });
 
     QUnit.test("Get date range when startDayHour & endDayHour are specified", function(assert) {
@@ -980,33 +1171,6 @@ QUnit.testStart(function() {
             startDate: new Date(2015, 1, 23, 0, 0),
             endDate: new Date(2015, 1, 23, 10, 0),
             allDay: undefined
-        });
-    });
-
-    QUnit.test("getCoordinateByDates should return coordinates depend on appointment duration", function(assert) {
-        var ws = this.instance;
-
-        ws.option({
-            currentDate: new Date(2015, 2, 16),
-            firstDayOfWeek: 1
-        });
-        var $cells = ws.$element().find(".dx-scheduler-date-table-cell"),
-            coordinates = ws.getCoordinatesByDates(new Date(2015, 2, 7), new Date(2015, 2, 28));
-
-        var cells = [12, 14, 21, 28];
-
-        $.each(coordinates, function(index, coordinate) {
-            var $currentCell = $cells.eq(cells[index]),
-                rowIndex = $currentCell.parent().index(),
-                expectedCoordinate = $currentCell.position();
-
-            if(rowIndex) {
-                // ! fix coordinate calculation in webkit
-                expectedCoordinate.top = rowIndex * ws.getCellHeight();
-            }
-
-            assert.equal(coordinate.top, expectedCoordinate.top, "");
-            assert.equal(coordinate.left, expectedCoordinate.left, "");
         });
     });
 
@@ -1060,11 +1224,11 @@ QUnit.testStart(function() {
 
     QUnit.test("Get cell count to last view date", function(assert) {
         this.instance.option({
-            currentDate: new Date(2015, 2, 16),
+            currentDate: new Date(2015, 1, 16),
             firstDayOfWeek: 1
         });
 
-        assert.equal(this.instance.getCellCountToLastViewDate(new Date(2015, 2, 17)), 20, "Cell count is OK");
+        assert.equal(this.instance.getCellCountToLastViewDate(new Date(2015, 1, 17)), 20, "Cell count is OK");
     });
 
     QUnit.test("Get cell count to last view date", function(assert) {
@@ -1116,6 +1280,42 @@ QUnit.testStart(function() {
 
 (function() {
 
+    QUnit.module("Work Space Month with grouping by date", {
+        beforeEach: function() {
+            this.instance = $("#scheduler-work-space").dxSchedulerWorkSpaceMonth({
+                currentDate: new Date(2018, 2, 1),
+                groupByDate: true,
+                showCurrentTimeIndicator: false
+            }).dxSchedulerWorkSpaceMonth("instance");
+
+            stubInvokeMethod(this.instance);
+
+            this.instance.option("groups", [{
+                name: "one",
+                items: [{ id: 1, text: "a" }, { id: 2, text: "b" }]
+            }]);
+        }
+    });
+
+    QUnit.test("Work space should find cell coordinates by date, groupByDate = true", function(assert) {
+        var $element = this.instance.$element();
+
+        this.instance.option("currentDate", new Date(2015, 2, 4));
+
+        var coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 4), 1, false);
+
+        assert.roughEqual(coords.top, $element.find(".dx-scheduler-date-table tbody td").eq(7).position().top, 1.1, "Top cell coordinates are right");
+        assert.roughEqual(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(7).position().left, 1.1, "Left cell coordinates are right");
+
+        coords = this.instance.getCoordinatesByDate(new Date(2015, 2, 21), 0, false);
+
+        assert.roughEqual(coords.top, $element.find(".dx-scheduler-date-table tbody td").eq(40).position().top, 1.1, "Top cell coordinates are right");
+        assert.roughEqual(coords.left, $element.find(".dx-scheduler-date-table tbody td").eq(40).position().left, 1.1, "Left cell coordinates are right");
+    });
+})("Work Space Month with grouping by date");
+
+(function() {
+
     QUnit.module("Work Space Month with horizontal grouping", {
         beforeEach: function() {
             this.instance = $("#scheduler-work-space").dxSchedulerWorkSpaceMonth({
@@ -1155,7 +1355,7 @@ QUnit.testStart(function() {
         assert.notOk(stub.calledOnce, "Tables weren't updated");
     });
 
-})("Work Space Month");
+})("Work Space Month with horizontal grouping");
 
 (function() {
 
@@ -1827,6 +2027,32 @@ QUnit.testStart(function() {
         assert.equal(cells.filter(".dx-state-focused").length, 1, "right quantity of focused cells");
     });
 
+    QUnit.test("It should not be possible to select cells via mouse if scrollable 'scrollByContent' is true", function(assert) {
+        var $element = $("#scheduler-work-space").dxSchedulerWorkSpaceMonth({
+                focusStateEnabled: true,
+                firstDayOfWeek: 1,
+                currentDate: new Date(2015, 3, 1),
+                height: 400,
+                allowMultipleCellSelection: true,
+                onContentReady: function(e) {
+                    var scrollable = e.component._dateTableScrollable;
+                    scrollable.option("scrollByContent", true);
+                },
+            }),
+            workspace = $element.dxSchedulerWorkSpaceMonth("instance");
+
+        var stub = sinon.stub(workspace, "notifyObserver");
+
+        var cells = $element.find("." + CELL_CLASS),
+            cell = cells.eq(23).get(0),
+            $table = $element.find(".dx-scheduler-date-table");
+
+        pointerMock(cells.eq(2)).start().click();
+        $($table).trigger($.Event("dxpointermove", { target: cell, toElement: cell, which: 1 }));
+
+        assert.notOk(stub.calledOnce, "Cells weren't selected");
+    });
+
 })("Workspace Keyboard Navigation");
 
 
@@ -1840,7 +2066,11 @@ QUnit.testStart(function() {
             startDayHour: 3,
             endDayHour: 7,
             hoursInterval: 0.5,
-            currentDate: new Date(2015, 3, 1)
+            currentDate: new Date(2015, 3, 1),
+            onContentReady: function(e) {
+                var scrollable = e.component.getScrollable();
+                scrollable.option("scrollByContent", false);
+            }
         });
 
         var cells = $element.find("." + CELL_CLASS),
@@ -1889,7 +2119,11 @@ QUnit.testStart(function() {
             startDayHour: 3,
             endDayHour: 7,
             hoursInterval: 0.5,
-            currentDate: new Date(2015, 3, 1)
+            currentDate: new Date(2015, 3, 1),
+            onContentReady: function(e) {
+                var scrollable = e.component.getScrollable();
+                scrollable.option("scrollByContent", false);
+            }
         });
 
         var cells = $element.find("." + CELL_CLASS),
@@ -1930,7 +2164,11 @@ QUnit.testStart(function() {
                 focusStateEnabled: true,
                 currentDate: new Date(2018, 4, 21),
                 groupOrientation: "vertical",
-                endDayHour: 2
+                endDayHour: 2,
+                onContentReady: function(e) {
+                    var scrollable = e.component.getScrollable();
+                    scrollable.option("scrollByContent", false);
+                }
             }),
             instance = $element.dxSchedulerWorkSpaceWeek("instance");
 
@@ -1974,7 +2212,11 @@ QUnit.testStart(function() {
                 endDayHour: 7,
                 hoursInterval: 0.5,
                 currentDate: new Date(2015, 3, 1),
-                height: 400
+                height: 400,
+                onContentReady: function(e) {
+                    var scrollable = e.component.getScrollable();
+                    scrollable.option("scrollByContent", false);
+                }
             }),
             instance = $element.dxSchedulerWorkSpaceMonth("instance");
 
@@ -2454,6 +2696,22 @@ QUnit.testStart(function() {
                 stubInvokeMethod(this.instance);
             };
         }
+    });
+
+    QUnit.test("getDateIntervalIndex should return correct interval index", function(assert) {
+        this.createInstance({
+            intervalCount: 3,
+            currentDate: new Date(2017, 5, 2)
+        });
+
+        var index = this.instance.getDateIntervalIndex(new Date(2017, 5, 2));
+        assert.equal(index, 0);
+
+        index = this.instance.getDateIntervalIndex(new Date(2017, 5, 3));
+        assert.equal(index, 1);
+
+        index = this.instance.getDateIntervalIndex(new Date(2017, 5, 4));
+        assert.equal(index, 2);
     });
 
     QUnit.test("WorkSpace Day view cells have right cellData with view option intervalCount=2", function(assert) {

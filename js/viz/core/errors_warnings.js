@@ -1,5 +1,3 @@
-"use strict";
-
 var errorUtils = require("../../core/utils/error"),
     errors = require("../../core/errors");
 /**
@@ -78,7 +76,7 @@ module.exports = errorUtils(errors.ERROR_MESSAGES, {
     /**
     * @name ErrorsViz.W2002
     */
-    W2002: "The {0} data field is absent",
+    W2002: "The {0} series cannot be drawn because the {1} data field is missing",
     /**
     * @name ErrorsViz.W2003
     */
@@ -111,6 +109,10 @@ module.exports = errorUtils(errors.ERROR_MESSAGES, {
     * @name ErrorsViz.W2107
     */
     W2107: "The export menu was hidden due to the container size",
+    /**
+    * @name ErrorsViz.W2108
+    */
+    W2108: "The browser does not support exporting images to {0} format.",
     /**
     * @name ErrorsViz.W2301
     */

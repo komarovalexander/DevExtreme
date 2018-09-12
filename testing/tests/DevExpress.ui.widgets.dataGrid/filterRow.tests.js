@@ -1,5 +1,3 @@
-"use strict";
-
 QUnit.testStart(function() {
     var markup =
 '<div>\
@@ -110,8 +108,7 @@ QUnit.test('Hide items without descriptions', function(assert) {
     var $testElement = $('#container'),
         $filterMenu,
         $filterMenuItems,
-        rootMenuItem,
-        $cell;
+        rootMenuItem;
 
     $.extend(this.columns, [{ caption: 'Column 1', allowFiltering: true, filterOperations: ['=', '<>', 'isblank'] }]);
 
@@ -122,7 +119,7 @@ QUnit.test('Hide items without descriptions', function(assert) {
     rootMenuItem = $filterMenu.find(".dx-menu-item");
     $(rootMenuItem).trigger("dxclick");
 
-    $cell = $filterMenu.parent();
+    $filterMenu.parent();
     $filterMenuItems = $("#qunit-fixture").find('.dx-overlay-content').first().find('li');
 
     // assert
@@ -1020,7 +1017,6 @@ QUnit.test("Set highlight when filter operation is changed", function(assert) {
 QUnit.test("Apply filter button is changed enabled state when filter operation is changed", function(assert) {
     // arrange
     var testElement = $('#container'),
-        filterMenu,
         $button,
         filterMenuItems;
 
@@ -1031,7 +1027,6 @@ QUnit.test("Apply filter button is changed enabled state when filter operation i
     this.applyFilterController.init();
     this.columnHeadersView.render(testElement);
 
-    filterMenu = $(this.columnHeadersView.element()).find('.dx-menu');
     filterMenuItems = $("#qunit-fixture").find('.dx-overlay-content').first().find('li');
 
     $(filterMenuItems.find('.dx-menu-item')[1]).trigger('dxclick');
@@ -2089,6 +2084,31 @@ QUnit.test("Filter by range when column with customizeText and filter value is a
     assert.equal($testElement.find(".dx-filter-range-content").length, 1, "has filter range content");
     assert.strictEqual($testElement.find(".dx-filter-range-content").text(), "6/7 - 8/7", "filter range value");
     assert.equal(that.dataController.items().length, 1, "count item");
+});
+
+// T663887
+QUnit.test("Filter by range when column with calculateCellValue and filter value is array", function(assert) {
+    this.options.columns = [{
+        dataType: "date",
+        selectedFilterOperation: "between",
+        allowFiltering: true,
+        filterValue: [new Date(1992, 7, 6), new Date(1992, 7, 8)],
+        calculateCellValue: function(data) {
+            return new Date(data.OrderDate);
+        }
+    }];
+
+    setupDataGridModules(this, ["data", "columns", "filterRow"], {
+        initViews: true
+    });
+
+    // act
+    var filter = this.dataController.getCombinedFilter();
+
+    // assert
+    assert.equal(filter.length, 3, "has filter range content");
+    assert.equal(typeof filter[0][0], "function", "has selector");
+    assert.equal(typeof filter[2][0], "function", "has selector");
 });
 
 QUnit.test("Rows view is not rendered when value is entered to editor of the filter row (applyFilter mode is onClick)", function(assert) {

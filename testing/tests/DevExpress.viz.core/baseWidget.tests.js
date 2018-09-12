@@ -1,5 +1,3 @@
-"use strict";
-
 /* global currentTest */
 
 var $ = require("jquery"),
@@ -600,6 +598,27 @@ QUnit.test('no options and container has no sizes', function(assert) {
             width: 400, height: 300,
             left: 10, top: 20, right: 30, bottom: 40
         }, 'canvas');
+    } finally {
+        renderer.fn.width.restore();
+        renderer.fn.height.restore();
+    }
+});
+
+// T665179
+QUnit.test('Do not get size from container if size option is set', function(assert) {
+    try {
+        var width = sinon.stub(renderer.fn, 'width').returns(0);
+        var height = sinon.stub(renderer.fn, 'height').returns(0);
+
+        this.createWidget({
+            size: {
+                width: 200,
+                height: 200
+            }
+        });
+
+        assert.ok(!width.called);
+        assert.ok(!height.called);
     } finally {
         renderer.fn.width.restore();
         renderer.fn.height.restore();

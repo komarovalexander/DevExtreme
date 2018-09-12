@@ -1,5 +1,3 @@
-"use strict";
-
 QUnit.testStart(function() {
     var markup = '<div id="container"></div><div id="pgfc"></div>';
     $("#qunit-fixture").html(markup);
@@ -86,11 +84,11 @@ QUnit.test("Empty options", function(assert) {
     assert.equal($areaFieldsContainers.length, 5, "area fields container count");
     assert.equal($areaFieldsContainers.eq(0).attr("group"), undefined, "group 1");
     assert.equal($areaFieldsContainers.eq(0).attr("allow-scrolling"), undefined, "group 1 - allow-scrolling");
-    assert.equal($areaFieldsContainers.eq(1).attr("group"), "filter", "group 2");
+    assert.equal($areaFieldsContainers.eq(1).attr("group"), "row", "group 2");
     assert.equal($areaFieldsContainers.eq(1).attr("allow-scrolling"), "true", "group 2 - allow-scrolling");
-    assert.equal($areaFieldsContainers.eq(2).attr("group"), "row", "group 3");
+    assert.equal($areaFieldsContainers.eq(2).attr("group"), "column", "group 3");
     assert.equal($areaFieldsContainers.eq(2).attr("allow-scrolling"), "true", "group 3 - allow-scrolling");
-    assert.equal($areaFieldsContainers.eq(3).attr("group"), "column", "group 4");
+    assert.equal($areaFieldsContainers.eq(3).attr("group"), "filter", "group 4");
     assert.equal($areaFieldsContainers.eq(3).attr("allow-scrolling"), "true", "group 4 - allow-scrolling");
     assert.equal($areaFieldsContainers.eq(4).attr("group"), "data", "group 5");
     assert.equal($areaFieldsContainers.eq(4).attr("allow-scrolling"), "true", "group 5 - allow-scrolling");
@@ -203,7 +201,7 @@ QUnit.test("Render to hidden container", function(assert) {
 
     // assert
     var columns = $("#container").find(".dx-col");
-    assert.strictEqual(columns.length, 2);
+    assert.strictEqual(columns.length, 4);
     assert.ok(columns.eq(0).height() > 0);
     assert.roughEqual(columns.eq(0).height(), columns.eq(1).height(), 1);
 });
@@ -1286,14 +1284,14 @@ QUnit.test("Layout 0", function(assert) {
     var $cols = this.$container.find(".dx-col");
     var $areas = this.$container.find(".dx-area");
 
-    assert.equal($cols.length, 2, "col count");
+    assert.equal($cols.length, 4, "col count");
     assert.ok($cols.eq(0).height() > 0, "col 0 height");
     assert.roughEqual($cols.eq(0).height(), $cols.eq(1).height(), 0.1, "col heights");
 
     assert.equal($areas.length, 5, "area count");
     assert.roughEqual($areas.eq(0).outerHeight(true) + $areas.eq(1).outerHeight(true), $areas.eq(2).outerHeight(true) + $areas.eq(3).outerHeight(true) + $areas.eq(4).outerHeight(true), 0.1, "area 0+1=2+3+4 height");
     assert.roughEqual($areas.eq(0).outerHeight(true), $areas.eq(2).outerHeight(true) + $areas.eq(3).outerHeight(true), 0.1, "area 0=2+3 height");
-    assert.roughEqual($areas.eq(1).outerHeight(true), $areas.eq(2).outerHeight(true), 0.1, "area 1=2 height");
+    assert.roughEqual($areas.eq(1).outerHeight(true), $areas.eq(2).outerHeight(true), 1.1, "area 1=2 height");
     assert.equal($areas.eq(0).width(), $areas.eq(1).width(), "area 0=1 width");
     assert.equal($areas.eq(1).width(), $areas.eq(2).width(), "area 1=2 width");
     assert.equal($areas.eq(2).width(), $areas.eq(3).width(), "area 2=3 width");
@@ -1340,9 +1338,9 @@ QUnit.test("Layout 2", function(assert) {
     assert.ok($areas.eq(0).outerHeight(true) > $areas.eq(1).outerHeight(true), "area 0>1 outerHeight");
     assert.ok($areas.eq(0).outerHeight(true) < $areas.eq(1).outerHeight(true) + $areas.eq(2).outerHeight(true), "area 0<1+2 outerHeight");
     assert.equal($areas.eq(1).outerHeight(true) + $areas.eq(2).outerHeight(true), $areas.eq(3).outerHeight(true) + $areas.eq(4).outerHeight(true), "area 1+2=3+4 outerHeight");
-    assert.roughEqual($areas.eq(1).outerHeight(true), $areas.eq(2).outerHeight(true), 0.1, "area 1=2 outerHeight");
-    assert.roughEqual($areas.eq(2).outerHeight(true), $areas.eq(3).outerHeight(true), 0.1, "area 2=3 outerHeight");
-    assert.roughEqual($areas.eq(3).outerHeight(true), $areas.eq(4).outerHeight(true), 0.1, "area 3=4 outerHeight");
+    assert.roughEqual($areas.eq(1).outerHeight(true), $areas.eq(2).outerHeight(true), 1.1, "area 1=2 outerHeight");
+    assert.roughEqual($areas.eq(2).outerHeight(true), $areas.eq(3).outerHeight(true), 1.1, "area 2=3 outerHeight");
+    assert.roughEqual($areas.eq(3).outerHeight(true), $areas.eq(4).outerHeight(true), 1.1, "area 3=4 outerHeight");
 
     assert.ok($areas.eq(0).width(), $areas.eq(1).width(), "area 0>1 width");
     assert.equal($areas.eq(1).width(), $areas.eq(2).width(), "area 1=2 width");

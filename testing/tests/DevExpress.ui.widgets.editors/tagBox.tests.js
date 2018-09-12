@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     TagBox = require("ui/tag_box"),
     devices = require("core/devices"),
@@ -476,6 +474,22 @@ QUnit.test("removing tags after clicking the 'clear' button", function(assert) {
     $($listItems.eq(2)).trigger("dxclick");
 
     assert.equal($element.find("." + TAGBOX_TAG_CLASS).length, 1, "one item is chosen");
+});
+
+QUnit.test("clear button should save valueChangeEvent", function(assert) {
+    var valueChangedHandler = sinon.spy(),
+        $element = $("#tagBox").dxTagBox({
+            items: [1],
+            showClearButton: true,
+            value: [1],
+            onValueChanged: valueChangedHandler
+        });
+
+    var $clearButton = $element.find(".dx-clear-button-area");
+    $clearButton.trigger("dxclick");
+
+    assert.equal(valueChangedHandler.callCount, 1, "valueChangedHandler has been called");
+    assert.equal(valueChangedHandler.getCall(0).args[0].event.type, "dxclick", "event is correct");
 });
 
 
@@ -2915,6 +2929,32 @@ QUnit.test("filter should not be cleared when no focusout and no item selection 
     assert.equal($.trim($(".dx-item").first().text()), "111", "value of first item");
 });
 
+QUnit.test("TagBox with selection controls shouldn't clear search after click on item", function(assert) {
+    var $tagBox = $("#tagBox").dxTagBox({
+            items: ["test1", "custom", "test2"],
+            searchEnabled: true,
+            searchTimeout: 0,
+            showSelectionControls: true,
+            selectAllMode: "allPages"
+        }),
+        instance = $tagBox.dxTagBox("instance");
+
+    this.clock.tick(TIME_TO_WAIT);
+
+    keyboardMock(instance._input()).type("te");
+    this.clock.tick(TIME_TO_WAIT);
+
+    var $listItems = $("." + LIST_ITEM_CLASS);
+
+    $listItems.first().trigger("dxclick");
+    this.clock.tick(TIME_TO_WAIT);
+
+    $listItems.last().trigger("dxclick");
+    this.clock.tick(TIME_TO_WAIT);
+
+    assert.deepEqual(instance.option("value"), ["test1", "test2"], "Correct value");
+});
+
 QUnit.module("popup position and size", moduleSetup);
 
 QUnit.testInActiveWindow("popup height should be depended from its content height", function(assert) {
@@ -4603,6 +4643,25 @@ QUnit.test("initial items value should be loaded when filter is not implemented 
         });
 
     assert.equal($tagBox.find("." + TAGBOX_TAG_CLASS).text(), "item 2item 3");
+});
+
+QUnit.test("initial items value should be loaded and selected when valueExpr = this and dataSource.key is used (T662546)", function(assert) {
+    var load = sinon.stub().returns([{ id: 1, text: "item 1" }, { id: 2, text: "item 2" }, { id: 3, text: "item 3" }]),
+        $tagBox = $("#tagBox").dxTagBox({
+            dataSource: {
+                load: load,
+                key: "id"
+            },
+            value: [{ id: 2, text: "item 2" }],
+            valueExpr: "this",
+            displayExpr: "text",
+            opened: true
+        });
+
+    assert.equal($tagBox.find("." + TAGBOX_TAG_CLASS).text(), "item 2");
+
+    var list = $tagBox.dxTagBox("instance")._$list.dxList("instance");
+    assert.deepEqual(list.option("selectedItems"), [{ id: 2, text: "item 2" }]);
 });
 
 QUnit.test("useSubmitBehavior option", function(assert) {

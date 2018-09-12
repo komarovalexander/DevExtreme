@@ -6,11 +6,6 @@
 */
 var dxChart = {
     /**
-    * @name dxChart.Options
-    * @namespace DevExpress.viz.charts
-    * @hidden
-    */
-    /**
     * @name dxChartOptions.seriesTemplate
     * @type object
     * @default undefined
@@ -27,7 +22,7 @@ var dxChart = {
         * @name dxChartOptions.seriesTemplate.customizeSeries
         * @type function(seriesName)
         * @type_function_param1 seriesName:any
-        * @type_function_return dxChartOptions.series
+        * @type_function_return ChartSeries
         */
         customizeSeries: function() { }
     },
@@ -487,38 +482,15 @@ var dxChart = {
              */
             visible: false,
             /**
-             * @name dxChartOptions.crosshair.label.font
-             * @type object
+            * @name dxChartOptions.crosshair.label.font
+            * @type Font
+            * @default '#FFFFFF' @prop color
              */
             font: {
-                /**
-                * @name dxChartOptions.crosshair.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxChartOptions.crosshair.label.font.weight
-                * @type number
-                * @default 400
-                */
                 weight: 400,
-                /**
-                * @name dxChartOptions.crosshair.label.font.color
-                * @type string
-                * @default '#FFFFFF'
-                */
                 color: '#FFFFFF',
-                /**
-                * @name dxChartOptions.crosshair.label.font.size
-                * @type number|string
-                * @default 12
-                */
                 size: 12,
-                /**
-                * @name dxChartOptions.crosshair.label.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined
             },
             /**
@@ -591,38 +563,15 @@ var dxChart = {
                  */
                 visible: false,
                 /**
-                 * @name dxChartOptions.crosshair.verticalLine.label.font
-                 * @type object
+                * @name dxChartOptions.crosshair.verticalLine.label.font
+                * @type Font
+                * @default '#FFFFFF' @prop color
                  */
                 font: {
-                    /**
-                    * @name dxChartOptions.crosshair.verticalLine.label.font.family
-                    * @extends CommonVizFontFamily
-                    */
                     family: undefined,
-                    /**
-                    * @name dxChartOptions.crosshair.verticalLine.label.font.weight
-                    * @type number
-                    * @default 400
-                    */
                     weight: 400,
-                    /**
-                    * @name dxChartOptions.crosshair.verticalLine.label.font.color
-                    * @type string
-                    * @default '#FFFFFF'
-                    */
                     color: '#FFFFFF',
-                    /**
-                    * @name dxChartOptions.crosshair.verticalLine.label.font.size
-                    * @type number|string
-                    * @default 12
-                    */
                     size: 12,
-                    /**
-                    * @name dxChartOptions.crosshair.verticalLine.label.font.opacity
-                    * @type number
-                    * @default undefined
-                    */
                     opacity: undefined
                 },
                 /**
@@ -696,38 +645,15 @@ var dxChart = {
                  */
                 visible: false,
                 /**
-                 * @name dxChartOptions.crosshair.horizontalLine.label.font
-                 * @type object
+                * @name dxChartOptions.crosshair.horizontalLine.label.font
+                * @type Font
+                * @default '#FFFFFF' @prop color
                  */
                 font: {
-                    /**
-                    * @name dxChartOptions.crosshair.horizontalLine.label.font.family
-                    * @extends CommonVizFontFamily
-                    */
                     family: undefined,
-                    /**
-                    * @name dxChartOptions.crosshair.horizontalLine.label.font.weight
-                    * @type number
-                    * @default 400
-                    */
                     weight: 400,
-                    /**
-                    * @name dxChartOptions.crosshair.horizontalLine.label.font.color
-                    * @type string
-                    * @default '#FFFFFF'
-                    */
                     color: '#FFFFFF',
-                    /**
-                    * @name dxChartOptions.crosshair.horizontalLine.label.font.size
-                    * @type number|string
-                    * @default 12
-                    */
                     size: 12,
-                    /**
-                    * @name dxChartOptions.crosshair.horizontalLine.label.font.opacity
-                    * @type number
-                    * @default undefined
-                    */
                     opacity: undefined
                 },
                 /**
@@ -915,37 +841,14 @@ var dxChart = {
             indentFromAxis: 10,
             /**
             * @name dxChartOptions.commonAxisSettings.label.font
-            * @type object
+            * @type Font
+            * @default '#767676' @prop color
             */
             font: {
-                /**
-                * @name dxChartOptions.commonAxisSettings.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxChartOptions.commonAxisSettings.label.font.weight
-                * @type number
-                * @default 400
-                */
                 weight: 400,
-                /**
-                * @name dxChartOptions.commonAxisSettings.label.font.color
-                * @type string
-                * @default '#767676'
-                */
                 color: '#767676',
-                /**
-                * @name dxChartOptions.commonAxisSettings.label.font.size
-                * @type number|string
-                * @default 12
-                */
                 size: 12,
-                /**
-                * @name dxChartOptions.commonAxisSettings.label.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined
             }
         },
@@ -1088,37 +991,15 @@ var dxChart = {
         title: {
             /**
             * @name dxChartOptions.commonAxisSettings.title.font
-            * @type object
+            * @type Font
+            * @default '#767676' @prop color
+            * @default 16 @prop size
             */
             font: {
-                /**
-                * @name dxChartOptions.commonAxisSettings.title.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxChartOptions.commonAxisSettings.title.font.weight
-                * @type number
-                * @default 400
-                */
                 weight: 400,
-                /**
-                * @name dxChartOptions.commonAxisSettings.title.font.color
-                * @type string
-                * @default '#767676'
-                */
                 color: '#767676',
-                /**
-                * @name dxChartOptions.commonAxisSettings.title.font.size
-                * @type number|string
-                * @default 16
-                */
                 size: 16,
-                /**
-                * @name dxChartOptions.commonAxisSettings.title.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined
             },
             /**
@@ -1164,37 +1045,14 @@ var dxChart = {
                 verticalAlignment: 'center',
                 /**
                 * @name dxChartOptions.commonAxisSettings.stripStyle.label.font
-                * @type object
+                * @type Font
+                * @default '#767676' @prop color
                 */
                 font: {
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.stripStyle.label.font.family
-                    * @extends CommonVizFontFamily
-                    */
                     family: undefined,
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.stripStyle.label.font.weight
-                    * @type number
-                    * @default 400
-                    */
                     weight: 400,
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.stripStyle.label.font.color
-                    * @type string
-                    * @default '#767676'
-                    */
                     color: '#767676',
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.stripStyle.label.font.size
-                    * @type number|string
-                    * @default 12
-                    */
                     size: 12,
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.stripStyle.label.font.opacity
-                    * @type number
-                    * @default undefined
-                    */
                     opacity: undefined
                 }
             }
@@ -1253,37 +1111,14 @@ var dxChart = {
                 position: 'inside',
                 /**
                 * @name dxChartOptions.commonAxisSettings.constantLineStyle.label.font
-                * @type object
+                * @type Font
+                * @default '#767676' @prop color
                 */
                 font: {
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.constantLineStyle.label.font.family
-                    * @extends CommonVizFontFamily
-                    */
                     family: undefined,
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.constantLineStyle.label.font.weight
-                    * @type number
-                    * @default 400
-                    */
                     weight: 400,
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.constantLineStyle.label.font.color
-                    * @type string
-                    * @default '#767676'
-                    */
                     color: '#767676',
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.constantLineStyle.label.font.size
-                    * @type number|string
-                    * @default 12
-                    */
                     size: 12,
-                    /**
-                    * @name dxChartOptions.commonAxisSettings.constantLineStyle.label.font.opacity
-                    * @type number
-                    * @default undefined
-                    */
                     opacity: undefined
                 }
             }
@@ -1323,13 +1158,7 @@ var dxChart = {
         * @type boolean
         * @default undefined
         */
-        endOnTick: undefined,
-        /**
-        * @name dxChartOptions.commonAxisSettings.wholeRange
-        * @type Array<number,string,Date>
-        * @default undefined
-        */
-        wholeRange: undefined
+        endOnTick: undefined
     },
     /**
     * @name dxChartOptions.argumentAxis
@@ -1560,15 +1389,21 @@ var dxChart = {
         max: undefined,
         /**
         * @name dxChartOptions.argumentAxis.visualRange
-        * @type Array<number,string,Date>
+        * @type VizRange | Array<number,string,Date>
         * @notUsedInTheme
         */
-        visualRange: [undefined, undefined],
-        /**
-        * @name dxChartOptions.argumentAxis.visualRangeLength
-        * @inherits VizTimeInterval
+        visualRange: undefined,
+         /**
+        * @name dxChartOptions.argumentAxis.wholeRange
+        * @type VizRange | Array<number,string,Date>
+        * @default undefined
         */
-        visualRangeLength: {},
+        wholeRange: undefined,
+        /**
+        * @name dxChartOptions.argumentAxis.visualRangeUpdateMode
+        * @type Enums.VisualRangeUpdateMode
+        */
+        visualRangeUpdateMode: "auto",
         /**
         * @name dxChartOptions.argumentAxis.axisDivisionFactor
         * @type number
@@ -1843,10 +1678,16 @@ var dxChart = {
         max: undefined,
         /**
         * @name dxChartOptions.valueAxis.visualRange
-        * @type Array<number,string,Date>
+        * @type VizRange | Array<number,string,Date>
         * @notUsedInTheme
         */
-        visualRange: [undefined, undefined],
+        visualRange: undefined,
+        /**
+        * @name dxChartOptions.valueAxis.wholeRange
+        * @type VizRange | Array<number,string,Date>
+        * @default undefined
+        */
+        wholeRange: undefined,
         /**
         * @name dxChartOptions.valueAxis.axisDivisionFactor
         * @type number
@@ -1933,6 +1774,11 @@ var dxChart = {
     /**
      * @name dxChartOptions.onZoomStart
      * @extends Action
+     * @type function(e)
+     * @type_function_param1 e:object
+     * @type_function_param1_field4 axis:chartAxisObject
+     * @type_function_param1_field5 range:VizRange
+     * @type_function_param1_field6 cancel:boolean
      * @notUsedInTheme
      * @action
      */
@@ -1942,41 +1788,25 @@ var dxChart = {
      * @extends Action
      * @type function(e)
      * @type_function_param1 e:object
-     * @type_function_param1_field4 rangeStart:Date|Number
-     * @type_function_param1_field5 rangeEnd:Date|Number
+     * @type_function_param1_field4 rangeStart:Date|Number:deprecated(range)
+     * @type_function_param1_field5 rangeEnd:Date|Number:deprecated(range)
+     * @type_function_param1_field6 axis:chartAxisObject
+     * @type_function_param1_field7 range:VizRange
+     * @type_function_param1_field8 previousRange:VizRange
+     * @type_function_param1_field9 cancel:boolean
      * @notUsedInTheme
      * @action
      */
     onZoomEnd: function() { },
     /**
     * @name dxChartOptions.series
-    * @type Object|Array<Object>
+    * @type ChartSeries|Array<ChartSeries>
     * @default undefined
-    * @inherits dxChartSeriesTypes.CommonSeries
     * @hideDefaults true
     * @notUsedInTheme
     * @inheritAll
     */
-    series: [{
-        /**
-        * @name dxChartOptions.series.name
-        * @type string
-        * @default undefined
-        */
-        name: undefined,
-        /**
-        * @name dxChartOptions.series.tag
-        * @type any
-        * @default undefined
-        */
-        tag: undefined,
-        /**
-        * @name dxChartOptions.series.type
-        * @type Enums.SeriesType
-        * @default 'line'
-        */
-        type: 'line'
-    }],
+    series: undefined,
     /**
     * @name dxChartOptions.minBubbleSize
     * @default 12
@@ -2028,11 +1858,6 @@ var dxChart = {
 */
 var dxPieChart = {
     /**
-    * @name dxPieChart.Options
-    * @namespace DevExpress.viz.charts
-    * @hidden
-    */
-    /**
     * @name dxPieChartOptions.seriesTemplate
     * @type object
     * @default undefined
@@ -2049,7 +1874,7 @@ var dxPieChart = {
         * @name dxPieChartOptions.seriesTemplate.customizeSeries
         * @type function(seriesName)
         * @type_function_param1 seriesName:any
-        * @type_function_return dxPieChartOptions.series
+        * @type_function_return PieChartSeries
         */
         customizeSeries: function() { }
     },
@@ -2099,26 +1924,12 @@ var dxPieChart = {
     palette: [],
     /**
     * @name dxPieChartOptions.series
-    * @type Object|Array<Object>
+    * @type PieChartSeries|Array<PieChartSeries>
     * @default undefined
-    * @inherits dxPieChartSeriesTypes.CommonPieChartSeries
     * @hideDefaults true
     * @inheritAll
     */
-    series: [{
-        /**
-        * @name dxPieChartOptions.series.name
-        * @type string
-        * @default undefined
-        */
-        name: undefined,
-        /**
-        * @name dxPieChartOptions.series.tag
-        * @type any
-        * @default undefined
-        */
-        tag: undefined
-    }],
+    series: undefined,
     /**
     * @name dxPieChartOptions.type
     * @type Enums.PieChartType
@@ -2193,11 +2004,6 @@ var dxPieChart = {
 */
 var dxPolarChart = {
     /**
-    * @name dxPolarChart.Options
-    * @namespace DevExpress.viz.charts
-    * @hidden
-    */
-    /**
     * @name dxPolarChartOptions.seriesTemplate
     * @type object
     * @default undefined
@@ -2214,7 +2020,7 @@ var dxPolarChart = {
         * @name dxPolarChartOptions.seriesTemplate.customizeSeries
         * @type function(seriesName)
         * @type_function_param1 seriesName:any
-        * @type_function_return dxPolarChartOptions.series
+        * @type_function_return PolarChartSeries
         */
         customizeSeries: function() { }
     },
@@ -2475,37 +2281,14 @@ var dxPolarChart = {
             indentFromAxis: 5,
             /**
             * @name dxPolarChartOptions.commonAxisSettings.label.font
-            * @type object
+            * @type Font
+            * @default '#767676' @prop color
             */
             font: {
-                /**
-                * @name dxPolarChartOptions.commonAxisSettings.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name dxPolarChartOptions.commonAxisSettings.label.font.weight
-                * @type number
-                * @default 400
-                */
                 weight: 400,
-                /**
-                * @name dxPolarChartOptions.commonAxisSettings.label.font.color
-                * @type string
-                * @default '#767676'
-                */
                 color: '#767676',
-                /**
-                * @name dxPolarChartOptions.commonAxisSettings.label.font.size
-                * @type number|string
-                * @default 12
-                */
                 size: 12,
-                /**
-                * @name dxPolarChartOptions.commonAxisSettings.label.font.opacity
-                * @type number
-                * @default undefined
-                */
                 opacity: undefined
             }
         },
@@ -2653,37 +2436,14 @@ var dxPolarChart = {
             label: {
                 /**
                 * @name dxPolarChartOptions.commonAxisSettings.stripStyle.label.font
-                * @type object
+                * @type Font
+                * @default '#767676' @prop color
                 */
                 font: {
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.stripStyle.label.font.family
-                    * @extends CommonVizFontFamily
-                    */
                     family: undefined,
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.stripStyle.label.font.weight
-                    * @type number
-                    * @default 400
-                    */
                     weight: 400,
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.stripStyle.label.font.color
-                    * @type string
-                    * @default '#767676'
-                    */
                     color: '#767676',
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.stripStyle.label.font.size
-                    * @type number|string
-                    * @default 12
-                    */
                     size: 12,
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.stripStyle.label.font.opacity
-                    * @type number
-                    * @default undefined
-                    */
                     opacity: undefined
                 }
             }
@@ -2724,37 +2484,14 @@ var dxPolarChart = {
                 visible: true,
                 /**
                 * @name dxPolarChartOptions.commonAxisSettings.constantLineStyle.label.font
-                * @type object
+                * @type Font
+                * @default '#767676' @prop color
                 */
                 font: {
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.constantLineStyle.label.font.family
-                    * @extends CommonVizFontFamily
-                    */
                     family: undefined,
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.constantLineStyle.label.font.weight
-                    * @type number
-                    * @default 400
-                    */
                     weight: 400,
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.constantLineStyle.label.font.color
-                    * @type string
-                    * @default '#767676'
-                    */
                     color: '#767676',
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.constantLineStyle.label.font.size
-                    * @type number|string
-                    * @default 12
-                    */
                     size: 12,
-                    /**
-                    * @name dxPolarChartOptions.commonAxisSettings.constantLineStyle.label.font.opacity
-                    * @type number
-                    * @default undefined
-                    */
                     opacity: undefined
                 }
             }
@@ -3180,46 +2917,21 @@ var dxPolarChart = {
     onSeriesSelectionChanged: function() { },
     /**
     * @name dxPolarChartOptions.series
-    * @type Object|Array<Object>
+    * @type PolarChartSeries|Array<PolarChartSeries>
     * @default undefined
-    * @inherits dxPolarChartSeriesTypes.CommonPolarChartSeries
     * @hideDefaults true
     * @notUsedInTheme
     * @inheritAll
     */
-    series: [{
-        /**
-        * @name dxPolarChartOptions.series.name
-        * @type string
-        * @default undefined
-        */
-        name: undefined,
-        /**
-        * @name dxPolarChartOptions.series.tag
-        * @type any
-        * @default undefined
-        */
-        tag: undefined,
-        /**
-        * @name dxPolarChartOptions.series.type
-        * @type Enums.PolarChartSeriesType
-        * @default 'scatter'
-        */
-        type: 'scatter'
-    }],
+    series: undefined,
 };
 /**
 * @name BaseChart
 * @type object
 * @hidden
-* @inherits BaseWidget
+* @inherits BaseWidget, DataHelperMixin
 */
 var BaseChart = {
-    /**
-    * @name BaseChart.Options
-    * @namespace DevExpress.viz.charts
-    * @hidden
-    */
     /**
     * @name BaseChartOptions.onDone
     * @extends Action
@@ -3391,37 +3103,14 @@ var BaseChart = {
         itemsAlignment: undefined,
         /**
         * @name BaseChartOptions.legend.font
-        * @type object
+        * @type Font
+        * @default '#767676' @prop color
         */
         font: {
-            /**
-            * @name BaseChartOptions.legend.font.color
-            * @type string
-            * @default '#767676'
-            */
             color: '#767676',
-            /**
-            * @name BaseChartOptions.legend.font.family
-            * @extends CommonVizFontFamily
-            */
             family: undefined,
-            /**
-            * @name BaseChartOptions.legend.font.weight
-            * @type number
-            * @default undefined
-            */
             weight: undefined,
-            /**
-            * @name BaseChartOptions.legend.font.size
-            * @type number|string
-            * @default undefined
-            */
             size: undefined,
-            /**
-            * @name BaseChartOptions.legend.font.opacity
-            * @type number
-            * @default undefined
-            */
             opacity: undefined
         },
         /**
@@ -3612,12 +3301,6 @@ var BaseChart = {
     * @return chartSeriesObject
     */
     getSeriesByPos: function() { },
-    /**
-    * @name BaseChartMethods.getDataSource
-    * @publicName getDataSource()
-    * @return DataSource
-    */
-    getDataSource: function() { },
     /**
     * @name BaseChartOptions.adaptiveLayout
     * @type object

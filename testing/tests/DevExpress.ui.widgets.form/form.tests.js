@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     resizeCallbacks = require("core/utils/resize_callbacks"),
     responsiveBoxScreenMock = require("../../helpers/responsiveBoxScreenMock.js"),
@@ -1821,6 +1819,34 @@ QUnit.test("'itemOption' should get item by composite path use the name option",
     assert.deepEqual(item.dataField, "LastName", "data field of item");
 });
 
+QUnit.test("'itemOption' should get a group item by the name option", function(assert) {
+    // arrange
+    var $testContainer = $("#form").dxForm({
+        formData: {
+            LastName: "Last Name"
+        },
+        items: [{
+            itemType: "group",
+            name: "testGroup",
+            items: [{
+                name: "simpleItem",
+                dataField: "LastName"
+            }]
+        }]
+    });
+
+    // act
+    var item = $testContainer.dxForm("instance").itemOption("testGroup");
+
+    // assert
+    assert.ok(!!item, "get a group item");
+    assert.equal(item.itemType, "group", "It's a group item");
+    assert.deepEqual(item.items, [{
+        name: "simpleItem",
+        dataField: "LastName"
+    }], "has correct items");
+});
+
 function getID(form, dataField) {
     return "dx_" + form.option("formID") + "_" + dataField;
 }
@@ -2151,10 +2177,10 @@ QUnit.test("Reset editor's value", function(assert) {
     form.resetValues();
 
         // assert
-    assert.equal(form.getEditor("name").option("value"), "", "editor for the name dataField");
-    assert.equal(form.getEditor("lastName").option("value"), "", "editor for the lastName dataField");
-    assert.equal(form.getEditor("room").option("value"), null, "editor for the room dataField");
-    assert.equal(form.getEditor("isDeveloper").option("value"), undefined, "editor for the isDeveloper dataField");
+    assert.strictEqual(form.getEditor("name").option("value"), "", "editor for the name dataField");
+    assert.strictEqual(form.getEditor("lastName").option("value"), "", "editor for the lastName dataField");
+    assert.strictEqual(form.getEditor("room").option("value"), null, "editor for the room dataField");
+    assert.strictEqual(form.getEditor("isDeveloper").option("value"), false, "editor for the isDeveloper dataField");
 });
 
 QUnit.module("Adaptivity");

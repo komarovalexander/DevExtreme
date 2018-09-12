@@ -1,5 +1,3 @@
-"use strict";
-
 import "common.css!";
 import "generic_light.css!";
 
@@ -2471,4 +2469,31 @@ QUnit.test("The grid should ignore the width of the band column", function(asser
     assert.strictEqual($bandColumnElements.get(1).style.width, "");
     assert.strictEqual($bandColumnElements.get(1).style.minWidth, "");
     assert.strictEqual($bandColumnElements.get(1).style.maxWidth, "");
+});
+
+// T670569
+QUnit.test("Filter row does not have rowspan attribute when band column is enabled", function(assert) {
+    var $testElement = $('#container');
+
+    this.columns = [
+        {
+            caption: "Band column 1",
+            width: 100
+        },
+        {
+            caption: "Band column 2",
+            columns: [
+                { caption: "Column3" }
+            ],
+            width: 200
+        }
+    ];
+
+    this.options.filterRow = { visible: true };
+    this.setupDataGrid();
+
+    this.columnHeadersView.render($testElement);
+
+    var $filterRowFirstColumnElement = $testElement.find(".dx-datagrid-filter-row").first().children().eq(0);
+    assert.strictEqual($filterRowFirstColumnElement.attr("rowspan"), undefined);
 });

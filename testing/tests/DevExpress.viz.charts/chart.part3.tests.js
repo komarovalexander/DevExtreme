@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     vizMocks = require("../../helpers/vizMocks.js"),
     commons = require("./chartParts/commons.js"),
@@ -1070,7 +1068,7 @@ QUnit.test("Legend visible after zooming", function(assert) {
             position: "inside"
         }
     });
-    chart.zoomArgument(300, 500);
+    chart.getArgumentAxis().applyVisualRangeSetter.lastCall.args[0](chart.getArgumentAxis(), { startValue: 0, endValue: 1 });
 
     assert.equal(this.layoutManager.layoutElements.callCount, 2);
     assert.deepEqual(this.layoutManager.layoutElements.lastCall.args[0], []);

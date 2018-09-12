@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     domUtils = require("../../core/utils/dom"),
@@ -251,7 +249,8 @@ var Slider = TrackBar.inherit({
             },
             {
                 device: function() {
-                    return themes.isMaterial() || themes.isAndroid5();
+                    var themeName = themes.current();
+                    return themes.isMaterial(themeName) || themes.isAndroid5(themeName);
                 },
                 options: {
                     useInkRipple: true
@@ -602,7 +601,6 @@ var Slider = TrackBar.inherit({
 
     _renderValue: function() {
         this.callBase();
-        this._setRangeStyles(this._rangeStylesConfig());
 
         var value = this.option("value");
 
@@ -664,12 +662,18 @@ var Slider = TrackBar.inherit({
                 this.callBase(args);
         }
     },
+
     _refresh: function() {
         this._toggleRTLDirection(this.option("rtlEnabled"));
         this._renderDimensions();
         this._renderValue();
         this._renderHandle();
         this._repaintHandle();
+    },
+
+    _clean: function() {
+        delete this._inkRipple;
+        this.callBase();
     }
 });
 

@@ -1,5 +1,3 @@
-"use strict";
-
 require("common.css!");
 require("generic_light.css!");
 require("ui/scheduler/ui.scheduler");
@@ -2253,6 +2251,59 @@ QUnit.test("Full-size appointment count depends on maxAppointmentsPerCell option
 
 
 QUnit.module("Appointment overlapping, vertical view", moduleOptions);
+
+QUnit.test("Full-size appointment should have minWidth, narrow width", function(assert) {
+    var items = [
+        { text: "Task 2", startDate: new Date(2015, 2, 1, 0, 0), endDate: new Date(2015, 2, 1, 2, 0) },
+        { text: "Task 4", startDate: new Date(2015, 2, 1, 0, 0), endDate: new Date(2015, 2, 1, 2, 0) }];
+
+    this.createInstance(
+        {
+            currentDate: new Date(2015, 2, 4),
+            currentView: "week",
+            views: [{
+                type: "week"
+            }],
+            width: 200,
+            dataSource: items
+        }
+    );
+
+    var $appointments = $(this.instance.$element()).find(".dx-scheduler-appointment");
+
+    assert.equal($appointments.eq(0).get(0).getBoundingClientRect().width, 5, "Appointment has min width");
+    assert.equal($appointments.eq(1).get(0).getBoundingClientRect().width, 5, "Appointment has min width");
+});
+
+QUnit.test("Full-size appointment count depends on maxAppointmentsPerCell option, 'auto' mode, narrow width", function(assert) {
+    var items = [
+        { text: "Task 2", startDate: new Date(2015, 2, 1, 0, 0), endDate: new Date(2015, 2, 1, 2, 0) },
+        { text: "Task 4", startDate: new Date(2015, 2, 1, 0, 0), endDate: new Date(2015, 2, 1, 2, 0) }];
+
+    this.createInstance(
+        {
+            currentDate: new Date(2015, 2, 4),
+            currentView: "week",
+            views: [{
+                type: "week",
+                maxAppointmentsPerCell: 'auto',
+                forceMaxAppointmentPerCell: true
+            }],
+            width: 300,
+            dataSource: items
+        }
+    );
+
+    var $dropDownMenu = $(this.instance.$element()).find(".dx-scheduler-dropdown-appointments").trigger("dxclick"),
+        dropDownMenu = $dropDownMenu.eq(0).dxDropDownMenu("instance"),
+        groupedAppointments = dropDownMenu.option("items"),
+        dropDownMenuText = dropDownMenu.option("buttonTemplate").find("span").first().text();
+
+    assert.equal($dropDownMenu.length, 1, "ddAppointment is rendered");
+
+    assert.equal(groupedAppointments.length, 2, "DropDown menu has correct items");
+    assert.equal(dropDownMenuText, "2", "DropDown menu has correct text");
+});
 
 QUnit.test("Full-size appointment count depends on maxAppointmentsPerCell option, 'numeric' mode", function(assert) {
     var items = [

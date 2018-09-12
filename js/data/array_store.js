@@ -1,5 +1,3 @@
-"use strict";
-
 import { rejectedPromise, trivialPromise } from "./utils";
 import Query from "./query";
 import { errors } from "./errors";

@@ -1,6 +1,6 @@
-"use strict";
 var unique = require("../../core/utils").unique,
     _isDefined = require("../../../core/utils/type").isDefined,
+    convertVizRangeObject = require("../../core/utils").convertVisualRangeObject,
     noop = require("../../../core/utils/common").noop,
     DISCRETE = "discrete";
 
@@ -97,7 +97,7 @@ function isLineSeries(series) {
 
 function getViewportReducer(series) {
     var rangeCalculator = getRangeCalculator(series.valueAxisType),
-        viewport = series.getArgumentAxis() && series.getArgumentAxis().visualRange() || [],
+        viewport = series.getArgumentAxis() && convertVizRangeObject(series.getArgumentAxis().visualRange() || {}, false),
         viewportFilter,
         calculatePointBetweenPoints = isLineSeries(series) ? calculateRangeBetweenPoints : noop;
 
@@ -174,8 +174,19 @@ module.exports = {
                 viewport: getInitialRange(series.valueAxisType, series.valueType, points.length ? series.getValueRangeInitialValue() : undefined)
             });
 
-        if(useAggregation && series.argumentAxisType === DISCRETE) {
-            range.arg = this.getArgumentRange(series);
+        if(useAggregation) {
+            const argumentRange = this.getArgumentRange(series);
+            if(series.argumentAxisType === DISCRETE) {
+                range.arg = argumentRange;
+            } else {
+                const viewport = convertVizRangeObject(series.getArgumentAxis().visualRange() || {}, false);
+                const viewportLength = (viewport[1] - viewport[0]) || 0;
+                const dataRangeLength = argumentRange.max - argumentRange.min;
+                if(viewportLength && viewportLength < dataRangeLength) {
+                    argumentCalculator(range.arg, argumentRange.min, argumentRange.min);
+                    argumentCalculator(range.arg, argumentRange.max, argumentRange.max);
+                }
+            }
         }
 
         processCategories(range.arg);
@@ -201,8 +212,8 @@ module.exports = {
     },
 
     getPointsInViewPort: function(series) {
-        var argumentViewPortFilter = getViewPortFilter(series.getArgumentAxis().visualRange() || []),
-            valueViewPort = series.getValueAxis().visualRange() || [],
+        var argumentViewPortFilter = getViewPortFilter(convertVizRangeObject(series.getArgumentAxis().visualRange() || {}, false)),
+            valueViewPort = convertVizRangeObject(series.getValueAxis().visualRange() || {}, false),
             valueViewPortFilter = getViewPortFilter(valueViewPort),
             points = series.getPoints(),
             addValue = function(values, point, isEdge) {

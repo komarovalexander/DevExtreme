@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     modules = require("./ui.grid_core.modules"),
@@ -36,6 +34,7 @@ var INVALIDATE_CLASS = "invalid",
     EDIT_MODE_BATCH = "batch",
     EDIT_MODE_CELL = "cell",
     EDIT_MODE_POPUP = "popup",
+    GROUP_CELL_CLASS = "dx-group-cell",
 
     FORM_BASED_MODES = [EDIT_MODE_POPUP, EDIT_MODE_FORM];
 
@@ -322,7 +321,6 @@ module.exports = {
                     var that = this,
                         i,
                         itemsCount,
-                        insertCount = 0,
                         editData = that._editData,
                         dataController = that.getController("data"),
                         getIndexByEditData = function(editData, items) {
@@ -353,7 +351,6 @@ module.exports = {
 
                             data[INSERT_INDEX] = 1;
                             items.splice(rowIndex, 0, data);
-                            insertCount++;
                         };
 
                     items = that.callBase(items, changeType);
@@ -578,6 +575,31 @@ module.exports = {
                     return new Tooltip($tooltipElement, tooltipOptions);
                 },
 
+                _hideFixedGroupCell: function($cell, overlayOptions) {
+                    var nextRowOptions,
+                        $nextFixedRowElement,
+                        $groupCellElement,
+                        isFixedColumns = this._rowsView.isFixedColumns(),
+                        isFormEditMode = this._editingController.isFormEditMode();
+
+                    if(isFixedColumns && !isFormEditMode) {
+                        nextRowOptions = $cell.closest(".dx-row").next().data("options");
+
+                        if(nextRowOptions && nextRowOptions.rowType === "group") {
+                            $nextFixedRowElement = $(this._rowsView.getRowElement(nextRowOptions.rowIndex)).last();
+                            $groupCellElement = $nextFixedRowElement.find("." + GROUP_CELL_CLASS);
+
+                            if($groupCellElement.length && $groupCellElement.get(0).style.visibility !== "hidden") {
+                                $groupCellElement.css("visibility", "hidden");
+
+                                overlayOptions.onDisposing = function() {
+                                    $groupCellElement.css("visibility", "");
+                                };
+                            }
+                        }
+                    }
+                },
+
                 _showValidationMessage: function($cell, message, alignment, revertTooltip) {
                     let needRepaint,
                         $highlightContainer = $cell.find("." + CELL_HIGHLIGHT_OUTLINE),
@@ -623,6 +645,8 @@ module.exports = {
                             this._shiftValidationMessageIfNeed(e.component.$content(), revertTooltip && revertTooltip.$content(), $cell);
                         }
                     };
+
+                    this._hideFixedGroupCell($cell, overlayOptions);
 
                     new Overlay($overlayElement, overlayOptions);
                 },
@@ -688,7 +712,7 @@ module.exports = {
                         }
                     }
 
-                    if((validationResult && !validationResult.isValid) || (editData && editData.type === "update")) {
+                    if((validationResult && !validationResult.isValid) || (editData && editData.type === "update" && !that._editingController.isSaving())) {
                         if(that._editingController.getEditMode() === EDIT_MODE_CELL) {
                             revertTooltip = that._showRevertButton($focus, $cell ? $focus.find("." + CELL_HIGHLIGHT_OUTLINE).first() : $focus);
                         }

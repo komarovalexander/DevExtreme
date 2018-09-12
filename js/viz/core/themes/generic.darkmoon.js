@@ -1,5 +1,3 @@
-"use strict";
-
 var themeModule = require("../../themes"),
     registerTheme = themeModule.registerTheme,
     ACCENT_COLOR = "#3debd3",
@@ -152,5 +150,17 @@ registerTheme({
     },
     bullet: {
         color: ACCENT_COLOR
+    },
+    sankey: {
+        link: {
+            border: {
+                color: BACKGROUND_COLOR
+            }
+        },
+        node: {
+            border: {
+                color: BACKGROUND_COLOR
+            }
+        }
     }
 }, "generic.dark");

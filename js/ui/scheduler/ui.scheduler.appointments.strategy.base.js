@@ -1,5 +1,3 @@
-"use strict";
-
 var noop = require("../../core/utils/common").noop,
     Class = require("../../core/class"),
     extend = require("../../core/utils/extend").extend,
@@ -425,7 +423,7 @@ var BaseRenderingStrategy = Class.inherit({
         var appointmentCountPerCell = this._getMaxAppointmentCountPerCellByType(item.allDay);
         var compactCount = 0;
 
-        if(appointmentCountPerCell !== undefined && appointmentCountPerCell !== 0 && item.index > appointmentCountPerCell - 1) {
+        if(appointmentCountPerCell !== undefined && item.index > appointmentCountPerCell - 1) {
             item.isCompact = true;
             compactCount = this._getCompactAppointmentParts(item.width);
             for(var k = 1; k < compactCount; k++) {
@@ -620,7 +618,7 @@ var BaseRenderingStrategy = Class.inherit({
         var ratio = this._getDefaultRatio(coordinates, appointmentCountPerCell);
         var maxHeight = this._getMaxHeight();
 
-        if(!appointmentCountPerCell) {
+        if(!isNumeric(appointmentCountPerCell)) {
             appointmentCountPerCell = coordinates.count;
             ratio = (maxHeight - offsets.unlimited) / maxHeight;
         }

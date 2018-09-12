@@ -6,11 +6,6 @@
 */
 var BaseGauge = {
     /**
-    * @name BaseGauge.Options
-    * @namespace DevExpress.viz.gauges
-    * @hidden
-    */
-    /**
     * @name BaseGaugeOptions.containerBackgroundColor
     * @type string
     * @default 'none'
@@ -197,37 +192,14 @@ var BaseGauge = {
             visible: true,
             /**
             * @name BaseGaugeOptions.scale.label.font
-            * @type object
+            * @type Font
+            * @default '#767676' @prop color
             */
             font: {
-                /**
-                * @name BaseGaugeOptions.scale.label.font.color
-                * @type string
-                * @default '#767676'
-                */
                 color: '#767676',
-                /**
-                * @name BaseGaugeOptions.scale.label.font.size
-                * @type number|string
-                * @default 12
-                */
                 size: 12,
-                /**
-                * @name BaseGaugeOptions.scale.label.font.family
-                * @extends CommonVizFontFamily
-                */
                 family: undefined,
-                /**
-                * @name BaseGaugeOptions.scale.label.font.weight
-                * @type number
-                * @default 400
-                */
                 weight: 400,
-                /**
-                * @name BaseGaugeOptions.scale.label.font.opacity
-                * @type number
-                * @default 1
-                */
                 opacity: 1
             }
         },
@@ -374,11 +346,6 @@ var BaseGauge = {
 */
 var dxCircularGauge = {
     /**
-    * @name dxCircularGauge.Options
-    * @namespace DevExpress.viz.gauges
-    * @hidden
-    */
-    /**
     * @name dxCircularGaugeOptions.geometry
     * @type object
     */
@@ -446,8 +413,7 @@ var dxCircularGauge = {
     },
     /**
     * @name dxCircularGaugeOptions.valueIndicator
-    * @inherits CommonIndicator
-    * @type object
+    * @type GaugeIndicator
     * @inheritAll
     */
     valueIndicator: {
@@ -461,8 +427,7 @@ var dxCircularGauge = {
     },
     /**
     * @name dxCircularGaugeOptions.subvalueIndicator
-    * @inherits CommonIndicator
-    * @type object
+    * @type GaugeIndicator
     * @inheritAll
     */
     subvalueIndicator: {
@@ -483,11 +448,6 @@ var dxCircularGauge = {
 * @export default
 */
 var dxLinearGauge = {
-    /**
-    * @name dxLinearGauge.Options
-    * @namespace DevExpress.viz.gauges
-    * @hidden
-    */
     /**
     * @name dxLinearGaugeOptions.geometry
     * @type object
@@ -569,8 +529,7 @@ var dxLinearGauge = {
     },
     /**
     * @name dxLinearGaugeOptions.valueIndicator
-    * @inherits CommonIndicator
-    * @type object
+    * @type GaugeIndicator
     * @inheritAll
     */
     valueIndicator: {
@@ -584,8 +543,7 @@ var dxLinearGauge = {
     },
     /**
     * @name dxLinearGaugeOptions.subvalueIndicator
-    * @inherits CommonIndicator
-    * @type object
+    * @type GaugeIndicator
     * @inheritAll
     */
     subvalueIndicator: {
@@ -606,11 +564,6 @@ var dxLinearGauge = {
 * @export default
 */
 var dxBarGauge = {
-    /**
-    * @name dxBarGauge.Options
-    * @namespace DevExpress.viz.gauges
-    * @hidden
-    */
     /**
     * @name dxBarGaugeOptions.animation
     * @type object
@@ -727,37 +680,14 @@ var dxBarGauge = {
         customizeText: undefined,
         /**
         * @name dxBarGaugeOptions.label.font
-        * @type object
+        * @type Font
+        * @default 16 @prop size
         */
         font: {
-            /**
-            * @name dxBarGaugeOptions.label.font.color
-            * @type string
-            * @default undefined
-            */
             color: undefined,
-            /**
-            * @name dxBarGaugeOptions.label.font.size
-            * @type number|string
-            * @default 16
-            */
             size: 16,
-            /**
-            * @name dxBarGaugeOptions.label.font.family
-            * @extends CommonVizFontFamily
-            */
             family: undefined,
-            /**
-            * @name dxBarGaugeOptions.label.font.weight
-            * @type number
-            * @default 400
-            */
             weight: 400,
-            /**
-            * @name dxBarGaugeOptions.label.font.opacity
-            * @type number
-            * @default 1
-            */
             opacity: 1
         }
     },

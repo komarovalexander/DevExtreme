@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     Class = require("../../core/class"),
     translator = require("../../animation/translator"),
@@ -152,11 +150,12 @@ var dropDownAppointments = Class.inherit({
                 buttonTemplate: this._createButtonTemplate(items.data.length, isCompact),
                 buttonWidth: config.buttonWidth,
                 closeOnClick: false,
-                onItemClick: function(args) {
-                    var mappedData = that.instance.fire("mapAppointmentFields", args);
+                onItemClick: (function(args) {
+                    var mappedData = this.instance.fire("mapAppointmentFields", args),
+                        result = extendFromObject(mappedData, args, false);
 
-                    that._appointmentClickAction(extendFromObject(mappedData, args, false));
-                },
+                    that._appointmentClickAction(this._clearExcessFields(result));
+                }).bind(this),
                 activeStateEnabled: false,
                 focusStateEnabled: this.instance.option("focusStateEnabled"),
                 itemTemplate: new FunctionTemplate(function(options) {
@@ -190,6 +189,14 @@ var dropDownAppointments = Class.inherit({
                 }
             });
         }
+    },
+
+    _clearExcessFields: function(data) {
+        delete data.itemData;
+        delete data.itemIndex;
+        delete data.itemElement;
+
+        return data;
     },
 
     _dragStartHandler: function($item, itemData, settings, $menu, e) {
@@ -314,8 +321,7 @@ var dropDownAppointments = Class.inherit({
 
     _createButtons: function(appointmentData) {
         var editing = this.instance.option("editing"),
-            allowDeleting = false,
-            allowUpdating = false;
+            allowDeleting = false;
 
         if(!editing) {
             return "";
@@ -323,12 +329,10 @@ var dropDownAppointments = Class.inherit({
 
         if(editing === true) {
             allowDeleting = true;
-            allowUpdating = true;
         }
 
         if(typeUtils.isObject(editing)) {
             allowDeleting = editing.allowDeleting;
-            allowUpdating = editing.allowUpdating;
         }
 
         var $container = $("<div>").addClass(DROPDOWN_APPOINTMENT_BUTTONS_BLOCK_CLASS),

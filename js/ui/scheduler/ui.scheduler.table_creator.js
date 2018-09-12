@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     dataUtils = require("../../core/element_data"),
@@ -121,13 +119,13 @@ var SchedulerTableCreator = {
         return templateCallbacks;
     },
 
-    makeGroupedTable: function(type, groups, cssClasses, cellCount, cellTemplate, rowCount) {
+    makeGroupedTable: function(type, groups, cssClasses, cellCount, cellTemplate, rowCount, groupByDate) {
         var rows = [];
 
         if(type === this.VERTICAL) {
             rows = this._makeVerticalGroupedRows(groups, cssClasses, cellTemplate, rowCount);
         } else {
-            rows = this._makeHorizontalGroupedRows(groups, cssClasses, cellCount, cellTemplate);
+            rows = this._makeHorizontalGroupedRows(groups, cssClasses, cellCount, cellTemplate, groupByDate);
         }
 
         return rows;
@@ -293,11 +291,12 @@ var SchedulerTableCreator = {
         };
     },
 
-    _makeHorizontalGroupedRows: function(groups, cssClasses, cellCount, cellTemplate) {
+    _makeHorizontalGroupedRows: function(groups, cssClasses, cellCount, cellTemplate, groupByDate) {
         var repeatCount = 1,
             groupCount = groups.length,
             rows = [],
-            cellTemplates = [];
+            cellTemplates = [],
+            repeatByDate = groupByDate ? cellCount : 1;
 
         var cellIterator = function(cell) {
             if(cell.template) {
@@ -307,12 +306,13 @@ var SchedulerTableCreator = {
             return cell.element;
         };
 
+
         for(var i = 0; i < groupCount; i++) {
             if(i > 0) {
                 repeatCount = groups[i - 1].items.length * repeatCount;
             }
 
-            var cells = this._makeGroupedRowCells(groups[i], repeatCount, cssClasses, cellTemplate);
+            var cells = this._makeGroupedRowCells(groups[i], repeatCount, cssClasses, cellTemplate, repeatByDate);
 
             rows.push(
                 $("<tr>")
@@ -327,10 +327,11 @@ var SchedulerTableCreator = {
             var $cell = rows[j].find("th"),
                 colspan = maxCellCount / $cell.length * cellCount;
 
-            if(colspan > 1) {
+            if(colspan > 1 && repeatByDate === 1) {
                 $cell.attr("colSpan", colspan);
             }
         }
+
 
         return {
             elements: rows,
@@ -338,7 +339,10 @@ var SchedulerTableCreator = {
         };
     },
 
-    _makeGroupedRowCells: function(group, repeatCount, cssClasses, cellTemplate) {
+    _makeGroupedRowCells: function(group, repeatCount, cssClasses, cellTemplate, repeatByDate) {
+        repeatByDate = repeatByDate || 1;
+        repeatCount = repeatCount * repeatByDate;
+
         var cells = [],
             items = group.items,
             itemCount = items.length;

@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     noop = require("../../core/utils/common").noop,
     devices = require("../../core/devices"),
@@ -362,6 +360,11 @@ var RadioGroup = Editor.inherit({
             default:
                 this.callBase(args);
         }
+    },
+
+    _clean: function() {
+        delete this._inkRipple;
+        this.callBase();
     }
 
 }).include(DataExpressionMixin);

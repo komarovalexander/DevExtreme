@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     noop = require("core/utils/common").noop,
     devices = require("core/devices"),
@@ -1072,18 +1070,6 @@ QUnit.test("popup should be configured with templatesRenderAsynchronously=false 
     var popup = $(".dx-dropdowneditor-overlay.dx-popup").dxPopup("instance");
 
     assert.strictEqual(popup.option("templatesRenderAsynchronously"), false, "templatesRenderAsynchronously should have false value");
-});
-
-QUnit.test("popup has toolbarCompactMode: true option", function(assert) {
-    $("#dropDownList").dxDropDownList({
-        dataSource: ["item-1", "item-2", "item-3"],
-        applyValueMode: "useButtons",
-        opened: true
-    });
-
-    var popup = $(".dx-dropdowneditor-overlay.dx-popup").dxPopup("instance");
-
-    assert.equal(popup.option("toolbarCompactMode"), true, "toolbarCompactMode is true");
 });
 
 

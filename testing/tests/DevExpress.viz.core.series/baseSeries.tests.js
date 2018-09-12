@@ -1,5 +1,3 @@
-"use strict";
-
 import $ from "jquery";
 import vizMocks from "../../helpers/vizMocks.js";
 import commonUtils from "core/utils/common";
@@ -48,7 +46,8 @@ var createSeries = function(options, settings) {
         labelsGroup: labelsGroup,
         commonSeriesModes: {},
         eventPipe: commonUtils.noop,
-        eventTrigger: commonUtils.noop
+        eventTrigger: commonUtils.noop,
+        incidentOccurred: commonUtils.noop
     }, settings);
 
     return new Series(settings, options);
@@ -554,13 +553,12 @@ QUnit.test("Update series data when points are not empty. Old points length > ne
     var options = { type: "mockType", argumentField: "arg", valueField: "val", label: { visible: false } },
         series = createSeries(options),
         data = [{ arg: 1, val: 10 }, { arg: 2, val: 11 }],
-        newData = [{ arg: 3, val: 4 }],
-        points;
+        newData = [{ arg: 3, val: 4 }];
 
     series.updateData(data);
     series.createPoints();
 
-    points = series.getAllPoints().slice();
+    series.getAllPoints().slice();
     series._points = [];
     series.updateData(newData);
     series.createPoints();
@@ -662,6 +660,33 @@ QUnit.test("Update points when series has several points at the same argument", 
     assert.equal(this.pointsCreatingCount, 3);
 });
 
+QUnit.test("IncidentOccurred was not called with empty data", function(assert) {
+    const data = [];
+    const incidentOccurred = sinon.spy();
+    const options = { type: "mockType", argumentField: "arg", valueField: "val", label: { visible: false } };
+    const series = createSeries(options, {
+        incidentOccurred: incidentOccurred
+    });
+
+    series.updateData(data);
+
+    assert.strictEqual(incidentOccurred.callCount, 0);
+});
+
+QUnit.test("IncidentOccurred. Data without argument field", function(assert) {
+    const data = [{ val: 1 }, { val: 2 }, { val: 3 }, { val: 4 }, { val: 5 }];
+    const incidentOccurred = sinon.spy();
+    const options = { type: "mockType", argumentField: "arg", valueField: "val", label: { visible: false } };
+    const series = createSeries(options, {
+        incidentOccurred: incidentOccurred
+    });
+
+    series.updateData(data);
+
+    assert.strictEqual(incidentOccurred.callCount, 1);
+    assert.strictEqual(incidentOccurred.lastCall.args[0], "W2002");
+});
+
 QUnit.module("ErrorBars", environmentWithSinonStubPoint);
 
 QUnit.test("Pass errorBars options to point (on creation). ErrorBars are not visible", function(assert) {
@@ -672,15 +697,14 @@ QUnit.test("Pass errorBars options to point (on creation). ErrorBars are not vis
                 someErrorBarsProperty: true
             }
         }),
-        data = [{ arg: 1, val: 2 }],
-        points;
+        data = [{ arg: 1, val: 2 }];
 
     series.areErrorBarsVisible = function() { return false; };
     // act
     series.updateData(data);
     series.createPoints();
     // assert
-    points = series.getPoints();
+    series.getPoints();
 
     assert.equal(this.createPoint.callCount, 1);
     assert.deepEqual(this.createPoint.firstCall.args[2].errorBars, undefined, "error bars options do not passed to point");
@@ -694,14 +718,13 @@ QUnit.test("Pass errorBars options to point (on creation). ErrorBars are visible
                 someErrorBarsProperty: true
             }
         }),
-        data = [{ arg: 1, val: 2 }],
-        points;
+        data = [{ arg: 1, val: 2 }];
     series.areErrorBarsVisible = function() { return true; };
     // act
     series.updateData(data);
     series.createPoints();
     // assert
-    points = series.getPoints();
+    series.getPoints();
 
     assert.equal(this.createPoint.callCount, 1);
     assert.deepEqual(this.createPoint.firstCall.args[2].errorBars, { someErrorBarsProperty: true }, "error bars options passed to point");

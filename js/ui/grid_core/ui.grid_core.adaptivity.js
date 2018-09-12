@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     window = require("../../core/utils/window").getWindow(),
     eventsEngine = require("../../events/core/events_engine"),
@@ -64,7 +62,7 @@ function adaptiveCellTemplate(container, options) {
         }));
         $adaptiveColumnButton.appendTo($container);
     } else {
-        $container.get(0).innerHTML = "&nbsp;";
+        gridCoreUtils.setEmptyText($container);
     }
 }
 
@@ -430,6 +428,7 @@ var AdaptiveColumnsController = modules.ViewController.inherit({
                 contentColumnsCount = visibleContentColumns.length,
                 columnsCanFit,
                 i,
+                hasHiddenColumns,
                 needHideColumn;
 
             do {
@@ -448,18 +447,23 @@ var AdaptiveColumnsController = modules.ViewController.inherit({
                         columnBestFitWidth = that._columnsController.columnOption(columnId, "bestFitWidth");
 
                     if(resultWidths[i] === HIDDEN_COLUMNS_WIDTH) {
+                        hasHiddenColumns = true;
                         continue;
                     }
                     if(!columnWidth && !visibleColumn.command && !visibleColumn.fixed) {
                         needHideColumn = true;
                         break;
                     }
-                    if(widthOption && widthOption !== "auto") {
+
+                    if(!widthOption || widthOption === "auto") {
+                        columnWidth = columnBestFitWidth || 0;
+                    }
+
+                    if(visibleColumn.command !== ADAPTIVE_COLUMN_NAME || hasHiddenColumns) {
                         totalWidth += columnWidth;
-                    } else {
-                        totalWidth += columnBestFitWidth || 0;
                     }
                 }
+
                 needHideColumn = needHideColumn || totalWidth > $rootElement.width();
 
                 if(needHideColumn) {
@@ -511,12 +515,7 @@ var AdaptiveColumnsController = modules.ViewController.inherit({
                 items: that._getFormItemsByHiddenColumns(that._hiddenColumns),
                 formID: "dx-" + new Guid()
             },
-            defaultFormOptions = themes.isMaterial()
-                ? {
-                    colCount: 2,
-                    screenByWidth: function() { return "lg"; }
-                }
-                : {};
+            defaultFormOptions = themes.isMaterial() ? { colCount: 2 } : {};
 
         this.executeAction("onAdaptiveDetailRowPreparing", { formOptions: userFormOptions });
 
@@ -992,7 +991,8 @@ module.exports = {
                 },
 
                 _needStretch: function() {
-                    return this.callBase.apply(this, arguments) || this._adaptiveColumnsController.getHidingColumnsQueue().length;
+                    var adaptiveColumnsController = this._adaptiveColumnsController;
+                    return this.callBase.apply(this, arguments) || adaptiveColumnsController.getHidingColumnsQueue().length || adaptiveColumnsController.hasHiddenColumns();
                 },
 
                 init: function() {

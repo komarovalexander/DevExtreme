@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     eventsEngine = require("../events/core/events_engine"),
     Slider = require("./slider"),
@@ -348,10 +346,6 @@ var RangeSlider = Slider.inherit({
      * @name dxRangeSliderMethods.reset
      * @publicName reset()
      */
-    reset: function() {
-        var defaultOptions = this._getDefaultOptions();
-        this.option("value", defaultOptions.value);
-    },
 
     _optionChanged: function(args) {
         switch(args.name) {

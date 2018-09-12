@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     EdmLiteral = require("data/odata/utils").EdmLiteral,
     ODataStore = require("data/odata/store"),
@@ -1585,6 +1583,26 @@ QUnit.test("unexpected server response with 200 status", function(assert) {
             assert.ok(false, MUST_NOT_REACH_MESSAGE);
         })
         .always(done);
+});
+
+QUnit.test("error handlers (check params)", function(assert) {
+    var done = assert.async();
+
+    var helper = new ErrorHandlingHelper();
+
+    var store = new ODataStore({
+        url: "odata.org",
+        errorHandler: helper.optionalHandler
+    });
+
+    helper.extraChecker = function(error) {
+        assert.equal(error.requestOptions.url, "odata.org");
+        assert.equal(error.httpStatus, 404);
+    };
+
+    helper.run(function() {
+        return store.load();
+    }, done, assert);
 });
 
 QUnit.test("error handlers (query evaluation)", function(assert) {

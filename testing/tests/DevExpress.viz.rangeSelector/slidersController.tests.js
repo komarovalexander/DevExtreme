@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     vizMocks = require("../../helpers/vizMocks.js"),
     SlidersController = require("viz/range_selector/sliders_controller").SlidersController,
@@ -46,7 +44,7 @@ var environment = {
     },
 
     setCategories: function(values) {
-        this.translator.update({ axisType: "discrete", categories: values }, { left: 1000, width: 3000 }, { isHorizontal: true });
+        this.translator.update({ axisType: "discrete", categories: values, min: values[0], max: values[values.length - 1] }, { left: 1000, width: 3000 }, { isHorizontal: true });
     },
 
     setDateTime: function(values) {
@@ -424,6 +422,36 @@ QUnit.test("values are not defined", function(assert) {
     this.check(assert, [1000, 3000], [10, 30]);
 });
 
+QUnit.test("values are not defined. Logarithmic", function(assert) {
+    this.translator.update({
+        min: 0.01,
+        max: 10000,
+        axisType: "logarithmic",
+        base: 10,
+        breaks: [{
+            from: 1,
+            to: 10,
+            cumulativeWidth: 0
+        }]
+    }, { left: 1000, width: 3000 }, { isHorizontal: true, breaksSize: 0 });
+
+    this.update();
+
+    this.setRange(undefined, undefined);
+
+    this.check(assert, [1000, 3000], [0.01, 10000]);
+});
+
+QUnit.test("values are not defined. Categories", function(assert) {
+    this.setCategories(["a", "b", "c", "d", "e"]);
+
+    this.update();
+
+    this.setRange(undefined, undefined);
+
+    this.check(assert, [1000, 3000], ["a", "e"]);
+});
+
 QUnit.test("values are not valid", function(assert) {
     this.update();
 
@@ -514,12 +542,17 @@ QUnit.test("number-like string values", function(assert) {
 });
 
 QUnit.test("data-like string values", function(assert) {
-    this.translator.update({ min: new Date("01/01/2010"), max: new Date("12/31/2010"), dataType: "datetime" }, { left: 1000, width: 3000 }, { isHorizontal: true });
+    this.translator.update({
+        min: new Date("01/01/2010"),
+        max: new Date("01/13/2010"),
+        dataType: "datetime"
+    },
+        { left: 1000, width: 3000 }, { isHorizontal: true });
     this.update();
 
-    this.setRange("02/01/2010", "05/01/2010");
+    this.setRange("01/02/2010", "01/05/2010");
 
-    this.check(assert, [1170, 1659], [new Date("02/01/2010"), new Date("05/01/2010")]);
+    this.check(assert, [1167, 1667], [new Date("01/02/2010"), new Date("01/05/2010")]);
 });
 
 QUnit.test("Start value in the scale break - start should be end of break", function(assert) {
@@ -827,17 +860,36 @@ QUnit.test("Docking with DateTime (irregular scale, from small range to big)", f
 });
 
 QUnit.test("Docking with DateTime (irregular scale, from big range to small)", function(assert) {
-    this.setDateTime();
+    this.translator.update({
+        axisType: "continuous",
+        dataType: "datetime",
+        min: new Date(2011, 0, 1),
+        max: new Date(2011, 0, 10)
+    }, { left: 1000, width: 3000 }, { isHorizontal: true });
+
     this.update({
         behavior: { snapToTicks: true },
-        fullTicks: [new Date(2011, 0, 1), new Date(2011, 1, 1), new Date(2011, 2, 1), new Date(2011, 3, 1), new Date(2011, 4, 1), new Date(2011, 5, 1), new Date(2011, 6, 1), new Date(2011, 7, 1), new Date(2011, 8, 1), new Date(2011, 9, 1), new Date(2011, 10, 1), new Date(2011, 11, 1), new Date(2012, 0, 1)]
+        fullTicks: [
+            new Date(2011, 0, 1),
+            new Date(2011, 0, 2),
+            new Date(2011, 0, 3),
+            new Date(2011, 0, 4),
+            new Date(2011, 0, 5),
+            new Date(2011, 0, 6),
+            new Date(2011, 0, 7),
+            new Date(2011, 0, 8),
+            new Date(2011, 0, 9),
+            new Date(2011, 0, 10),
+            new Date(2011, 0, 11),
+            new Date(2011, 0, 12),
+            new Date(2011, 0, 13)]
     });
-    this.setRange(new Date(2011, 0, 1), new Date(2011, 1, 1));
+    this.setRange(new Date(2011, 0, 1), new Date(2011, 0, 2));
 
     this.controller.moveSelectedArea(1800);
 
-    this.check(assert, [new Date(2011, 4, 1), new Date(2011, 5, 1)], [1789, 1993]);
-    assert.deepEqual(this.notifications, [[new Date(2011, 4, 1), new Date(2011, 5, 1)]], "notification");
+    this.check(assert, [new Date(2011, 0, 4), new Date(2011, 0, 5)], [1667, 1889]);
+    assert.deepEqual(this.notifications, [[new Date(2011, 0, 4), new Date(2011, 0, 5)]], "notification");
 });
 
 QUnit.test("Close to start", function(assert) {

@@ -1,5 +1,3 @@
-"use strict";
-
 require("ui/action_sheet");
 require("ui/drop_down_menu");
 
@@ -157,6 +155,34 @@ QUnit.test("useFlatButtons change dx-button-flat class in runtime in Material", 
     assert.notOk(button.hasClass("dx-button-flat"));
 
     themes.isMaterial = origIsMaterial;
+});
+
+var TOOLBAR_COMPACT_CLASS = "dx-toolbar-compact";
+
+QUnit.test("Toolbar with compact mode has the compact class", function(assert) {
+    var $toolbar = this.element.dxToolbar({
+            items: [
+                { location: 'before', text: 'before' },
+                { location: 'center', text: 'center' }
+            ],
+            compactMode: true,
+            width: 20
+        }),
+        toolbar = $toolbar.dxToolbar("instance");
+
+    assert.ok($toolbar.hasClass(TOOLBAR_COMPACT_CLASS), "toolbar with compact mode and small width has the compact class");
+
+    toolbar.option("compactMode", false);
+
+    assert.ok(!$toolbar.hasClass(TOOLBAR_COMPACT_CLASS), "toolbar without compact mode hasn't the compact class");
+
+    toolbar.option("compactMode", true);
+
+    assert.ok($toolbar.hasClass(TOOLBAR_COMPACT_CLASS), "compact class has been added to the toolbar");
+
+    toolbar.option("width", 400);
+
+    assert.ok(!$toolbar.hasClass(TOOLBAR_COMPACT_CLASS), "toolbar with compact mode hasn't the compact class if widget has a large width");
 });
 
 QUnit.test("Button save elementAttr.class class on container in Material", function(assert) {
@@ -577,11 +603,7 @@ QUnit.test("close win8 appbar on 'back' button click", function(assert) {
 });
 
 QUnit.test("close win8 appbar on menu item click", function(assert) {
-    var count = 0;
     this.$element.dxToolbar({
-        onItemClick: function() {
-            count++;
-        },
         items: [
             { location: 'menu', text: 'item1' },
             { location: 'menu', text: 'item2' }

@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     domAdapter = require("../core/dom_adapter"),
     windowUtils = require("../core/utils/window"),
@@ -33,7 +31,8 @@ var $ = require("../core/renderer"),
     pointerEvents = require("../events/pointer"),
     Resizable = require("./resizable"),
     EmptyTemplate = require("./widget/empty_template"),
-    Deferred = require("../core/utils/deferred").Deferred;
+    Deferred = require("../core/utils/deferred").Deferred,
+    getSwatchContainer = require("./widget/swatch_container");
 
 var OVERLAY_CLASS = "dx-overlay",
     OVERLAY_WRAPPER_CLASS = "dx-overlay-wrapper",
@@ -494,8 +493,8 @@ var Overlay = Widget.inherit({
     _initContainer: function(container) {
         container = container === undefined ? viewPortUtils.value() : container;
 
-        var $element = this.$element(),
-            $container = $element.closest(container);
+        var $element = this.$element();
+        var $container = $element.closest(container);
 
         if(!$container.length) {
             $container = $(container).first();
@@ -539,17 +538,21 @@ var Overlay = Widget.inherit({
         if(typeUtils.isFunction(closeOnOutsideClick)) {
             closeOnOutsideClick = closeOnOutsideClick(e);
         }
+
+        var $container = this._$content,
+            isAttachedTarget = $(window.document).is(e.target) || domUtils.contains(window.document, e.target),
+            outsideClick = isAttachedTarget && !($container.is(e.target) || domUtils.contains($container.get(0), e.target));
+
+        if(!outsideClick) {
+            return false;
+        }
+
         if(closeOnOutsideClick) {
-            var $container = this._$content,
-                outsideClick = (!$container.is(e.target) && !domUtils.contains($container.get(0), e.target) && $(e.target).closest(window.document).length);
-
-            if(outsideClick) {
-                if(this.option("shading")) {
-                    e.preventDefault();
-                }
-
-                this.hide();
+            if(this.option("shading")) {
+                e.preventDefault();
             }
+
+            this.hide();
         }
 
         return this.option("propagateOutsideClick");
@@ -1173,12 +1176,14 @@ var Overlay = Widget.inherit({
 
     _attachWrapperToContainer: function() {
         var $element = this.$element();
+        var containerDefined = this.option("container") !== undefined;
+        var renderContainer = containerDefined ? this._$container : getSwatchContainer($element);
 
-        if(this._$container && this._$container[0] !== $element.parent()[0]) {
-            this._$wrapper.appendTo(this._$container);
-        } else {
-            this._$wrapper.appendTo($element);
+        if(renderContainer[0] === $element.parent()[0]) {
+            renderContainer = $element;
         }
+
+        this._$wrapper.appendTo(renderContainer);
     },
 
     _renderGeometry: function() {
@@ -1425,6 +1430,7 @@ var Overlay = Widget.inherit({
             case "deferRendering":
             case "contentTemplate":
                 this._contentAlreadyRendered = false;
+                this._clean();
                 this._invalidate();
                 break;
             case "closeOnBackButton":

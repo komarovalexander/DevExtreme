@@ -1,5 +1,3 @@
-"use strict";
-
 /* global currentAssert */
 import $ from "jquery";
 import Class from "core/class";
@@ -13,7 +11,6 @@ import seriesFamilyModule from "viz/core/series_family";
 import seriesModule from "viz/series/base_series";
 import vizMocks from "./vizMocks.js";
 
-let pointsMockData;
 const firstCategory = "First";
 const secondCategory = "Second";
 const thirdCategory = "Third";
@@ -48,7 +45,7 @@ export const horizontalContinuousXData = {
     "80": horizontalStart + horizontalDelta * 4,
     '100': horizontalStart + horizontalDelta * 5
 };
-export const horizontalContinuousXDataUntranslate = {
+export const horizontalContinuousXDataFrom = {
     "70": 0,
     "170": 20,
     "270": 40,
@@ -91,7 +88,7 @@ export const verticalCategoryTick = verticalCategoryDelta / 2;
 export const continuousTranslatorDataX = {
     translate: horizontalContinuousXData,
     specialCases: horizontalContinuousXDataSpecialCases,
-    untranslate: horizontalContinuousXDataUntranslate,
+    from: horizontalContinuousXDataFrom,
     interval: 20
 };
 export const continuousTranslatorDataY = {
@@ -104,7 +101,7 @@ export const horizontalCategoryXData = {
     'Third': horizontalCategoryStart + horizontalCategoryDelta * 2,
     'Fourth': horizontalCategoryStart + horizontalCategoryDelta * 3
 };
-export const horizontalCategoryXDataUntranslate = {
+export const horizontalCategoryXDataFrom = {
     70: 'First',
     170: 'Second',
     270: 'Third',
@@ -136,7 +133,7 @@ export const categoriesHorizontalTranslatorDataX = {
     translate: horizontalCategoryXData,
     specialCases: horizontalCategoryXDataSpecialCases,
     interval: horizontalCategoryDelta,
-    untranslate: horizontalCategoryXDataUntranslate
+    from: horizontalCategoryXDataFrom
 };
 export const categoriesHorizontalTranslatorDataY = {
     translate: horizontalContinuousYData,
@@ -295,11 +292,6 @@ export const insertMockFactory = function insertMockFactory() {
         currentSeries: 0
     };
 
-    pointsMockData = {
-        points: [],
-        args: []
-    };
-
     mockItem("Point", pointModule, function(series, data, options) {
         var opt = $.extend(true, {}, data, options);
         opt.series = series;
@@ -353,7 +345,6 @@ export const restoreMockFactory = function() {
 
 export const resetMockFactory = function resetMockFactory() {
     seriesMockData = null;
-    pointsMockData = null;
 };
 
 export const setupSeriesFamily = function() {
@@ -376,11 +367,11 @@ export const MockTranslator = function(data) {
             }
             return result;
         },
-        untranslate: function(index) {
-            currentAssert().ok(index !== undefined && index !== null, 'Verification of value that was passed to Translator (untranslate)');
-            var result = innerData.untranslate[index.toString()];
+        from: function(index) {
+            currentAssert().ok(index !== undefined && index !== null, 'Verification of value that was passed to Translator (from)');
+            var result = innerData.from[index.toString()];
             if(typeof index === "number" && failOnWrongData && result === undefined) {
-                currentAssert().ok(false, 'untranslate(' + index + ') = undefined');
+                currentAssert().ok(false, 'from(' + index + ') = undefined');
             }
             return result;
         },
@@ -418,10 +409,7 @@ export const MockTranslator = function(data) {
         checkMinBarSize: function() {
             return Math.abs(arguments[0]) < arguments[1] ? arguments[0] >= 0 ? arguments[1] : -arguments[1] : arguments[0];
         },
-        reinit: commonUtils.noop,
-        isEqualRange: function() {
-            return true;
-        }
+        reinit: commonUtils.noop
     };
 };
 
@@ -569,7 +557,7 @@ export const MockSeries = function MockSeries(options) {
         getPointsByArg: function(arg) {
             var f = [];
             $.each(options.points, function(_, point) {
-                // jshint eqeqeq:false
+                // eslint-disable-next-line eqeqeq
                 if(point.argument.valueOf() == arg.valueOf()) {
                     f.push(point);
                 }
@@ -1014,7 +1002,9 @@ export const MockAxis = function(renderOptions) {
         applyVisualRangeSetter: sinon.spy(),
         _setVisualRange: sinon.spy(),
         visualRange: sinon.spy(),
-        _getAdjustedBusinessRange: sinon.spy()
+        _getAdjustedBusinessRange: sinon.spy(),
+        refreshVisualRangeOption: sinon.spy(),
+        prepareAnimation: sinon.spy()
     };
 };
 

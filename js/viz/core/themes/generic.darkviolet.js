@@ -1,5 +1,3 @@
-"use strict";
-
 var themeModule = require("../../themes"),
     registerTheme = themeModule.registerTheme,
     ACCENT_COLOR = "#9c63ff",
@@ -133,6 +131,18 @@ registerTheme({
             },
             "textcloud": {
                 color: ACCENT_COLOR
+            }
+        }
+    },
+    sankey: {
+        link: {
+            border: {
+                color: BACKGROUND_COLOR
+            }
+        },
+        node: {
+            border: {
+                color: BACKGROUND_COLOR
             }
         }
     }

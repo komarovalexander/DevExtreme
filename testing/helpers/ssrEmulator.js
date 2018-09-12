@@ -1,5 +1,3 @@
-"use strict";
-
 var domAdapter = require("core/dom_adapter");
 var windowUtils = require("core/utils/window");
 var serverSideDOMAdapter = require("./serverSideDOMAdapterPatch.js");
@@ -33,7 +31,7 @@ var serverSideDOMAdapter = require("./serverSideDOMAdapterPatch.js");
     document.createElement = function() {
         var result = originalCreateElement.apply(this, arguments);
 
-        ["offsetWidth", "offsetHeight"].forEach(function(field) {
+        ["offsetWidth", "offsetHeight", "getBoundingClientRect"].forEach(function(field) {
             Object.defineProperty(result, field, {
                 get: function() {
                     return undefined;

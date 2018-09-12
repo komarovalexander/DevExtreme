@@ -1,5 +1,3 @@
-"use strict";
-
 var pointerMock = require("../../helpers/pointerMock.js"),
     vizMocks = require("../../helpers/vizMocks.js"),
     shutterPlugin = require("viz/chart_components/shutter_zoom");
@@ -19,7 +17,7 @@ QUnit.module("Shutter zoom plugin", {
             _argumentAxes: [{
                 getTranslator: function() {
                     return {
-                        untranslate: function(val) {
+                        from: function(val) {
                             return {
                                 100: 0,
                                 200: 1,

@@ -1,4 +1,3 @@
-"use strict";
 import rangeModule from "../translators/range";
 import { getDateFormatByDifferences } from "../../format_helper";
 import dateUtils from "../../core/utils/date";
@@ -13,7 +12,6 @@ const getNextDateUnit = dateUtils.getNextDateUnit;
 const correctDateWithUnitBeginning = dateUtils.correctDateWithUnitBeginning;
 const _math = Math;
 const _max = _math.max;
-const _isArray = Array.isArray;
 const TOP = constants.top;
 const BOTTOM = constants.bottom;
 const LEFT = constants.left;
@@ -340,9 +338,8 @@ module.exports = {
             that._axisPosition = that._orthogonalPositions[position === "top" || position === "left" ? "start" : "end"];
         },
 
-        _getTickMarkPoints: function(tick, length) {
-            var coords = tick.coords,
-                isHorizontal = this._isHorizontal,
+        _getTickMarkPoints: function(coords, length) {
+            var isHorizontal = this._isHorizontal,
                 tickCorrection = {
                     left: -1,
                     top: -1,
@@ -660,7 +657,7 @@ module.exports = {
                     translateX,
                     translateY;
 
-                if(label === null) {
+                if(label === null || box.isEmpty) {
                     return;
                 }
 
@@ -770,10 +767,7 @@ module.exports = {
                 ticks = ticksData.ticks,
                 tickInterval = ticksData.tickInterval,
                 options = this._options,
-                constantLineOptions = (options.constantLines || []).filter(function(options) {
-                    that._checkAlignmentConstantLineLabels(options.label);
-                    return options.label.position === "outside" && options.label.visible;
-                }),
+                constantLineOptions = that._outsideConstantLines.filter(l => l.labelOptions.visible).map(l => l.options),
                 rootElement = that._renderer.root,
                 labelIsVisible = options.label.visible && !range.stubData && ticks.length,
                 labelValue = labelIsVisible && that.formatLabel(ticks[ticks.length - 1], options.label, undefined, undefined, tickInterval, ticks),
@@ -946,8 +940,9 @@ module.exports = {
             max: true
         },
 
-        _setVisualRange(min, max) {
-            this._viewport = this.adjustRange([min, max]);
+        _setVisualRange(visualRange) {
+            const range = this.adjustRange(vizUtils.getVizRangeObject(visualRange));
+            this._viewport = range;
         },
 
         applyVisualRangeSetter(visualRangeSetter) {
@@ -1205,28 +1200,6 @@ module.exports = {
                 shiftGroup("left", constantLinesGroups);
                 shiftGroup("right", constantLinesGroups);
             }
-        },
-
-        // API
-        visualRange(range) {
-            const that = this;
-            let newRange = _isArray(range) ? range : arguments;
-            const rangeLength = newRange.length;
-
-            if(arguments.length === 0) {
-                const adjustedRange = this._getAdjustedBusinessRange();
-                return [adjustedRange.minVisible, adjustedRange.maxVisible];
-            }
-
-            if(!rangeLength) {
-                newRange = [null, null];
-            } else if(rangeLength === 1) {
-                newRange = [newRange[0], null];
-            } else {
-                newRange = [newRange[0], newRange[1]];
-            }
-
-            that._visualRange(newRange);
         }
     }
 };

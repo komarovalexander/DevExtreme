@@ -1,33 +1,54 @@
-"use strict";
-
-import Class from "../../core/class";
-import { Deferred } from "../../core/utils/deferred";
-import deferredUtils from "../../core/utils/deferred";
 import $ from "../../core/renderer";
-const when = deferredUtils.when;
 import fx from "../../animation/fx";
 
 const animation = {
-    moveTo($element, position, duration, completeAction) {
+    moveTo(config) {
+        let $element = config.$element,
+            position = config.position,
+            direction = config.direction || "left",
+            toConfig = {},
+            animationType;
+
+        if(direction === "right") {
+            toConfig["transform"] = "translate(" + position + "px, 0px)";
+            animationType = "custom";
+        }
+
+        if(direction === "left") {
+            toConfig["left"] = position;
+            animationType = "slide";
+        }
+
+        if(direction === "top" || direction === "bottom") {
+            toConfig["top"] = position;
+            animationType = "slide";
+        }
+
         fx.animate($element, {
-            type: "slide",
-            to: { left: position },
-            duration,
-            complete: completeAction
+            type: animationType,
+            to: toConfig,
+            duration: config.duration,
+            complete: config.complete
         });
     },
-    paddingLeft($element, padding, duration, completeAction) {
-        const toConfig = {};
+    margin(config) {
+        let $element = config.$element,
+            margin = config.margin,
+            direction = config.direction || "left",
+            toConfig = {};
 
-        toConfig["padding-left"] = padding;
+        if(direction === "left") {
+            toConfig["marginLeft"] = margin;
+        } else {
+            toConfig["marginRight"] = margin;
+        }
 
         fx.animate($element, {
-            to: { paddingLeft: padding },
-            duration,
-            complete: completeAction
+            to: toConfig,
+            duration: config.duration,
+            complete: config.complete
         });
     },
-
     fade($element, config, duration, completeAction) {
         fx.animate($element, {
             type: "fade",
@@ -55,51 +76,69 @@ const animation = {
     }
 };
 
-const DrawerStrategy = Class.inherit({
+class DrawerStrategy {
 
-    ctor(drawer) {
+    constructor(drawer) {
         this._drawer = drawer;
-    },
+    }
+
+    renderPanel(template) {
+        template && template.render({
+            container: this._drawer.content()
+        });
+    }
 
     renderPosition(offset, animate) {
-        this._contentAnimation = new Deferred(),
-        this._menuAnimation = new Deferred();
-        this._shaderAnimation = new Deferred();
+        this._stopAnimations();
+
+        this._drawer._animations.push(new Promise((resolve) => {
+            this._contentAnimationResolve = resolve;
+        }));
+        this._drawer._animations.push(new Promise((resolve) => {
+            this._panelAnimationResolve = resolve;
+        }));
+        this._drawer._animations.push(new Promise((resolve) => {
+            this._shaderAnimationResolve = resolve;
+        }));
 
         if(animate) {
-            this._drawer._animations.push(this._contentAnimation);
-            this._drawer._animations.push(this._menuAnimation);
-            this._drawer._animations.push(this._shaderAnimation);
-
-            when.apply($, this._drawer._animations).done((function() {
-                this._animationCompleteHandler();
-            }).bind(this._drawer));
+            Promise.all(this._drawer._animations).then(() => {
+                this._drawer._animationCompleteHandler();
+            });
         }
-    },
+    }
 
-    _getMenuOffset(offset) {
+    _stopAnimations() {
+        fx.stop(this._drawer._$shader, true);
+        fx.stop($(this._drawer.content()), true);
+        fx.stop($(this._drawer.viewContent()), true);
+    }
+
+    _getPanelOffset(offset) {
+        var size = this._drawer._isHorizontalDirection() ? this._drawer.getRealPanelWidth() : this._drawer.getRealPanelHeight();
+
         if(offset) {
-            return -(this._drawer.getRealMenuWidth() - this._drawer.getMaxWidth());
+            return -(size - this._drawer.getMaxSize());
         } else {
-            return -(this._drawer.getRealMenuWidth() - this._drawer.getMinWidth());
+            return -(size - this._drawer.getMinSize());
         }
-    },
+    }
 
-    _getMenuWidth(offset) {
-        return offset ? this._drawer.getMaxWidth() : this._drawer.getMinWidth();
-    },
+    _getPanelWidth(offset) {
+        return offset ? this._drawer.getMaxSize() : this._drawer.getMinSize();
+    }
 
     renderShaderVisibility(offset, animate, duration) {
         const fadeConfig = this._getFadeConfig(offset);
 
         if(animate) {
             animation.fade($(this._drawer._$shader), fadeConfig, duration, () => {
-                this._shaderAnimation.resolve();
+                this._shaderAnimationResolve();
             });
         } else {
             this._drawer._$shader.css("opacity", fadeConfig.to);
         }
-    },
+    }
 
     _getFadeConfig(offset) {
         if(offset) {
@@ -113,8 +152,16 @@ const DrawerStrategy = Class.inherit({
                 from: 0.5
             };
         }
-    },
-});
+    }
+
+    getPanelContent() {
+        return this._drawer._$panel;
+    }
+
+    getWidth() {
+        return this._drawer.$element().get(0).getBoundingClientRect().width;
+    }
+};
 
 module.exports = DrawerStrategy;
 module.exports.animation = animation;

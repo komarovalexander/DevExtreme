@@ -1,23 +1,17 @@
-"use strict";
-
 var extend = require("../../core/utils/extend").extend,
     each = require("../../core/utils/iterator").each,
-    numericTranslator = require("./numeric_translator"),
     categoryTranslator = require("./category_translator"),
     intervalTranslator = require("./interval_translator"),
     datetimeTranslator = require("./datetime_translator"),
     logarithmicTranslator = require("./logarithmic_translator"),
     vizUtils = require("../core/utils"),
     typeUtils = require("../../core/utils/type"),
-    rangeModule = require("./range"),
     getLog = vizUtils.getLog,
     getPower = vizUtils.getPower,
     isDefined = typeUtils.isDefined,
+    adjust = require("../../core/utils/math").adjust,
     _abs = Math.abs,
     CANVAS_PROP = ["width", "height", "left", "top", "bottom", "right"],
-    NUMBER_EQUALITY_CORRECTION = 1,
-    DATETIME_EQUALITY_CORRECTION = 60000,
-    _noop = require("../../core/utils/common").noop,
     _Translator2d,
 
     addInterval = require("../../core/utils/date").addInterval;
@@ -46,10 +40,6 @@ var validateBusinessRange = function(businessRange) {
     validate("maxVisible", "max");
     return businessRange;
 };
-
-function valuesAreDefinedAndEqual(val1, val2) {
-    return isDefined(val1) && isDefined(val2) && val1.valueOf() === val2.valueOf();
-}
 
 function prepareBreaks(breaks, range) {
     var transform = range.axisType === 'logarithmic' ? function(value) {
@@ -84,132 +74,20 @@ function prepareBreaks(breaks, range) {
 }
 
 function getCanvasBounds(range) {
-    var min = range.min,
-        max = range.max,
-        minVisible = range.minVisible,
-        maxVisible = range.maxVisible,
-        newMin,
-        newMax,
-        base = range.base,
-        isDateTime = typeUtils.isDate(max) || typeUtils.isDate(min),
-        correction = isDateTime ? DATETIME_EQUALITY_CORRECTION : NUMBER_EQUALITY_CORRECTION,
-        isLogarithmic = range.axisType === 'logarithmic';
+    let min = range.min;
+    let max = range.max;
+    let minVisible = range.minVisible;
+    let maxVisible = range.maxVisible;
+    let isLogarithmic = range.axisType === 'logarithmic';
 
     if(isLogarithmic) {
-        maxVisible = getLog(maxVisible, base);
-        minVisible = getLog(minVisible, base);
-        min = getLog(min, base);
-        max = getLog(max, base);
+        maxVisible = getLog(maxVisible, range.base);
+        minVisible = getLog(minVisible, range.base);
+        min = getLog(min, range.base);
+        max = getLog(max, range.base);
     }
 
-    if(valuesAreDefinedAndEqual(min, max)) {
-        newMin = min.valueOf() - correction;
-        newMax = max.valueOf() + correction;
-
-        if(isDateTime) {
-            min = new Date(newMin);
-            max = new Date(newMax);
-        } else {
-            min = (min !== 0 || isLogarithmic) ? newMin : 0;
-            max = newMax;
-        }
-    }
-
-    if(valuesAreDefinedAndEqual(minVisible, maxVisible)) {
-        newMin = minVisible.valueOf() - correction;
-        newMax = maxVisible.valueOf() + correction;
-
-        if(isDateTime) {
-            minVisible = (newMin < min.valueOf()) ? min : new Date(newMin);
-            maxVisible = (newMax > max.valueOf()) ? max : new Date(newMax);
-        } else {
-            if(minVisible !== 0 || isLogarithmic) {
-                minVisible = newMin < min ? min : newMin;
-            }
-            maxVisible = newMax > max ? max : newMax;
-        }
-    }
-
-    return { base: base, rangeMin: min, rangeMax: max, rangeMinVisible: minVisible, rangeMaxVisible: maxVisible };
-}
-
-function getEqualityCorrection(range) {
-    var isDateTime = typeUtils.isDate(range.min) || typeUtils.isDate(range.max);
-
-    return isDateTime ? DATETIME_EQUALITY_CORRECTION : NUMBER_EQUALITY_CORRECTION;
-}
-
-function zoomIsEqualCanvas(range) {
-    const businessRange = this.getBusinessRange();
-
-    return valuesAreDefinedAndEqual(businessRange.min, businessRange.max) && this.isEqualRange(range);
-}
-
-function isEqualRange(range) {
-    const that = this;
-    const businessRange = that.getBusinessRange();
-    const canvasOptions = getCanvasBounds(businessRange);
-    const correctionPrecision = getEqualityCorrection(businessRange) / 100;
-    const comparingRange = new rangeModule.Range(range);
-
-    if(businessRange.axisType === "discrete") {
-        return false;
-    }
-
-    if(range && businessRange.axisType === "logarithmic") {
-        comparingRange.min = comparingRange.min && getLog(comparingRange.min, businessRange.base);
-        comparingRange.max = comparingRange.max && getLog(comparingRange.max, businessRange.base);
-    }
-
-    return range && (!isDefined(comparingRange.min) || _abs(comparingRange.min - canvasOptions.rangeMin) <= correctionPrecision) &&
-        (!isDefined(comparingRange.max) || _abs(comparingRange.max - canvasOptions.rangeMax) <= correctionPrecision);
-}
-
-function checkGestureEventsForScaleEdges(scrollThreshold, scale, scroll, touches, isZoomed) {
-    var that = this,
-        businessRange = that.getBusinessRange(),
-        isDiscreteAxis = businessRange.axisType === "discrete",
-        scrollBarNearMin = that.scrollHasExtremePosition(scrollThreshold, false),
-        scrollBarNearMax = that.scrollHasExtremePosition(scrollThreshold, true),
-        isOriginalScale = that.checkScrollForOriginalScale(scrollThreshold),
-        scalingEventAtMin = scrollBarNearMin && ((businessRange.rotated ? scroll > 0 : scroll < 0) || scale !== 1),
-        scalingEventAtMax = scrollBarNearMax && ((businessRange.rotated ? scroll < 0 : scroll > 0) || scale !== 1);
-
-    return (touches === 2 && scale === 1) || ((isZoomed || isDiscreteAxis || !this.isEqualRange({ min: businessRange.minVisible, max: businessRange.maxVisible })) && (!scrollBarNearMin && !scrollBarNearMax)) ||
-        (!isOriginalScale && (scalingEventAtMin || scalingEventAtMax)) || (isOriginalScale && scale > 1);
-}
-
-function checkScrollForOriginalScale(scrollThreshold) {
-    return this.scrollHasExtremePosition(scrollThreshold, false) && this.scrollHasExtremePosition(scrollThreshold, true);
-}
-
-function scrollHasExtremePosition(scrollThreshold, isMax) {
-    return this.checkExtremePosition(this.getBusinessRange(), scrollThreshold, isMax);
-}
-
-function checkExtremePosition(businessRange, scrollThreshold, isMax) {
-    const isDiscreteAxis = businessRange.axisType === "discrete";
-    const min = isDiscreteAxis ? businessRange.categories[0] : businessRange.min;
-    const max = isDiscreteAxis ? businessRange.categories[businessRange.categories.length - 1] : businessRange.max;
-    const isSinglePoint = min === max;
-    const isMaxExtremum = (!businessRange.invert && isMax) || (businessRange.invert && !isMax);
-    let axisExtremum = isMaxExtremum ? max : min;
-    let scrollExtremum = isMaxExtremum ? businessRange.maxVisible : businessRange.minVisible;
-
-    if(isDiscreteAxis) {
-        return !isDefined(scrollExtremum) || axisExtremum.valueOf() === scrollExtremum.valueOf();
-    } else {
-        if(businessRange.axisType === "logarithmic") {
-            axisExtremum = vizUtils.getLog(axisExtremum, businessRange.base);
-            scrollExtremum = vizUtils.getLog(scrollExtremum, businessRange.base);
-        }
-
-        const equalityCorrection = axisExtremum.valueOf() === scrollExtremum.valueOf() ? 0 : getEqualityCorrection(businessRange);
-        const distanceToExtremum = isSinglePoint ?
-            Math.abs((axisExtremum + ((isMaxExtremum ? 1 : -1) * equalityCorrection)) - scrollExtremum) :
-            Math.abs(axisExtremum - scrollExtremum);
-        return distanceToExtremum * this._canvasOptions.ratioOfCanvasRange < scrollThreshold;
-    }
+    return { base: range.base, rangeMin: min, rangeMax: max, rangeMinVisible: minVisible, rangeMaxVisible: maxVisible };
 }
 
 function getCheckingMethodsAboutBreaks(inverted) {
@@ -285,20 +163,22 @@ _Translator2d.prototype = {
             default:
                 if(range.dataType === "datetime") {
                     script = datetimeTranslator;
-                } else {
-                    script = numericTranslator;
                 }
         }
-
+        (that._oldMethods || []).forEach(function(methodName) {
+            delete that[methodName];
+        });
+        that._oldMethods = Object.keys(script);
         extend(that, script);
         that._conversionValue = options.conversionValue ? function(value) { return value; } : function(value) { return Math.round(value); };
 
-        that._calculateSpecialValues();
+        that.sc = {};
         that._checkingMethodsAboutBreaks = [
             getCheckingMethodsAboutBreaks(false),
             getCheckingMethodsAboutBreaks(that.isInverted())
         ];
         that._translateBreaks();
+        that._calculateSpecialValues();
     },
 
     _translateBreaks: function() {
@@ -358,13 +238,13 @@ _Translator2d.prototype = {
         return correctedCategoriesCount > 0 ? canvasOptions.canvasLength / correctedCategoriesCount : canvasOptions.canvasLength;
     },
 
-    _prepareCanvasOptions: function() {
-        var that = this,
-            businessRange = that._businessRange,
-            canvasOptions = that._canvasOptions = getCanvasBounds(businessRange),
-            length,
-            canvas = that._canvas,
-            breaks = that._breaks;
+    _prepareCanvasOptions() {
+        const that = this;
+        const businessRange = that._businessRange;
+        const canvasOptions = that._canvasOptions = getCanvasBounds(businessRange);
+        const canvas = that._canvas;
+        const breaks = that._breaks;
+        let length;
 
         if(that._options.isHorizontal) {
             canvasOptions.startPoint = canvas.left;
@@ -426,30 +306,29 @@ _Translator2d.prototype = {
     },
 
     _calculateSpecialValues: function() {
-        var that = this,
-            canvasOptions = that._canvasOptions,
-            startPoint = canvasOptions.startPoint,
-            endPoint = canvasOptions.endPoint,
-            range = that._businessRange,
-            minVisible = range.minVisible,
-            maxVisible = range.maxVisible,
-            invert,
-            canvas_position_default,
-            canvas_position_center_middle;
+        const that = this;
+        const canvasOptions = that._canvasOptions;
+        const startPoint = canvasOptions.startPoint;
+        const endPoint = canvasOptions.endPoint;
+        const range = that._businessRange;
+        const minVisible = range.minVisible;
+        const maxVisible = range.maxVisible;
+        const canvas_position_center_middle = startPoint + canvasOptions.canvasLength / 2;
+        let canvas_position_default;
 
-        if(minVisible <= 0 && maxVisible >= 0) {
-            that.sc = {};// we can not call translate method without sc object
-            canvas_position_default = that.translate(0);
-        } else {
-            invert = range.invert ^ (minVisible <= 0 && maxVisible <= 0);
+        if(isDefined(minVisible) && isDefined(maxVisible) && minVisible.valueOf() === maxVisible.valueOf()) {
+            canvas_position_default = canvas_position_center_middle;
+        } else if(minVisible <= 0 && maxVisible >= 0) {
+            canvas_position_default = that.translate(0, 1);
+        }
+        if(!isDefined(canvas_position_default)) {
+            const invert = range.invert ^ (minVisible <= 0 && maxVisible <= 0);
             if(that._options.isHorizontal) {
                 canvas_position_default = invert ? endPoint : startPoint;
             } else {
                 canvas_position_default = invert ? startPoint : endPoint;
             }
         }
-
-        canvas_position_center_middle = startPoint + canvasOptions.canvasLength / 2;
 
         that.sc = {
             "canvas_position_default": canvas_position_default,
@@ -464,7 +343,13 @@ _Translator2d.prototype = {
         };
     },
 
-    translateSpecialCase: function(value) {
+    translateSpecialCase(value) {
+        const range = this._businessRange;
+        if(isDefined(range.maxVisible) && isDefined(range.minVisible) &&
+            range.maxVisible.valueOf() === range.minVisible.valueOf() &&
+            range.maxVisible.valueOf() === value.valueOf()) {
+            value = "canvas_position_center";
+        }
         return this.sc[value];
     },
 
@@ -480,30 +365,199 @@ _Translator2d.prototype = {
 
     getMinBarSize: function(minBarSize) {
         var visibleArea = this.getCanvasVisibleArea(),
-            minValue = this.untranslate(visibleArea.min + minBarSize);
+            minValue = this.from(visibleArea.min + minBarSize);
 
-        return _abs(this.untranslate(visibleArea.min) - (!isDefined(minValue) ? this.untranslate(visibleArea.max) : minValue));
+        return _abs(this.from(visibleArea.min) - (!isDefined(minValue) ? this.from(visibleArea.max) : minValue));
     },
     checkMinBarSize: function(value, minShownValue, stackValue) {
         return _abs(value) < minShownValue ? value >= 0 ? minShownValue : -minShownValue : value;
     },
-    translate: _noop,
-    untranslate: _noop,
-    getInterval: _noop,
-    zoom: _noop,
-    getMinScale: _noop,
-    zoomIsEqualCanvas: zoomIsEqualCanvas,
-    isEqualRange: isEqualRange,
-    checkScrollForOriginalScale: checkScrollForOriginalScale,
-    scrollHasExtremePosition: scrollHasExtremePosition,
-    checkGestureEventsForScaleEdges: checkGestureEventsForScaleEdges,
-    checkExtremePosition: checkExtremePosition,
+
+    translate(bp, direction) {
+        const range = this._businessRange;
+        const specialValue = this.translateSpecialCase(bp);
+
+        if(isDefined(specialValue)) {
+            return Math.round(specialValue);
+        }
+
+        if((isDefined(range.minVisible) && isDefined(range.maxVisible) && range.maxVisible.valueOf() === range.minVisible.valueOf()) || isNaN(bp)) {
+            return null;
+        }
+        return this.to(bp, direction);
+    },
+
+    getInterval: function() {
+        return Math.round(this._canvasOptions.ratioOfCanvasRange * (this._businessRange.interval || Math.abs(this._canvasOptions.rangeMax - this._canvasOptions.rangeMin)));
+    },
+
+    zoom(translate, scale, wholeRange) {
+        const canvasOptions = this._canvasOptions;
+
+        if(canvasOptions.rangeMinVisible.valueOf() === canvasOptions.rangeMaxVisible.valueOf() && translate !== 0) {
+            return this.zoomZeroLengthRange(translate, scale);
+        }
+
+        const startPoint = canvasOptions.startPoint;
+        const endPoint = canvasOptions.endPoint;
+
+        let newStart = (startPoint + translate) / scale;
+        let newEnd = (endPoint + translate) / scale;
+
+        wholeRange = wholeRange || {};
+        const minPoint = this.to(this._businessRange.invert ? wholeRange.endValue : wholeRange.startValue);
+        const maxPoint = this.to(this._businessRange.invert ? wholeRange.startValue : wholeRange.endValue);
+
+        if(minPoint > newStart) {
+            newEnd -= newStart - minPoint;
+            newStart = minPoint;
+        }
+
+        if(maxPoint < newEnd) {
+            newStart -= newEnd - maxPoint;
+            newEnd = maxPoint;
+        }
+        if((maxPoint - minPoint) < (newEnd - newStart)) {
+            newStart = minPoint;
+            newEnd = maxPoint;
+        }
+
+        translate = (endPoint - startPoint) * newStart / (newEnd - newStart) - startPoint;
+        scale = ((startPoint + translate) / newStart) || 1;
+
+        return {
+            min: adjust(this.from(newStart, 1)),
+            max: adjust(this.from(newEnd, -1)),
+            translate: adjust(translate),
+            scale: adjust(scale)
+        };
+    },
+
+    zoomZeroLengthRange(translate, scale) {
+        const canvasOptions = this._canvasOptions;
+        const min = canvasOptions.rangeMin;
+        const max = canvasOptions.rangeMax;
+        const correction = (max.valueOf() !== min.valueOf() ? max.valueOf() - min.valueOf() : _abs(canvasOptions.rangeMinVisible.valueOf() - min.valueOf())) / canvasOptions.canvasLength;
+        const isDateTime = typeUtils.isDate(max) || typeUtils.isDate(min);
+        const isLogarithmic = this._businessRange.axisType === 'logarithmic';
+
+        let newMin = canvasOptions.rangeMinVisible.valueOf() - correction;
+        let newMax = canvasOptions.rangeMaxVisible.valueOf() + correction;
+
+        newMin = isLogarithmic ? adjust(Math.pow(canvasOptions.base, newMin)) : isDateTime ? new Date(newMin) : newMin;
+        newMax = isLogarithmic ? adjust(Math.pow(canvasOptions.base, newMax)) : isDateTime ? new Date(newMax) : newMax;
+
+        return {
+            min: newMin,
+            max: newMax,
+            translate: translate,
+            scale: scale
+        };
+    },
+
+    getMinScale: function(zoom) {
+        return zoom ? 1.1 : 0.9;
+    },
+
+    getScale: function(val1, val2) {
+        var canvasOptions = this._canvasOptions;
+        if(canvasOptions.rangeMax === canvasOptions.rangeMin) {
+            return 1;
+        }
+
+        val1 = isDefined(val1) ? this._fromValue(val1) : canvasOptions.rangeMin;
+        val2 = isDefined(val2) ? this._fromValue(val2) : canvasOptions.rangeMax;
+        return (canvasOptions.rangeMax - canvasOptions.rangeMin) / Math.abs(val1 - val2);
+    },
+
+    // dxRangeSelector
+    isValid: function(value) {
+        var co = this._canvasOptions;
+
+        value = this._fromValue(value);
+
+        return value !== null &&
+            !isNaN(value) &&
+            value.valueOf() + co.rangeDoubleError >= co.rangeMin &&
+            value.valueOf() - co.rangeDoubleError <= co.rangeMax;
+    },
+
+    getCorrectValue: function(value, direction) {
+        var that = this,
+            breaks = that._breaks,
+            prop;
+
+        value = that._fromValue(value);
+
+        if(that._breaks) {
+            prop = that._checkValueAboutBreaks(breaks, value, "trFrom", "trTo", that._checkingMethodsAboutBreaks[0]);
+            if(prop.inBreak === true) {
+                return that._toValue(direction > 0 ? prop.break.trTo : prop.break.trFrom);
+            }
+        }
+
+        return that._toValue(value);
+    },
+
+    to: function(bp, direction) {
+        bp = this._fromValue(bp);
+
+        var that = this,
+            canvasOptions = that._canvasOptions,
+            breaks = that._breaks,
+            prop = { length: 0 },
+            commonBreakSize = 0;
+
+        if(breaks !== undefined) {
+            prop = that._checkValueAboutBreaks(breaks, bp, "trFrom", "trTo", that._checkingMethodsAboutBreaks[0]);
+            commonBreakSize = isDefined(prop.breaksSize) ? prop.breaksSize : 0;
+        }
+        if(prop.inBreak === true) {
+            if(direction > 0) {
+                return prop.break.start;
+            } else if(direction < 0) {
+                return prop.break.end;
+            } else {
+                return null;
+            }
+        }
+        return that._conversionValue(that._calculateProjection((bp - canvasOptions.rangeMinVisible - prop.length) *
+            canvasOptions.ratioOfCanvasRange + commonBreakSize));
+    },
+
+    from: function(pos, direction) {
+        var that = this,
+            breaks = that._breaks,
+            prop = { length: 0 },
+            canvasOptions = that._canvasOptions,
+            startPoint = canvasOptions.startPoint,
+            commonBreakSize = 0;
+
+        if(breaks !== undefined) {
+            prop = that._checkValueAboutBreaks(breaks, pos, "start", "end", that._checkingMethodsAboutBreaks[1]);
+            commonBreakSize = isDefined(prop.breaksSize) ? prop.breaksSize : 0;
+        }
+
+        if(prop.inBreak === true) {
+            if(direction > 0) {
+                return that._toValue(prop.break.trTo);
+            } else if(direction < 0) {
+                return that._toValue(prop.break.trFrom);
+            } else {
+                return null;
+            }
+        }
+
+        return that._toValue(that._calculateUnProjection((pos - startPoint - commonBreakSize) / canvasOptions.ratioOfCanvasRange + prop.length));
+    },
+
+    isValueProlonged: false,
 
     // dxRangeSelector specific
 
     // TODO: Rename to getValueRange
     getRange: function() {
-        return [this.untranslate(this._canvasOptions.startPoint, -1), this.untranslate(this._canvasOptions.endPoint, 1)];
+        return [this._toValue(this._canvasOptions.rangeMin), this._toValue(this._canvasOptions.rangeMax)];
     },
 
     isEmptyValueRange: function() {
@@ -517,5 +571,17 @@ _Translator2d.prototype = {
 
     add: function(value, diff, dir) {
         return this._add(value, diff, (this._businessRange.invert ? -1 : +1) * dir);
+    },
+
+    _add: function(value, diff, coeff) {
+        return this._toValue(this._fromValue(value) + diff * coeff);
+    },
+
+    _fromValue: function(value) {
+        return value !== null ? Number(value) : null;
+    },
+
+    _toValue: function(value) {
+        return value !== null ? Number(value) : null;
     }
 };

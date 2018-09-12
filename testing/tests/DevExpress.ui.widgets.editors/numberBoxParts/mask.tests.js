@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     config = require("core/config"),
     keyboardMock = require("../../../helpers/keyboardMock.js"),
@@ -51,6 +49,18 @@ QUnit.test("number type of input is not supported with masks", function(assert) 
 QUnit.test("empty value should not be formatted", function(assert) {
     this.instance.option("value", "");
     assert.equal(this.input.val(), "", "value is empty");
+});
+
+QUnit.test("placeholder should disappear when an empty value has been changed", function(assert) {
+    this.instance.option({
+        format: "#0.00",
+        value: null,
+        placeholder: "Test"
+    });
+
+    this.keyboard.press("up");
+    assert.equal(this.input.val(), "1.00", "text is correct");
+    assert.notOk(this.$element.find(".dx-placeholder").is(":visible"), "placeholder is hidden");
 });
 
 QUnit.test("format should be applied on value change", function(assert) {
@@ -181,6 +191,16 @@ QUnit.test("pressing numpad minus button should revert the number", function(ass
     assert.equal(this.instance.option("value"), -123.456, "value has been changed after valueChange event");
 });
 
+QUnit.test("pressing minus with fireFox keyCode should revert the number", function(assert) {
+    this.instance.option({
+        format: "#.000",
+        value: 123.456
+    });
+
+    this.keyboard.keyDown(173, { key: "-" }).input();
+    assert.equal(this.input.val(), "-123.456", "value is correct");
+});
+
 QUnit.test("pressing '-' button should revert zero number", function(assert) {
     this.instance.option({
         format: "#0",
@@ -229,9 +249,68 @@ QUnit.test("pressing minus button should revert selected number", function(asser
         value: 0
     });
 
-    this.keyboard.caret({ start: 0, end: 5 }).keyDown(MINUS_KEY).type("-");
+    this.keyboard.caret({ start: 0, end: 5 }).keyDown(MINUS_KEY);
+    this.clock.tick();
+
     assert.equal(this.input.val(), "-$ 0.00", "text is correct");
-    assert.deepEqual(this.keyboard.caret(), { start: 3, end: 3 }, "caret is good");
+    assert.deepEqual(this.keyboard.caret(), { start: 3, end: 6 }, "caret is good");
+});
+
+QUnit.test("pressing '-' should keep selection", function(assert) {
+    this.instance.option({
+        format: "#0.#",
+        value: 123.456
+    });
+
+    this.keyboard.caret({ start: 0, end: 5 }).keyDown(NUMPAD_MINUS_KEYCODE);
+    this.clock.tick();
+    assert.equal(this.input.val(), "-123.5", "value is correct");
+    assert.deepEqual(this.keyboard.caret(), { start: 1, end: 6 }, "caret is good");
+
+    this.keyboard
+        .type("5")
+        .change();
+    assert.equal(this.instance.option("value"), -5, "value has been changed after valueChange event");
+    assert.deepEqual(this.keyboard.caret(), { start: 2, end: 2 }, "caret is good");
+
+    this.keyboard.caret({ start: 0, end: 2 }).keyDown(MINUS_KEY);
+    this.clock.tick();
+    assert.equal(this.input.val(), "5", "value is correct");
+    assert.deepEqual(this.keyboard.caret(), { start: 0, end: 1 }, "caret is good");
+
+    this.keyboard
+        .type("6")
+        .change();
+    assert.equal(this.instance.option("value"), 6, "value has been changed after valueChange event");
+    assert.deepEqual(this.keyboard.caret(), { start: 1, end: 1 }, "caret is good");
+});
+
+QUnit.test("pressing '-' correctly remove the selected part of previous value", function(assert) {
+    this.instance.option({
+        format: "#0.#",
+        value: 123.4
+    });
+
+    this.keyboard.caret({ start: 1, end: 3 }).keyDown(NUMPAD_MINUS_KEYCODE);
+    this.clock.tick();
+    assert.equal(this.input.val(), "-123.4", "value is correct");
+    assert.deepEqual(this.keyboard.caret(), { start: 2, end: 4 }, "caret is good");
+
+    this.keyboard.change();
+    assert.equal(this.instance.option("value"), -123.4, "value has been changed after valueChange event");
+});
+
+QUnit.test("NumberBox keeps correct selection after revert the sign", function(assert) {
+    this.instance.option({
+        format: "#0.#;<<#0.#>>",
+        value: 123.4
+    });
+
+    this.keyboard.caret({ start: 1, end: 2 }).keyDown(NUMPAD_MINUS_KEYCODE);
+    this.clock.tick();
+
+    assert.equal(this.input.val(), "<<123.4>>", "value is correct");
+    assert.deepEqual(this.keyboard.caret(), { start: 3, end: 4 }, "caret is good");
 });
 
 
@@ -343,6 +422,20 @@ QUnit.test("removed digits should not be replaced to 0 when they are not require
 
     this.keyboard.press("del").change();
     assert.equal(this.input.val(), "1", "decimal point was removed together with last float digit");
+});
+
+QUnit.test("value is not changed when using the big float part", function(assert) {
+    this.instance.option({
+        format: "#,##0.##############################",
+        value: ""
+    });
+
+    this.keyboard.caret(0)
+        .type("3.4")
+        .press("enter")
+        .change();
+
+    assert.equal(this.instance.option("value"), "3.4");
 });
 
 
@@ -1441,4 +1534,26 @@ QUnit.testInActiveWindow("caret should be at start boundary on focusin", functio
     this.clock.tick();
 
     assert.deepEqual(this.keyboard.caret(), { start: 6, end: 6 }, "caret is right");
+});
+
+QUnit.module("format: custom parser and formatter", moduleConfig);
+
+QUnit.test("custom parser and formatter should work", function(assert) {
+    this.instance.option({
+        value: null,
+        format: {
+            formatter: function(value) {
+                return "$ " + value;
+            },
+
+            parser: function(text) {
+                return parseFloat(text.replace(/[^0-9.]/g, ""));
+            }
+        }
+    });
+
+    this.keyboard.type("1234.56").press("enter");
+
+    assert.equal(this.input.val(), "$ 1234.56", "text is correct");
+    assert.equal(this.instance.option("value"), 1234.56, "value is correct");
 });

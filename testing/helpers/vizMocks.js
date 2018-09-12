@@ -1,5 +1,3 @@
-"use strict";
-
 (function(root, factory) {
     /* global jQuery */
     if(typeof define === 'function' && define.amd) {
@@ -127,7 +125,19 @@
                 removeEventListener: function() {}
             };
         },
-        $thisReturnFunctions: ["toBackground", "sharp", "rotate", "enableLinks", "virtualLink", "linkOn", "linkOff", "linkAppend", "linkRemove", "data"]
+        $thisReturnFunctions: [
+            "toBackground",
+            "sharp",
+            "rotate",
+            "enableLinks",
+            "virtualLink",
+            "linkOn",
+            "linkOff",
+            "linkAppend",
+            "linkRemove",
+            "data",
+            "animate"
+        ]
     });
 
     var patternCounter = 0,

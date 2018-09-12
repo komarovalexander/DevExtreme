@@ -1,5 +1,3 @@
-"use strict";
-
 var seriesModule = require("../series/base_series"),
     seriesFamilyModule = require("../core/series_family"),
     typeUtils = require("../../core/utils/type"),
@@ -98,20 +96,22 @@ SeriesDataSource.prototype = {
         allSeriesOptions = (Array.isArray(allSeriesOptions) ? allSeriesOptions : (allSeriesOptions ? [allSeriesOptions] : []));
 
         for(i = 0; i < allSeriesOptions.length; i++) {
-            particularSeriesOptions = extend(true, {
-                incidentOccurred: options.incidentOccurred
-            }, allSeriesOptions[i]);
+            particularSeriesOptions = extend(true, {}, allSeriesOptions[i]);
 
             particularSeriesOptions.rotated = false;
 
             seriesTheme = chartThemeManager.getOptions("series", particularSeriesOptions, allSeriesOptions.length);
             seriesTheme.argumentField = seriesTheme.argumentField || options.dataSourceField;// B253068
+            if(!seriesTheme.name) {
+                seriesTheme.name = "Series " + (i + 1).toString();
+            }
             if(data && data.length > 0) {
                 // TODO
                 newSeries = new seriesModule.Series({
                     renderer: options.renderer,
                     argumentAxis: options.argumentAxis,
-                    valueAxis: options.valueAxis
+                    valueAxis: options.valueAxis,
+                    incidentOccurred: options.incidentOccurred
                 }, seriesTheme);
                 series.push(newSeries);
             }

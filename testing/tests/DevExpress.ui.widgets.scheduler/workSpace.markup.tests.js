@@ -1,5 +1,3 @@
-"use strict";
-
 import $ from "jquery";
 import SchedulerWorkSpace from "ui/scheduler/ui.scheduler.work_space";
 import SchedulerWorkSpaceHorizontalStrategy from "ui/scheduler/ui.scheduler.work_space.grouped.strategy.horizontal";
@@ -19,6 +17,7 @@ QUnit.testStart(() => {
 
 const WORKSPACE_CLASS = "dx-scheduler-work-space",
     WORKSPACE_WITH_COUNT_CLASS = "dx-scheduler-work-space-count",
+    WORKSPACE_WITH_GROUP_BY_DATE_CLASS = "dx-scheduler-work-space-group-by-date",
     HEADER_PANEL_CLASS = "dx-scheduler-header-panel",
     ALL_DAY_PANEL_CLASS = "dx-scheduler-all-day-panel",
     ALL_DAY_TABLE_CELL_CLASS = "dx-scheduler-all-day-table-cell",
@@ -118,11 +117,21 @@ QUnit.module("Workspace markup", moduleConfig, () => {
     QUnit.test("Scheduler workspace with intervalCount should have a right css class", (assert) => {
         this.instance.option("intervalCount", 3);
         let $element = this.instance.$element();
-        assert.ok($element.hasClass(WORKSPACE_WITH_COUNT_CLASS), "dxSchedulerWorkSpace has 'dx-scheduler-workspace' css class");
+        assert.ok($element.hasClass(WORKSPACE_WITH_COUNT_CLASS), "dxSchedulerWorkSpace has right css class");
 
         this.instance.option("intervalCount", 1);
         $element = this.instance.$element();
         assert.notOk($element.hasClass(WORKSPACE_WITH_COUNT_CLASS), "dxSchedulerWorkSpace has 'dx-scheduler-workspace' css class");
+    });
+
+    QUnit.test("Scheduler workspace with groupByDate should have a right css class", (assert) => {
+        this.instance.option("groupByDate", true);
+        let $element = this.instance.$element();
+        assert.ok($element.hasClass(WORKSPACE_WITH_GROUP_BY_DATE_CLASS), "dxSchedulerWorkSpace has right css class");
+
+        this.instance.option("groupByDate", false);
+        $element = this.instance.$element();
+        assert.notOk($element.hasClass(WORKSPACE_WITH_GROUP_BY_DATE_CLASS), "dxSchedulerWorkSpace hasn't right css class");
     });
 
     QUnit.test("Scheduler workspace should contain time panel, header panel, allday panel and content", (assert) => {
@@ -1206,6 +1215,30 @@ QUnit.module("Workspace Month markup", monthModuleConfig, () => {
         const firstDate = new Date(2015, 1, 23);
 
         $element.find(".dx-scheduler-date-table tr>td").each(function(index, cell) {
+            const date = new Date(firstDate);
+            date.setDate(firstDate.getDate() + index);
+            assert.equal($(cell).text(), dateLocalization.format(date, "dd"), "Cell has a right date");
+        });
+    });
+
+    QUnit.test("Scheduler workspace month view should have a right date in each cell, groupByDate = true", (assert) => {
+        const $element = this.instance.$element();
+
+        this.instance.option("groupByDate", true);
+        this.instance.option("groups", [
+            {
+                name: "one",
+                items: [{ id: 1, text: "a" }, { id: 2, text: "b" }, { id: 3, text: "c" }]
+            }
+        ]);
+        this.instance.option("currentDate", new Date(2015, 2, 1));
+        this.instance.option("firstDayOfWeek", 1);
+
+        const firstDate = new Date(2015, 1, 23);
+
+        $element.find(".dx-scheduler-date-table tr>td").each(function(index, cell) {
+            var index = Math.floor(index / 3);
+
             const date = new Date(firstDate);
             date.setDate(firstDate.getDate() + index);
             assert.equal($(cell).text(), dateLocalization.format(date, "dd"), "Cell has a right date");

@@ -1,5 +1,3 @@
-"use strict";
-
 var errors = require("../../core/errors"),
     extend = require("../../core/utils/extend").extend,
     each = require("../../core/utils/iterator").each,
@@ -127,7 +125,11 @@ var dateGetterMap = {
 
         current.setHours(0, 0, 0);
         current.setDate(current.getDate() + diff);
-        daysFromYearStart = 1 + (current - new Date(current.getFullYear(), 0, 1)) / dayInMilliseconds;
+
+        var yearStart = new Date(current.getFullYear(), 0, 1),
+            timezoneDiff = (yearStart.getTimezoneOffset() - current.getTimezoneOffset()) * toMs("minute");
+
+        daysFromYearStart = 1 + (current - yearStart + timezoneDiff) / dayInMilliseconds;
 
         return Math.ceil(daysFromYearStart / 7);
     },

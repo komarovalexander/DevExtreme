@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     ko = require("knockout"),
     DataSource = require("data/data_source/data_source").DataSource,
@@ -59,7 +57,8 @@ var processColumnsForCompare = function(columns, parameterNames) {
                     propertyName === 'defaultFilterOperation' ||
                     propertyName === 'defaultFilterOperations' ||
                     propertyName === 'visibleIndex' ||
-                    propertyName === 'resizedCallbacks') {
+                    propertyName === 'resizedCallbacks' ||
+                    propertyName === 'id') {
                     delete this[propertyName];
                 }
             }

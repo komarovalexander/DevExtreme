@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     commonUtils = require("../../core/utils/common"),
@@ -1078,6 +1076,18 @@ var CollectionWidget = Widget.inherit({
 
     _getItemData: function(itemElement) {
         return $(itemElement).data(this._itemDataKey());
+    },
+
+    _getSummaryItemsWidth: function(items, includeMargin) {
+        var result = 0;
+
+        if(items) {
+            iteratorUtils.each(items, function(_, item) {
+                result += $(item).outerWidth(includeMargin || false);
+            });
+        }
+
+        return result;
     },
 
     /**

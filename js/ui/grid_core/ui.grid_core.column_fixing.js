@@ -1,8 +1,5 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
-    browser = require("../../core/utils/browser"),
     isDefined = require("../../core/utils/type").isDefined,
     extend = require("../../core/utils/extend").extend,
     each = require("../../core/utils/iterator").each,
@@ -20,6 +17,7 @@ var CONTENT_CLASS = "content",
     FIXED_COLUMNS_CLASS = "dx-fixed-columns",
     POINTER_EVENTS_TARGET_CLASS = "dx-pointer-events-target",
     POINTER_EVENTS_NONE_CLASS = "dx-pointer-events-none",
+    GROUP_ROW_CLASS = "dx-group-row",
 
     getTransparentColumnIndex = function(fixedColumns) {
         var transparentColumnIndex = -1;
@@ -111,8 +109,11 @@ var baseFixedColumns = {
                 $cell
                     .addClass(POINTER_EVENTS_NONE_CLASS)
                     .toggleClass(FIRST_CELL_CLASS, transparentColumnIndex === 0 || prevFixedColumn && prevFixedColumn.command === "expand")
-                    .toggleClass(LAST_CELL_CLASS, fixedColumns.length && transparentColumnIndex === (fixedColumns.length - 1))
-                    .html(rowType !== "freeSpace" ? "&nbsp;" : "");
+                    .toggleClass(LAST_CELL_CLASS, fixedColumns.length && transparentColumnIndex === (fixedColumns.length - 1));
+
+                if(rowType !== "freeSpace") {
+                    gridCoreUtils.setEmptyText($cell);
+                }
             }
         } else if(rowType === "filter") {
             $cell.toggleClass(FIRST_CELL_CLASS, options.columnIndex === transparentColumnIndex);
@@ -174,24 +175,36 @@ var baseFixedColumns = {
 
     _getCellElementsCore: function(rowIndex) {
         var that = this,
+            fixedColumn,
             fixedColumns,
             fixedColumnIndex,
             fixedCellElements,
             cellElements = that.callBase(rowIndex),
+            isGroupRow = cellElements.parent().hasClass(GROUP_ROW_CLASS),
             index = that.name === "columnHeadersView" ? rowIndex : undefined; // TODO
 
         if(that._fixedTableElement && cellElements) {
             fixedColumns = that.getFixedColumns(index);
-
             fixedCellElements = that._getRowElements(that._fixedTableElement).eq(rowIndex).children("td");
-            each(fixedColumns, function(columnIndex, column) {
-                if(column.command === "transparent") {
-                    if(fixedCellElements.eq(columnIndex).hasClass(MASTER_DETAIL_CELL_CLASS)) {
-                        cellElements[columnIndex] = fixedCellElements.get(columnIndex) || cellElements[columnIndex];
+
+            each(fixedCellElements, function(columnIndex, cell) {
+                if(isGroupRow) {
+                    if(cellElements[columnIndex] && cell.style.visibility !== "hidden") {
+                        cellElements[columnIndex] = cell;
                     }
                 } else {
-                    fixedColumnIndex = that._columnsController.getVisibleIndex(column.index, index);
-                    cellElements[fixedColumnIndex] = fixedCellElements.get(columnIndex) || cellElements[fixedColumnIndex];
+                    fixedColumn = fixedColumns[columnIndex];
+
+                    if(fixedColumn) {
+                        if(fixedColumn.command === "transparent") {
+                            if(fixedCellElements.eq(columnIndex).hasClass(MASTER_DETAIL_CELL_CLASS)) {
+                                cellElements[columnIndex] = cell || cellElements[columnIndex];
+                            }
+                        } else {
+                            fixedColumnIndex = that._columnsController.getVisibleIndex(fixedColumn.index, index);
+                            cellElements[fixedColumnIndex] = cell || cellElements[fixedColumnIndex];
+                        }
+                    }
                 }
             });
         }
@@ -519,11 +532,10 @@ var RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
                 $content = $("<div>").addClass(contentClass);
 
                 eventsEngine.on($content, "scroll", function(e) {
-                    scrollTop = $(e.target).scrollTop();
-                    if(scrollTop) {
-                        $(e.target).scrollTop(0);
-                        scrollable.scrollTo({ y: that._scrollTop + scrollTop });
-                    }
+                    that._fixedScrollTimeout = setTimeout(function() {
+                        scrollTop = $(e.target).scrollTop();
+                        scrollable.scrollTo({ y: scrollTop });
+                    });
                 });
                 eventsEngine.on($content, wheelEvent.name, function(e) {
                     if(scrollable) {
@@ -545,19 +557,13 @@ var RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
         return that.callBase();
     },
 
-    _updateBottomLoading: function() {
-        if(!this._isFixedTableRendering) {
-            this.callBase();
-        }
-    },
-
     _updateScrollable: function() {
         this.callBase();
 
         var scrollable = this.getScrollable(),
             scrollTop = scrollable && scrollable.scrollOffset().top;
 
-        this._updateFixedTablePosition(-scrollTop);
+        this._updateFixedTablePosition(scrollTop);
     },
 
     _renderContent: function(contentElement, tableElement) {
@@ -616,11 +622,7 @@ var RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
                 alignByFixedColumnCellCount -= (options.columns[transparentColumnIndex].colspan - 1) || 0;
                 groupCellColSpan -= (options.columns[transparentColumnIndex].colspan - 1) || 0;
             } else if(alignByColumnCellCount > 0) {
-                if(browser.mozilla) {
-                    $groupCell.css("display", "none");
-                } else {
-                    $groupCell.css("visibility", "hidden");
-                }
+                $groupCell.css("visibility", "hidden");
             }
             alignByColumnCellCount = alignByFixedColumnCellCount;
         }
@@ -705,11 +707,9 @@ var RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
     _updateFixedTablePosition: function(scrollTop, needFocus) {
         if(this._fixedTableElement && this._tableElement) {
             var $focusedElement,
-                editorFactory = this.getController("editorFactory"),
-                dataController = this._dataController,
-                offset = dataController.getContentOffset ? dataController.getContentOffset() : 0;
+                editorFactory = this.getController("editorFactory");
 
-            this._fixedTableElement.css("top", scrollTop + offset);
+            this._fixedTableElement.parent().scrollTop(scrollTop);
 
             if(needFocus) {
                 $focusedElement = editorFactory.focus();
@@ -732,19 +732,24 @@ var RowsViewFixedColumnsExtender = extend({}, baseFixedColumns, {
     },
 
     _handleScroll: function(e) {
-        this._updateFixedTablePosition(-e.scrollOffset.top, true);
+        this._updateFixedTablePosition(e.scrollOffset.top, true);
         this.callBase(e);
     },
 
     _updateContentPosition: function(isRender) {
         this.callBase.apply(this, arguments);
         if(!isRender) {
-            this._updateFixedTablePosition(-this._scrollTop);
+            this._updateFixedTablePosition(this._scrollTop);
         }
     },
     _afterRowPrepared: function(e) {
         if(this._isFixedTableRendering) return;
         this.callBase(e);
+    },
+
+    dispose: function() {
+        this.callBase.apply(this, arguments);
+        clearTimeout(this._fixedScrollTimeout);
     }
 });
 

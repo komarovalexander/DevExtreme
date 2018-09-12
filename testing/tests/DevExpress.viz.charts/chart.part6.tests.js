@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     executeAsyncMock = require("../../helpers/executeAsyncMock.js"),
     commons = require("./chartParts/commons.js"),
@@ -1285,8 +1283,8 @@ QUnit.test("adjustOnZoom with min/max options", function(assert) {
     chartMocks.seriesMockData.series.push(stubSeries1);
 
     stubSeries1.getViewport.returns({
-        min: 10,
-        max: 15
+        startValue: 10,
+        endValue: 15
     });
 
     var chart = this.createChart({

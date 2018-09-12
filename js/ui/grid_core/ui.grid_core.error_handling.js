@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     clickEvent = require("../../events/click"),
@@ -72,7 +70,7 @@ var ErrorHandlingController = modules.ViewController.inherit({
             return $errorMessageElement;
         }
 
-        viewElement = rowIndex >= 0 ? that._rowsView : that._columnHeadersView,
+        viewElement = rowIndex >= 0 || !that._columnHeadersView.isVisible() ? that._rowsView : that._columnHeadersView,
         $tableElements = $popupContent || viewElement.getTableElements();
 
         each($tableElements, function(_, tableElement) {
@@ -84,9 +82,15 @@ var ErrorHandlingController = modules.ViewController.inherit({
                 that.removeErrorRow($row.next());
                 $errorMessageElement.insertAfter($row);
             } else {
-                rowElements = $(tableElement).children("tbody").children("tr");
-                that.removeErrorRow(rowElements.last());
-                $(tableElement).append($errorMessageElement);
+                var $tbody = $(tableElement).children("tbody");
+                rowElements = $tbody.children("tr");
+                if(that._columnHeadersView.isVisible()) {
+                    that.removeErrorRow(rowElements.last());
+                    $(tableElement).append($errorMessageElement);
+                } else {
+                    that.removeErrorRow(rowElements.first());
+                    $tbody.first().prepend($errorMessageElement);
+                }
             }
         });
         return $firstErrorRow;

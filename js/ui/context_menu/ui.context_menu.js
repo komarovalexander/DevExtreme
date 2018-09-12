@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     eventsEngine = require("../../events/core/events_engine"),
@@ -572,6 +570,7 @@ var ContextMenu = MenuBase.inherit((function() {
                     focusStateEnabled: this.option("focusStateEnabled"),
                     animation: overlayAnimation,
                     closeOnOutsideClick: this._closeOnOutsideClickHandler.bind(this),
+                    propagateOutsideClick: true,
                     closeOnTargetScroll: true,
                     deferRendering: false,
                     position: {

@@ -1,5 +1,3 @@
-"use strict";
-
 import $ from "jquery";
 import vizMocks from "../../helpers/vizMocks.js";
 import tickGeneratorModule from "viz/axes/tick_generator";
@@ -119,7 +117,8 @@ var environment = {
                 renderer: this.renderer,
                 axisType: "xyAxes",
                 drawingType: "linear",
-                incidentOccurred: this.incidentOccurred
+                incidentOccurred: this.incidentOccurred,
+                eventTrigger: () => { }
             };
             this.range = new RangeStubCtor();
             this.range.min = 0;
@@ -1221,7 +1220,6 @@ QUnit.test("Alignment of labels after their rotation and updating width of canva
     this.renderer.text = spyRendererText.call(this, markersBBoxes);
     var axis = this.drawAxisWithOptions({ min: 1, max: 10, label: { overlappingBehavior: "rotate", rotationAngle: 40 } });
 
-    this.renderer.text.reset();
     // updating
     this.translator.translate.withArgs(1).returns(10);
     this.translator.translate.withArgs(3).returns(40);
@@ -1335,13 +1333,49 @@ QUnit.test("Labels overlap, some of them hide", function(assert) {
     assert.deepEqual(this.arrayRemovedElements, ["3", "7", "11", "15"], "decimated labels");
 
     assert.equal(texts.getCall(0).returnValue.attr.lastCall.args[0].translateY, 600, "0 text not moved");
-    assert.equal(texts.getCall(1).returnValue.attr.lastCall.args[0].translateY, 600, "1 text not moved");
     assert.equal(texts.getCall(2).returnValue.attr.lastCall.args[0].translateY, 607, "2 text moved");
-    assert.equal(texts.getCall(3).returnValue.attr.lastCall.args[0].translateY, 600, "3 text not moved");
     assert.equal(texts.getCall(4).returnValue.attr.lastCall.args[0].translateY, 600, "4 text not moved");
-    assert.equal(texts.getCall(5).returnValue.attr.lastCall.args[0].translateY, 600, "5 text not moved");
     assert.equal(texts.getCall(6).returnValue.attr.lastCall.args[0].translateY, 607, "6 text moved");
-    assert.equal(texts.getCall(7).returnValue.attr.lastCall.args[0].translateY, 600, "7 text not moved");
+});
+
+QUnit.test("Do not update removed label position on update size", function(assert) {
+    var markersBBoxes = [
+        { x: 0, y: 0, width: 20, height: 5 },
+        { x: 15, y: 0, width: 20, height: 6 },
+        { x: 20, y: 0, width: 20, height: 5 },
+        { x: 45, y: 0, width: 15, height: 7 },
+        { x: 60, y: 0, width: 10, height: 5 },
+        { x: 85, y: 0, width: 10, height: 5 },
+        { x: 100, y: 0, width: 10, height: 5 },
+        { x: 115, y: 0, width: 10, height: 5 }
+    ];
+
+    this.generatedTicks = [1, 3, 5, 7, 9, 11, 13, 15];
+
+    this.translator.translate.withArgs(11).returns(60);
+    this.translator.translate.withArgs(13).returns(70);
+    this.translator.translate.withArgs(15).returns(80);
+
+    this.renderer.text = spyRendererText.call(this, markersBBoxes);
+
+    const axis = this.drawAxisWithOptions({
+        min: 1,
+        max: 10,
+        label: {
+            overlappingBehavior: "stagger",
+            staggeringSpacing: 0,
+            indentFromAxis: 0
+        }
+    });
+
+    const removedLabel = this.renderer.text.getCall(1).returnValue;
+
+    removedLabel.attr.reset();
+
+    // act
+    axis.updateSize(this.canvas);
+
+    assert.equal(removedLabel.attr.callCount, 0);
 });
 
 QUnit.test("Axis position is top", function(assert) {
@@ -1673,9 +1707,7 @@ QUnit.test("Custom staggering spacing, overlapping mode is hide, labels are over
     assert.deepEqual(this.arrayRemovedElements, ["3", "7"], "labels should decimated");
 
     assert.equal(texts.getCall(0).returnValue.attr.lastCall.args[0].translateY, 600, "0 text not moved");
-    assert.equal(texts.getCall(1).returnValue.attr.lastCall.args[0].translateY, 600, "1 text not moved");
     assert.equal(texts.getCall(2).returnValue.attr.lastCall.args[0].translateY, 607, "2 text moved");
-    assert.equal(texts.getCall(3).returnValue.attr.lastCall.args[0].translateY, 600, "3 text not moved");
     assert.equal(texts.getCall(4).returnValue.attr.lastCall.args[0].translateY, 600, "4 text not moved");
 });
 
@@ -2696,7 +2728,8 @@ QUnit.test("Get scale breaks in the viewport", function(assert) {
             { startValue: 500, endValue: 600 }
         ]
     });
-    this.axis.zoom(250, 540);
+
+    this.axis.visualRange(250, 540);
     this.axis.createTicks(this.canvas);
 
     var breaks = this.tickGeneratorSpy.lastCall.args[7];
@@ -2713,7 +2746,7 @@ QUnit.test("Do not get scale break if viewport inside it", function(assert) {
         breaks: [{ startValue: 200, endValue: 500 }]
     });
 
-    this.axis.zoom(250, 340);
+    this.axis.visualRange(250, 340);
     this.axis.createTicks(this.canvas);
 
     var breaks = this.tickGeneratorSpy.lastCall.args[7];
@@ -3288,7 +3321,7 @@ QUnit.test("Recalculate the breaks on zoom", function(assert) {
     this.axis.createTicks(this.canvas);
 
     // act
-    this.axis.zoom(new Date(2017, 8, 8, 8, 0, 0), new Date(2017, 8, 11));
+    this.axis.visualRange(new Date(2017, 8, 8, 8, 0, 0), new Date(2017, 8, 11));
     this.axis.createTicks(this.canvas);
 
     // assert
@@ -3716,7 +3749,7 @@ QUnit.test("Filter scalebreaks on zoom", function(assert) {
     this.axis.setGroupSeries(this.series);
     this.axis.createTicks(this.canvas);
 
-    this.axis.zoom(50, 100);
+    this.axis.visualRange(50, 100);
     this.axis.createTicks(this.canvas);
 
     assert.deepEqual(this.tickGeneratorSpy.lastCall.args[7], [{ from: 50, to: 80, cumulativeWidth: 0 }]);
@@ -3740,7 +3773,7 @@ QUnit.test("Recalculate scale breaks on zoom", function(assert) {
         this.stubSeries([[80, 120, 40], []])
     ]);
 
-    this.axis.zoom(50, 100);
+    this.axis.visualRange(50, 100);
     this.axis.createTicks(this.canvas);
 
     assert.deepEqual(this.tickGeneratorSpy.lastCall.args[7], [{ from: 80, to: 100, cumulativeWidth: 0 }]);
@@ -3758,10 +3791,10 @@ QUnit.test("Reset zoom", function(assert) {
         max: 120
     });
 
-    this.axis.zoom(50, 100);
+    this.axis.visualRange(50, 100);
     this.axis.createTicks(this.canvas);
 
-    this.axis.zoom(2, 120);
+    this.axis.visualRange(2, 120);
     this.axis.createTicks(this.canvas);
 
     assert.deepEqual(this.tickGeneratorSpy.lastCall.args[7], [{ from: 10, to: 40, cumulativeWidth: 0 }, { from: 40, to: 80, cumulativeWidth: 0 }]);
@@ -3888,7 +3921,8 @@ QUnit.module("Adjust value axis", {
             renderer: this.renderer,
             axisType: "xyAxes",
             drawingType: "linear",
-            isArgumentAxis: false
+            isArgumentAxis: false,
+            eventTrigger() {}
         });
 
         this.series = [new MockSeries({}), new MockSeries({})];
@@ -4139,7 +4173,7 @@ QUnit.test("Do not adjust axis if it was zoomed", function(assert) {
     this.axis.setBusinessRange({ min: -100, max: 100 });
     this.axis.setMarginOptions({});
 
-    this.axis.zoom(-20, 60);
+    this.axis.visualRange(-20, 60);
 
     this.axis.adjust();
     this.translator.stub("updateBusinessRange").reset();

@@ -1,5 +1,3 @@
-"use strict";
-
 var themeModule = require("../../themes"),
     registerTheme = themeModule.registerTheme,
 
@@ -180,6 +178,10 @@ registerTheme({
     },
     primaryTitleColor: DARK_TITLE_COLOR,
     secondaryTitleColor: DARK_TITLE_COLOR,
+
+    tooltip: {
+        color: "#000"
+    },
 
     "export": {
         backgroundColor: DARK_BACKGROUND_COLOR,
@@ -365,6 +367,13 @@ registerTheme({
         item: {
             border: {
                 color: DARK_BACKGROUND_COLOR
+            }
+        }
+    },
+    sankey: {
+        label: {
+            font: {
+                color: WHITE
             }
         }
     }

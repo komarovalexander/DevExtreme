@@ -1,5 +1,3 @@
-"use strict";
-
 var Class = require("../core/class"),
     window = require("../core/utils/window").getWindow(),
     typeUtils = require("../core/utils/type"),
@@ -10,13 +8,14 @@ var Class = require("../core/class"),
     JSZip = require("jszip"),
     fileSaver = require("./file_saver"),
     excelFormatConverter = require("./excel_format_converter"),
+    XlsxFile = require("./xlsx/xlsx_file"),
     XML_TAG = "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
     GROUP_SHEET_PR_XML = "<sheetPr><outlinePr summaryBelow=\"0\"/></sheetPr>",
     SINGLE_SHEET_PR_XML = "<sheetPr/>",
-    BASE_STYLE_XML = "<fonts count=\"2\"><font><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/><family val=\"2\"/>" +
+    BASE_STYLE_XML1 = "<fonts count=\"2\"><font><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/><family val=\"2\"/>" +
                      "<scheme val=\"minor\"/></font><font><b/><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/>" +
-                     "<family val=\"2\"/><scheme val=\"minor\"/></font></fonts><fills count=\"1\"><fill><patternFill patternType=\"none\"/>" +
-                     "</fill></fills><borders count=\"1\"><border><left style=\"thin\"><color rgb=\"FFD3D3D3\"/></left><right style=\"thin\">" +
+                     "<family val=\"2\"/><scheme val=\"minor\"/></font></fonts>",
+    BASE_STYLE_XML2 = "<borders count=\"1\"><border><left style=\"thin\"><color rgb=\"FFD3D3D3\"/></left><right style=\"thin\">" +
                      "<color rgb=\"FFD3D3D3\"/></right><top style=\"thin\"><color rgb=\"FFD3D3D3\"/></top><bottom style=\"thin\"><color rgb=\"FFD3D3D3\"/>" +
                      "</bottom></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>",
     OPEN_XML_FORMAT_URL = "http://schemas.openxmlformats.org",
@@ -28,6 +27,9 @@ var Class = require("../core/class"),
     STYLE_FILE_NAME = "styles.xml",
     WORKSHEETS_FOLDER = "worksheets",
     WORKSHEET_FILE_NAME = "sheet1.xml",
+    WORKSHEET_HEADER_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+        'mc:Ignorable="x14ac" xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac">',
     VALID_TYPES = {
         "boolean": "b",
         "date": "d",
@@ -37,11 +39,10 @@ var Class = require("../core/class"),
     EXCEL_START_TIME = Date.UTC(1899, 11, 30),
     DAYS_COUNT_BEFORE_29_FEB_1900 = 60,
 
-    BOLD_STYLES_COUNT = 4,
     MAX_DIGIT_WIDTH_IN_PIXELS = 7, // Calibri font with 11pt size
     CUSTOM_FORMAT_START_INDEX = 165;
 
-exports.ExcelCreator = Class.inherit({
+var ExcelCreator = Class.inherit({
     _getXMLTag: function(tagName, attributes, content) {
         var result = "<" + tagName,
             i,
@@ -154,9 +155,7 @@ exports.ExcelCreator = Class.inherit({
     _prepareValue: function(rowIndex, cellIndex) {
         var dataProvider = this._dataProvider,
             value = dataProvider.getCellValue(rowIndex, cellIndex),
-            type = this._getDataType(dataProvider.getCellType(rowIndex, cellIndex)),
-            formatID = this._styleArray[this._dataProvider.getStyleId(rowIndex, cellIndex)].formatID,
-            format = typeUtils.isNumeric(formatID) ? this._styleFormat[formatID - 1] : null;
+            type = this._getDataType(dataProvider.getCellType(rowIndex, cellIndex));
 
         if(type === "d" && !typeUtils.isDate(value)) {
             type = "s";
@@ -168,7 +167,7 @@ exports.ExcelCreator = Class.inherit({
                 break;
 
             case "d":
-                value = this._getExcelDateValue(value, format);
+                value = this._getExcelDateValue(value);
                 type = "n";
                 break;
         }
@@ -197,9 +196,19 @@ exports.ExcelCreator = Class.inherit({
 
             for(cellIndex = 0; cellIndex !== cellsLength; cellIndex++) {
                 cellData = that._prepareValue(rowIndex, cellIndex);
+                let cellStyleId = dataProvider.getStyleId(rowIndex, cellIndex);
+                const xlsxCell = {
+                    style: that._styleArray[cellStyleId],
+                };
+                if(dataProvider.customizeXlsxCell) {
+                    dataProvider.customizeXlsxCell({
+                        xlsxCell
+                    });
+                }
+                cellStyleId = this._xlsxFile.registerCellFormat(xlsxCell.style);
 
                 cellsArray.push({
-                    style: dataProvider.getStyleId(rowIndex, cellIndex),
+                    style: cellStyleId,
                     value: cellData.value,
                     type: cellData.type
                 });
@@ -213,14 +222,6 @@ exports.ExcelCreator = Class.inherit({
         }
 
         return result;
-    },
-
-    _getBoldStyleID: function(alignment) {
-        for(var i = 0; i < BOLD_STYLES_COUNT - 1; i++) {
-            if(this._styleArray[i].alignment === alignment) {
-                return i;
-            }
-        }
     },
 
     _calculateWidth: function(pixelsWidth) {
@@ -238,13 +239,18 @@ exports.ExcelCreator = Class.inherit({
         });
 
         styles.forEach(function(style) {
+            const formatID = that._appendFormat(style.format, style.dataType);
             that._styleArray.push({
-                bold: !!style.bold,
-                alignment: style.alignment || "left",
-                formatID: that._appendFormat(style.format, style.dataType),
-                wrapText: style.wrapText
+                fontId: Number(!!style.bold),
+                numberFormatId: typeUtils.isDefined(formatID) ? Number(formatID) + CUSTOM_FORMAT_START_INDEX - 1 : 0,
+                alignment: {
+                    vertical: "top",
+                    wrapText: Number(!!style.wrapText),
+                    horizontal: style.alignment || "left"
+                }
             });
         });
+        that._styleArray.forEach(item => this._xlsxFile.registerCellFormat(item));
     },
 
     _prepareCellData: function() {
@@ -293,7 +299,6 @@ exports.ExcelCreator = Class.inherit({
     _generateStylesXML: function() {
         var that = this,
             folder = that._zip.folder(XL_FOLDER_NAME),
-            xmlStyles = [],
             formatIndex,
             XML = "";
 
@@ -304,26 +309,13 @@ exports.ExcelCreator = Class.inherit({
             ]);
         }
 
-        XML = XML + that._getXMLTag("numFmts", [{ name: "count", value: that._styleFormat.length }], that._styleFormat.join("")) + BASE_STYLE_XML;
+        XML = XML + that._getXMLTag("numFmts", [{ name: "count", value: that._styleFormat.length }], that._styleFormat.join(""));
+        XML = XML + BASE_STYLE_XML1;
+        XML = XML + this._xlsxFile.generateFillsXml();
+        XML = XML + BASE_STYLE_XML2;
 
-        this._styleArray.forEach(function(style) {
-            xmlStyles.push(that._getXMLTag("xf", [
-                { name: "xfId", value: 0 },
-                { name: "applyAlignment", value: 1 },
-                { name: "fontId", value: Number(!!style.bold) },
-                { name: "applyNumberFormat", value: (typeUtils.isDefined(style.formatID)) ? 1 : 0 },
-                {
-                    name: "numFmtId",
-                    value: typeUtils.isDefined(style.formatID) ? Number(style.formatID) + CUSTOM_FORMAT_START_INDEX - 1 : 0
-                }
-            ], that._getXMLTag("alignment", [
-                { name: "vertical", value: "top" },
-                { name: "wrapText", value: Number(!!style.wrapText) },
-                { name: "horizontal", value: style.alignment }
-            ])));
-        });
+        XML = XML + this._xlsxFile.generateCellFormatsXml();
 
-        XML = XML + that._getXMLTag("cellXfs", [{ name: "count", value: xmlStyles.length }], xmlStyles.join(""));
         XML = XML + that._getXMLTag("cellStyles", [{ name: "count", value: 1 }], that._getXMLTag("cellStyle", [
             { name: "name", value: "Normal" },
             { name: "xfId", value: 0 },
@@ -403,9 +395,7 @@ exports.ExcelCreator = Class.inherit({
             colsLength = this._colsArray.length,
             rSpans = "1:" + colsLength,
             headerRowCount = this._dataProvider.getHeaderRowCount ? this._dataProvider.getHeaderRowCount() : 1,
-            xmlResult = [["<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" " +
-                          "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" " +
-                          "mc:Ignorable=\"x14ac\" xmlns:x14ac=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac\">",
+            xmlResult = [[WORKSHEET_HEADER_XML,
                 ((this._needSheetPr) ? GROUP_SHEET_PR_XML : SINGLE_SHEET_PR_XML), "<dimension ref=\"A1:", this._getCellIndex(this._maxIndex[0], this._maxIndex[1]) + "\"/><sheetViews><sheetView " +
             (this._rtlEnabled ? "rightToLeft=\"1\" " : "") + "tabSelected=\"1\" workbookViewId=\"0\">" + this._getPaneXML() + "</sheetView></sheetViews><sheetFormatPr defaultRowHeight=\"15\" outlineLevelRow=\"",
                 ((this._dataProvider.getRowsCount() > 0) ? this._dataProvider.getGroupLevel(0) : 0), "\" x14ac:dyDescent=\"0.25\"/>"].join("")];
@@ -550,9 +540,10 @@ exports.ExcelCreator = Class.inherit({
         this._styleFormat = [];
         this._needSheetPr = false;
         this._dataProvider = dataProvider;
+        this._xlsxFile = new XlsxFile();
 
-        if(typeUtils.isDefined(JSZip)) {
-            this._zip = new JSZip();
+        if(typeUtils.isDefined(ExcelCreator.JSZip)) {
+            this._zip = new ExcelCreator.JSZip();
         } else {
             this._zip = null;
         }
@@ -583,6 +574,10 @@ exports.ExcelCreator = Class.inherit({
     }
 });
 
+ExcelCreator.JSZip = JSZip;
+
+exports.ExcelCreator = ExcelCreator;
+
 exports.getData = function(data, options, callback) {
     // TODO: Looks like there is no need to export ExcelCreator any more?
     var excelCreator = new exports.ExcelCreator(data, options);
@@ -607,8 +602,12 @@ exports.__internals = {
     STYLE_FILE_NAME: STYLE_FILE_NAME,
     WORKSHEET_FILE_NAME: WORKSHEET_FILE_NAME,
     WORKSHEETS_FOLDER: WORKSHEETS_FOLDER,
+    WORKSHEET_HEADER_XML: WORKSHEET_HEADER_XML,
     SHAREDSTRING_FILE_NAME: SHAREDSTRING_FILE_NAME,
     GROUP_SHEET_PR_XML: GROUP_SHEET_PR_XML,
-    SINGLE_SHEET_PR_XML: SINGLE_SHEET_PR_XML
+    SINGLE_SHEET_PR_XML: SINGLE_SHEET_PR_XML,
+    BASE_STYLE_XML1: BASE_STYLE_XML1,
+    BASE_STYLE_XML2: BASE_STYLE_XML2,
+    XML_TAG: XML_TAG
 };
 ///#ENDDEBUG

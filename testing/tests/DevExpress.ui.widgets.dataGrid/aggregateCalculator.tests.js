@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     AggregateCalculator = require("ui/data_grid/aggregate_calculator");
 
@@ -10,6 +8,18 @@ var customAggregator = {
     },
     finalize: function(result) {
         return result + 42;
+    }
+};
+
+var customAggregatorForSecondGroup = {
+    seed: function(groupIndex) {
+        return groupIndex === 1 ? 6 : undefined;
+    },
+    step: function(accumulator, value) {
+        return accumulator !== undefined ? accumulator - value : undefined;
+    },
+    finalize: function(result) {
+        return result !== undefined ? result + 42 : undefined;
     }
 };
 
@@ -96,19 +106,20 @@ QUnit.test("group aggregates", function(assert) {
             { aggregator: "max", selector: "this" },
             { aggregator: "min", selector: "this" },
             { aggregator: "avg", selector: "this" },
-            { aggregator: customAggregator, selector: "this" }
+            { aggregator: customAggregator, selector: "this" },
+            { aggregator: customAggregatorForSecondGroup, selector: "this" }
         ],
         groupLevel: 2
     });
 
     calculator.calculate();
 
-    assert.deepEqual(data[0].aggregates, [4, 19, 6, 4, 4.75, 29]);
-    assert.deepEqual(data[0].items[0].aggregates, [2, 10, 6, 4, 5, 38]);
-    assert.deepEqual(data[0].items[1].aggregates, [2, 9, 5, 4, 4.5, 39]);
+    assert.deepEqual(data[0].aggregates, [4, 19, 6, 4, 4.75, 29, undefined]);
+    assert.deepEqual(data[0].items[0].aggregates, [2, 10, 6, 4, 5, 38, 38]);
+    assert.deepEqual(data[0].items[1].aggregates, [2, 9, 5, 4, 4.5, 39, 39]);
 
-    assert.deepEqual(data[1].aggregates, [2, 5, 3, 2, 2.5, 43]);
-    assert.deepEqual(data[1].items[0].aggregates, [2, 5, 3, 2, 2.5, 43]);
+    assert.deepEqual(data[1].aggregates, [2, 5, 3, 2, 2.5, 43, undefined]);
+    assert.deepEqual(data[1].items[0].aggregates, [2, 5, 3, 2, 2.5, 43, 43]);
 });
 
 QUnit.test("selectors", function(assert) {

@@ -1,5 +1,3 @@
-"use strict";
-
 var commonUtils = require("../../core/utils/common"),
     noop = commonUtils.noop,
     eventsEngine = require("../../events/core/events_engine"),
@@ -9,6 +7,7 @@ var commonUtils = require("../../core/utils/common"),
     inArray = require("../../core/utils/array").inArray,
     eventUtils = require("../../events/utils"),
     BaseWidget = require("../core/base_widget"),
+    coreDataUtils = require("../../core/utils/data"),
     legendModule = require("../components/legend"),
     dataValidatorModule = require("../components/data_validator"),
     seriesModule = require("../series/base_series"),
@@ -663,7 +662,8 @@ var BaseChart = BaseWidget.inherit({
 
         if(that._scrollBar) {
             argBusinessRange = that._argumentAxes[0].getTranslator().getBusinessRange();
-            if(argBusinessRange.axisType === "discrete" && argBusinessRange.categories && argBusinessRange.categories.length <= 1) {
+            if(argBusinessRange.axisType === "discrete" && argBusinessRange.categories && argBusinessRange.categories.length <= 1 ||
+                argBusinessRange.axisType !== "discrete" && argBusinessRange.min === argBusinessRange.max) {
                 zoomMinArg = zoomMaxArg = undefined;
             } else {
                 zoomMinArg = argBusinessRange.minVisible;
@@ -917,13 +917,26 @@ var BaseChart = BaseWidget.inherit({
         that._needHandleRenderComplete = true;
     },
 
+    _simulateOptionChange(fullName, value, previousValue) {
+        const that = this;
+        const optionSetter = coreDataUtils.compileSetter(fullName);
+
+        optionSetter(that._options, value, {
+            functionsAsIs: true,
+            merge: !that._getOptionsByReference()[fullName]
+        });
+
+        that._notifyOptionChanged(fullName, value, previousValue);
+        that._changes.reset();
+    },
+
     _optionChanged: function(arg) {
         this._themeManager.resetOptions(arg.name);
         this.callBase.apply(this, arguments);
     },
 
-    _applyChanges: function() {
-        var that = this;
+    _applyChanges() {
+        const that = this;
         that._themeManager.update(that._options);
         that.callBase.apply(that, arguments);
         that._doRefresh();
@@ -957,7 +970,7 @@ var BaseChart = BaseWidget.inherit({
     },
 
     _customChangesOrder: ["ANIMATION", "REFRESH_SERIES_FAMILIES", "DATA_SOURCE", "PALETTE", "REFRESH_SERIES_DATA_INIT", "DATA_INIT",
-        "FORCE_RENDER", "AXES_AND_PANES", "ROTATED", "REFRESH_SERIES_REINIT", "SCROLL_BAR", "CHART_TOOLTIP", "REINIT"],
+        "FORCE_RENDER", "VISUAL_RANGE", "AXES_AND_PANES", "ROTATED", "REFRESH_SERIES_REINIT", "SCROLL_BAR", "CHART_TOOLTIP", "REINIT"],
 
     _change_ANIMATION: function() {
         this._renderer.updateAnimationOptions(this._getAnimationOptions());
@@ -983,7 +996,7 @@ var BaseChart = BaseWidget.inherit({
 
     _change_REFRESH_SERIES_FAMILIES: function() {
         this._processSeriesFamilies();
-        this._populateBusinessRange(true);
+        this._populateBusinessRange();
         this._processRefreshData(FORCE_RENDER_REFRESH_ACTION);
     },
 
@@ -1048,7 +1061,6 @@ var BaseChart = BaseWidget.inherit({
     },
 
     _dataSourceChangedHandler: function() {
-        this._resetZoom();
         this._dataInit();
     },
 
@@ -1075,7 +1087,7 @@ var BaseChart = BaseWidget.inherit({
         }
         that._repopulateSeries();
         that._seriesPopulatedHandlerCore();
-        that._populateBusinessRange(true);
+        that._populateBusinessRange();
         that._tracker.updateSeries(that.series);
         that._updateLegend();
         needRedraw && that._forceRender();
@@ -1189,9 +1201,9 @@ var BaseChart = BaseWidget.inherit({
         let particularSeriesOptions;
         let seriesTheme;
         let seriesThemes = [];
-        const seriesVisibilityChanged = () => {
+        const seriesVisibilityChanged = (target) => {
             that._specialProcessSeries();
-            that._populateBusinessRange(false);
+            that._populateBusinessRange(target && target.getValueAxis());
             that._renderer.stopAllAnimations(true);
             that._updateLegend();
             that._doRender({ force: true });
@@ -1223,6 +1235,7 @@ var BaseChart = BaseWidget.inherit({
     _populateSeries(data) {
         const that = this;
         const seriesBasis = [];
+        const incidentOccurred = that._incidentOccurred;
         let seriesThemes = that._populateSeriesOptions(data);
         let particularSeries;
         let changedStateSeriesCount = 0;
@@ -1271,11 +1284,12 @@ var BaseChart = BaseWidget.inherit({
                     seriesGroup: that._seriesGroup,
                     labelsGroup: that._labelsGroup,
                     eventTrigger: that._eventTrigger,
-                    eventPipe: eventPipe
+                    eventPipe: eventPipe,
+                    incidentOccurred: incidentOccurred
                 }, renderSettings), seriesTheme);
             }
             if(!particularSeries.isUpdated) {
-                that._incidentOccurred("E2101", [seriesTheme.type]);
+                incidentOccurred("E2101", [seriesTheme.type]);
             } else {
                 particularSeries.index = that.series.length;
                 that.series.push(particularSeries);

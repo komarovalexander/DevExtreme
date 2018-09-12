@@ -1,5 +1,3 @@
-"use strict";
-
 import $ from "jquery";
 import vizMocks from "../../helpers/vizMocks.js";
 import vizUtilsModule from "viz/core/utils";
@@ -53,14 +51,12 @@ var environment = {
             axesContainerGroup: axesContainerGroup,
             gridGroup: gridGroup,
             incidentOccurred: this.incidentOccurred,
+            eventTrigger: () => { },
             axisType: "xyAxes",
             drawingType: "linear"
         }, options));
     },
     afterEach: function() {
-        if(this.getCategoriesInfo !== undefined) {
-            this.getCategoriesInfo.restore();
-        }
         translator2DModule.Translator2D.restore();
         this.axis.dispose();
         this.axis = null;
@@ -85,6 +81,7 @@ var environment = {
             title: {},
             marker: {}
         }, options));
+        this.axis._options._customVisualRange = options ? options.visualRange : undefined;
 
         this.axis.validate();
     }
@@ -153,18 +150,14 @@ QUnit.test("Calculate tickInterval if ratio of (categories count) to (count by s
 QUnit.test("Return categories between min and max", function(assert) {
     var categories = ["cat1", "cat2", "cat3", "cat4", "cat5"];
 
-    this.getCategoriesInfo = sinon.stub(vizUtilsModule, "getCategoriesInfo");
-    this.getCategoriesInfo.withArgs(categories, "cat2", "cat4").returns({ categories: ["cat2", "cat3", "cat4"] });
-
     this.createAxis();
     this.updateOptions({
         argumentType: "string",
         type: "discrete",
-        min: "cat2",
-        max: "cat4"
+        visualRange: ["cat2", "cat4"]
     });
 
-    this.axis.setBusinessRange({ categories: ["cat1", "cat2", "cat3", "cat4", "cat5"] });
+    this.axis.setBusinessRange({ categories });
 
     // act
     this.axis.createTicks(canvas(1000));
@@ -334,6 +327,63 @@ QUnit.test("forceTickInterval true. No user's tickIntervsal, calculated tickInte
         allowDecimals: true,
         forceUserTickInterval: true,
         tickInterval: undefined
+    });
+
+    this.axis.setBusinessRange({ min: 0, max: 10 });
+
+    // act
+    this.axis.createTicks(canvas(300));
+
+    assert.deepEqual(this.axis._tickInterval, 2);
+});
+
+QUnit.test("forceTickInterval false. User's tickIntervsal 2, no user's axisDivisionFactor, calculated tickInterval 2 - return user tickInterval", function(assert) {
+    this.createAxis();
+    this.updateOptions({
+        argumentType: "numeric",
+        type: "continuous",
+        allowDecimals: true,
+        forceUserTickInterval: false,
+        tickInterval: 2,
+        axisDivisionFactor: undefined
+    });
+
+    this.axis.setBusinessRange({ min: 0, max: 10 });
+
+    // act
+    this.axis.createTicks(canvas(300));
+
+    assert.deepEqual(this.axis._tickInterval, 2);
+});
+
+QUnit.test("forceTickInterval false. User's tickIntervsal 2, user's axisDivisionFactor 100, calculated tickInterval 5 - return calculated", function(assert) {
+    this.createAxis();
+    this.updateOptions({
+        argumentType: "numeric",
+        type: "continuous",
+        allowDecimals: true,
+        forceUserTickInterval: false,
+        tickInterval: 2,
+        axisDivisionFactor: 100
+    });
+
+    this.axis.setBusinessRange({ min: 0, max: 10 });
+
+    // act
+    this.axis.createTicks(canvas(300));
+
+    assert.deepEqual(this.axis._tickInterval, 5);
+});
+
+QUnit.test("forceTickInterval true. User's tickIntervsal 2, user's axisDivisionFactor 100, calculated tickInterval 2 - return user tickInterval", function(assert) {
+    this.createAxis();
+    this.updateOptions({
+        argumentType: "numeric",
+        type: "continuous",
+        allowDecimals: true,
+        forceUserTickInterval: true,
+        tickInterval: 2,
+        axisDivisionFactor: 100
     });
 
     this.axis.setBusinessRange({ min: 0, max: 10 });
@@ -524,17 +574,33 @@ QUnit.test("BusinessDelta is 0", function(assert) {
     this.createAxis();
     this.updateOptions({
         argumentType: "numeric",
-        type: "continuous",
-        allowDecimals: true
+        type: "continuous"
     });
 
-    this.axis.setBusinessRange({ min: 200, max: 200 });
+    this.axis.setBusinessRange({ min: 231, max: 231 });
 
     // act
     this.axis.createTicks(canvas(1000));
 
-    assert.deepEqual(this.axis._majorTicks.map(value), [200]);
-    assert.deepEqual(this.axis._tickInterval, 1);
+    assert.deepEqual(this.axis._majorTicks.map(value), [231]);
+    assert.deepEqual(this.axis._tickInterval, undefined);
+});
+
+QUnit.test("BusinessDelta is 0 (logarithmic)", function(assert) {
+    this.createAxis();
+    this.updateOptions({
+        argumentType: "numeric",
+        type: "logarithmic",
+        logarithmBase: 10
+    });
+
+    this.axis.setBusinessRange({ min: 1452, max: 1452 });
+
+    // act
+    this.axis.createTicks(canvas(1000));
+
+    assert.deepEqual(this.axis._majorTicks.map(value), [1452]);
+    assert.deepEqual(this.axis._tickInterval, undefined);
 });
 
 QUnit.test("Custom tickInterval is very small - ignore tickInterval and raise W2003 warning", function(assert) {
@@ -1071,9 +1137,8 @@ QUnit.test("getAggregationInfo with zooming. min is 0", function(assert) {
     });
 
     this.axis.setBusinessRange({ min: -50, max: 50 });
-    this.axis.zoom(0, 5);
     this.axis.createTicks(canvas(170));
-
+    this.axis.visualRange(0, 5);
     const aggregationInfo = this.axis.getAggregationInfo(undefined, {});
 
     assert.strictEqual(aggregationInfo.interval, 0.5);
@@ -1091,7 +1156,7 @@ QUnit.test("getAggregationInfo with zooming. max is 0", function(assert) {
     });
 
     this.axis.setBusinessRange({ min: -50, max: 50 });
-    this.axis.zoom(-5, 0);
+    this.axis.visualRange(-5, 0);
     this.axis.createTicks(canvas(170));
 
     const aggregationInfo = this.axis.getAggregationInfo(undefined, {});
@@ -2079,16 +2144,18 @@ QUnit.test("Hours tickInterval (4)", function(assert) {
         endOnTick: false
     });
 
-    this.axis.setBusinessRange({ min: new Date(2012, 3, 1, 3), max: new Date(2012, 3, 1, 21) });
+    this.axis.setBusinessRange({ min: new Date(2012, 5, 1, 3), max: new Date(2012, 5, 1, 21) });
 
     // act
     this.axis.createTicks(canvas(250));
 
-    assert.deepEqual(this.axis._majorTicks.map(value), [new Date(2012, 3, 1, 4),
-        new Date(2012, 3, 1, 8),
-        new Date(2012, 3, 1, 12),
-        new Date(2012, 3, 1, 16),
-        new Date(2012, 3, 1, 20)].map(function(d) { return d.valueOf(); }));
+    assert.deepEqual(this.axis._majorTicks.map(value), [
+        new Date(2012, 5, 1, 4),
+        new Date(2012, 5, 1, 8),
+        new Date(2012, 5, 1, 12),
+        new Date(2012, 5, 1, 16),
+        new Date(2012, 5, 1, 20)
+    ].map(function(d) { return d.valueOf(); }));
     assert.deepEqual(this.axis._tickInterval, { "hours": 4 });
 });
 
@@ -2618,6 +2685,23 @@ QUnit.test("Do not generate minor ticks nor calculate minorTickInterval when dat
 
     assert.deepEqual(this.axis._minorTicks.map(value), []);
     assert.deepEqual(this.axis._minorTickInterval, undefined);
+});
+
+QUnit.test("BusinessDelta is 0", function(assert) {
+    this.createAxis();
+    this.updateOptions({
+        argumentType: "datetime",
+        type: "continuous"
+    });
+
+    this.axis.setBusinessRange({ min: new Date(2018, 4, 5), max: new Date(2018, 4, 5) });
+
+    // act
+    this.axis.createTicks(canvas(1000));
+
+    assert.equal(this.axis._majorTicks.length, 1);
+    assert.deepEqual(this.axis._majorTicks[0].value, new Date(2018, 4, 5));
+    assert.deepEqual(this.axis._tickInterval, undefined);
 });
 
 QUnit.module("Polar axes", environment);

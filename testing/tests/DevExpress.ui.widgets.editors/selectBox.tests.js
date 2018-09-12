@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     noop = require("core/utils/common").noop,
     SelectBox = require("ui/select_box"),
@@ -494,15 +492,44 @@ QUnit.test("dxSelectBox automatically scrolls to selected item on opening", func
         items: items,
         value: 100
     });
+    var selectBox = $selectBox.dxSelectBox("instance");
 
     this.clock.tick(TIME_TO_WAIT);
 
-    $selectBox.dxSelectBox("option", "opened", true);
+    selectBox.option("opened", true);
 
-    var $popupContent = $(toSelector(POPUP_CONTENT_CLASS));
+    var $popupContent = $(selectBox.content());
     var $selectedItem = $popupContent.find(toSelector(LIST_ITEM_SELECTED_CLASS));
 
     assert.ok($popupContent.offset().top + $popupContent.height() > $selectedItem.offset().top, "selected item is visible");
+});
+
+QUnit.test("dxSelectBox automatically scrolls to selected item on opening after item search", function(assert) {
+    var items = [];
+    for(var i = 0; i <= 100; i++) {
+        items.push(i);
+    }
+
+    var $selectBox = $("#selectBox").dxSelectBox({
+        items: items,
+        searchTimeout: 0,
+        searchEnabled: true
+    });
+
+    var selectBox = $selectBox.dxSelectBox("instance"),
+        $input = $selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS));
+    selectBox.option("opened", true);
+    var $popupContent = $(selectBox.content());
+
+    keyboardMock($input)
+        .focus()
+        .type("50")
+        .change();
+    $popupContent.find(toSelector(LIST_ITEM_CLASS)).eq(0).trigger("dxclick");
+    selectBox.option("opened", true);
+
+    var $selectedItem = $popupContent.find(toSelector(LIST_ITEM_SELECTED_CLASS));
+    assert.ok($popupContent.offset().top + $popupContent.height() > $selectedItem.offset().top, "selected item is visible after search");
 });
 
 QUnit.test("dxSelectBox scrolls to the top when paging is enabled and selectbox is editable and item is out of page", function(assert) {
@@ -511,7 +538,7 @@ QUnit.test("dxSelectBox scrolls to the top when paging is enabled and selectbox 
         items.push(i);
     }
 
-    var $selectBox = $("#selectBox").dxSelectBox({
+    var selectBox = $("#selectBox").dxSelectBox({
         searchEnabled: true,
         dataSource: {
             paginate: true,
@@ -519,13 +546,13 @@ QUnit.test("dxSelectBox scrolls to the top when paging is enabled and selectbox 
             pageSize: 100
         },
         value: 101
-    });
+    }).dxSelectBox("instance");
 
     this.clock.tick(TIME_TO_WAIT);
 
-    $selectBox.dxSelectBox("option", "opened", true);
+    selectBox.option("opened", true);
 
-    var $popupContent = $(toSelector(POPUP_CONTENT_CLASS));
+    var $popupContent = $(selectBox.content());
     var $firstItem = $popupContent.find(toSelector(LIST_ITEM_CLASS)).eq(0);
 
     assert.ok($popupContent.offset().top <= $firstItem.offset().top, "first item is visible");
@@ -546,12 +573,13 @@ QUnit.test("dxSelectBox scroll to selected item when paging is enabled and selec
         },
         value: 99
     });
+    var selectBox = $selectBox.dxSelectBox("instance");
 
     this.clock.tick(TIME_TO_WAIT);
 
-    $selectBox.dxSelectBox("option", "opened", true);
+    selectBox.option("opened", true);
 
-    var $popupContent = $(toSelector(POPUP_CONTENT_CLASS)),
+    var $popupContent = $(selectBox.content()),
         $selectedItem = $popupContent.find(toSelector(LIST_ITEM_CLASS)).eq(98),
         itemBottom = $selectedItem.offset().top + $selectedItem.outerHeight(),
         contentBottom = $popupContent.offset().top + $popupContent.outerHeight();
@@ -1289,7 +1317,7 @@ QUnit.test("'clear' button should clear value when items is object and searchEna
     assert.equal($selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS)).val(), "", "text is cleared");
 });
 
-QUnit.test("'clear' button should save valueChange event instance", function(assert) {
+QUnit.test("clear button should save valueChangeEvent", function(assert) {
     var valueChangedHandler = sinon.spy(),
         $selectBox = $("#selectBox").dxSelectBox({
             items: [1],
@@ -1349,7 +1377,7 @@ QUnit.test("'clear' button should reset selectedValue if 'acceptCustomValue' is 
     $($clearButton).trigger("dxclick");
 
     assert.equal(selectBox.option("value"), null, "value is reset after click on 'clear' button");
-    assert.equal(selectBox.option("text"), undefined, "text is reset after click on 'clear' button");
+    assert.equal(selectBox.option("text"), "", "text is reset after click on 'clear' button");
 
     var $input = $selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS));
 
@@ -2423,6 +2451,64 @@ QUnit.test("Widget should works correctly after setting dataSource to null", fun
     assert.equal($list.dxList("option", "noDataText"), "No data to display", "SelectBox works correctly");
 });
 
+QUnit.test("search should stay opened after the search when focus state is disabled", function(assert) {
+    var $selectBox = $("#selectBox").dxSelectBox({
+            items: ["item 1"],
+            focusStateEnabled: false,
+            searchEnabled: true,
+            searchTimeout: 0
+        }),
+        selectBox = $selectBox.dxSelectBox("instance"),
+        $input = $selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS)),
+        keyboard = keyboardMock($input);
+
+    keyboard.type("item");
+    assert.ok(selectBox.option("opened"), "selectBox should be opened");
+});
+
+QUnit.testInActiveWindow("widget with fieldTemplate and remote data source should display right value after search and selection (T668290)", function(assert) {
+    var $selectBox = $("#selectBox").dxSelectBox({
+            dataSource: {
+                store: new CustomStore({
+                    byKey: noop,
+                    load: function(options) {
+                        return [{
+                            Id: "1",
+                            Name: "Name 1"
+                        }, {
+                            Id: "2",
+                            Name: "Name 2"
+                        }];
+                    },
+                    key: "Id"
+                })
+            },
+            valueExpr: "Id",
+            displayValue: "Name",
+            fieldTemplate: function(data) {
+                return $("<div>").dxTextBox({
+                    value: (data !== null) ? data.Name : ""
+                });
+            },
+            minSearchLength: 1,
+            showDataBeforeSearch: false,
+            searchEnabled: true,
+            searchTimeout: 0,
+            itemTemplate: function(data) {
+                return "<div><span>" + data.Name + "</span></div>";
+            }
+        }),
+        selectBox = $selectBox.dxSelectBox("instance"),
+        keyboard = keyboardMock($selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS)));
+
+    keyboard.type("a");
+
+    var listItem = $(selectBox.content()).find(toSelector(LIST_ITEM_CLASS)).eq(1);
+    listItem.trigger("dxclick");
+
+    assert.equal($selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS)).val(), "Name 2", "selectBox displays right value");
+});
+
 QUnit.testInActiveWindow("Value should be null after input is cleared and enter key is tapped", function(assert) {
     var items = [1, 2],
         $selectBox = $("#selectBox").dxSelectBox({
@@ -3412,10 +3498,11 @@ QUnit.testInActiveWindow("selectbox does not hide self after input blur", functi
     var $selectBox = $("#selectBoxWithoutScroll").dxSelectBox({
         dataSource: [100, 200, 300]
     });
+    var selectBox = $selectBox.dxSelectBox("instance");
 
     var $input = $selectBox.find(toSelector(TEXTEDITOR_INPUT_CLASS));
     pointerMock($input).start().click();
-    var $popupContent = $(toSelector(POPUP_CONTENT_CLASS));
+    var $popupContent = $(selectBox.content());
     assert.equal($popupContent.is(":visible"), true, "popup visible after click");
     $input.blur();
     assert.equal($popupContent.is(":visible"), true, "popup visible after focus out");

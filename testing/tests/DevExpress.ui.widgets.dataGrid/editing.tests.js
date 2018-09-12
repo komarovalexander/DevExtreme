@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     renderer = require("core/renderer"),
     eventsEngine = require("events/core/events_engine"),
@@ -450,7 +448,6 @@ QUnit.test('Save changes button click call saveEditData', function(assert) {
     // arrange
     var headerPanel = this.headerPanel,
         rowsView = this.rowsView,
-        headerPanelElement,
         saveEditDataCallCount = 0,
         testElement = $('#container');
 
@@ -474,8 +471,6 @@ QUnit.test('Save changes button click call saveEditData', function(assert) {
 
     headerPanel.render(testElement);
     rowsView.render(testElement);
-
-    headerPanelElement = testElement.find('.dx-datagrid-header-panel').first();
 
     // act
     testElement.find(".dx-datagrid-save-button").trigger("dxclick");
@@ -516,10 +511,16 @@ QUnit.test('Cancel changes button click call cancelEditData', function(assert) {
     headerPanelElement = testElement.find('.dx-datagrid-header-panel').first();
 
     // act
-    this.click(headerPanelElement, '.dx-datagrid-cancel-button');
+    $(headerPanelElement).find(".dx-datagrid-cancel-button").trigger("dxclick");
 
     // assert
-    assert.equal(cancelEditDataCallCount, 1, 'cancelEditData called');
+    assert.equal(cancelEditDataCallCount, 0, 'cancelEditData is not called'); // T630875
+
+    // act
+    this.clock.tick();
+
+    // assert
+    assert.equal(cancelEditDataCallCount, 1, 'cancelEditData is called');
 });
 
 QUnit.test('Edit Row', function(assert) {
@@ -1385,8 +1386,7 @@ QUnit.test('Save Row', function(assert) {
     var that = this,
         rowsView = this.rowsView,
         testElement = $('#container'),
-        updateArgs,
-        cells;
+        updateArgs;
 
     that.options.editing = {
         allowUpdating: true,
@@ -1418,7 +1418,7 @@ QUnit.test('Save Row', function(assert) {
 
     // act
     this.click(testElement.find('tbody > tr').first(), '.dx-link-save');
-    cells = getCells(testElement);
+    getCells(testElement);
 
     // assert
     assert.equal(getInputElements(testElement.find('tbody > tr').first()).length, 0);
@@ -1430,8 +1430,7 @@ QUnit.test('Save Row for calculated column', function(assert) {
     var that = this,
         rowsView = this.rowsView,
         testElement = $('#container'),
-        updateArgs,
-        cells;
+        updateArgs;
 
     that.options.editing = {
         allowUpdating: true,
@@ -1457,7 +1456,7 @@ QUnit.test('Save Row for calculated column', function(assert) {
 
     // act
     this.click(testElement.find('tbody > tr').first(), 'a:contains(Save)');
-    cells = getCells(testElement);
+    getCells(testElement);
 
     // assert
     assert.equal(getInputElements(testElement.find('tbody > tr').first()).length, 0);
@@ -1498,8 +1497,7 @@ QUnit.test('Serialize value before saving', function(assert) {
         rowsView = this.rowsView,
         testElement = $('#container'),
         updateArgs,
-        serializingValue,
-        cells;
+        serializingValue;
 
     that.options.editing = {
         allowUpdating: true,
@@ -1530,7 +1528,7 @@ QUnit.test('Serialize value before saving', function(assert) {
 
     // act
     this.click(testElement.find('tbody > tr').first(), 'a:contains(Save)');
-    cells = getCells(testElement);
+    getCells(testElement);
 
     // assert
     assert.equal(getInputElements(testElement.find('tbody > tr').first()).length, 0);
@@ -1837,6 +1835,8 @@ QUnit.test('Save changes on save button click when batch mode', function(assert)
     getInputElements(testElement).eq(0).trigger('change');
     mouse.up();
 
+    this.clock.tick();
+
     // assert
     assert.deepEqual(updateArgs, [['test1', { "name": "Test1" }], ['test2', { "name": "Test2" }]], "changed rows are saved");
 });
@@ -1946,6 +1946,7 @@ QUnit.test('Save changes when batch mode when one the changes is canceled from e
 
     // act
     this.editingController.saveEditData();
+    this.clock.tick();
 
     // assert
     assert.deepEqual(updateArgs, [['test1', { "name": "Test1" }]]);
@@ -2292,6 +2293,7 @@ QUnit.test("The cell should be editable after cancel removing the row", function
     that.editingController.optionChanged({ name: "onRowRemoving" });
 
     that.deleteRow(0);
+    that.clock.tick();
 
     // act
     that.editCell(0, 0);
@@ -3496,7 +3498,6 @@ QUnit.test('Insert Row when "cell" edit mode', function(assert) {
     var that = this,
         headerPanel = that.headerPanel,
         rowsView = that.rowsView,
-        headerPanelElement,
         testElement = $('#container');
 
     that.options.editing = {
@@ -3506,8 +3507,6 @@ QUnit.test('Insert Row when "cell" edit mode', function(assert) {
     };
     headerPanel.render(testElement);
     rowsView.render(testElement);
-
-    headerPanelElement = testElement.find('.dx-datagrid-header-panel');
 
     // act
     that.addRow();
@@ -4154,6 +4153,38 @@ QUnit.test("oldData on rowUpdating for checkbox editor", function(assert) {
     assert.equal(rowUpdatingCallCount, 1, "rowUpdating call count");
 });
 
+QUnit.test("onRowUpdating should raise once if eventArgs.cancel is true for the checkBox data editor in cell edit mode (T656376)", function(assert) {
+    // arrange
+    var that = this,
+        rowsView = this.rowsView,
+        rowUpdatingCallCount = 0,
+        testElement = $("#container"),
+        $checkbox;
+
+    that.options.editing = {
+        mode: "cell",
+        allowUpdating: true
+    };
+
+    that.options.onRowUpdating = function(e) {
+        ++rowUpdatingCallCount;
+        e.cancel = true;
+    };
+    that.options.columns.push({ dataField: "booleanField", dataType: "boolean" });
+
+    that.columnsController.reset();
+    that.editingController.optionChanged({ name: "onRowUpdating" });
+    rowsView.render(testElement);
+
+    // act
+    $checkbox = testElement.find(".dx-row").first().find(".dx-checkbox");
+    $($checkbox).trigger("dxclick");
+
+    // assert
+    assert.ok($checkbox.length, "checkbox found");
+    assert.equal(rowUpdatingCallCount, 1, "rowUpdating call count");
+});
+
 // T172738
 QUnit.test("Highlight modified with option showEditorAlways true on column", function(assert) {
     // arrange
@@ -4370,6 +4401,7 @@ QUnit.test("Remove row when set onRowRemoving", function(assert) {
 
     // act
     that.deleteRow(0);
+    that.clock.tick();
     $(".dx-dialog-button").first().trigger("dxclick");
 
     // assert
@@ -5443,6 +5475,40 @@ QUnit.test("Get correct first editable column index when visible option for item
     assert.equal(editableIndex, 1, "editable index");
 });
 
+// T664284
+QUnit.test("Form should be updated after change editing.form options if editing mode is popup", function(assert) {
+    // arrange
+    var that = this,
+        rowsView = this.rowsView,
+        testElement = $('#container');
+
+    that.$element = function() {
+        return testElement;
+    };
+
+    that.options.editing = {
+        allowUpdating: true,
+        mode: "popup",
+        form: {
+            items: ["room"]
+        },
+        popup: {
+            animation: false
+        }
+    };
+
+    rowsView.render(testElement);
+
+    that.editRow(0);
+
+    // act
+    this.editingController.option("editing.form.items", ["phone", "room"]);
+    this.editingController.optionChanged({ name: "editing", fullName: "editing.form.items" });
+
+    // assert
+    assert.equal($(".dx-datagrid-edit-form-item").length, 2, "two form items are visible");
+});
+
 // T528580
 QUnit.test("Save edit data when update fails in batch edit mode", function(assert) {
     // arrange
@@ -5776,7 +5842,9 @@ QUnit.test("repaintRows should be skipped on saving", function(assert) {
     });
 
     // act
-    this.cellValue(0, "selected", true);
+    var checkboxInstance = testElement.find(".dx-checkbox").eq(0).dxCheckBox("instance");
+    checkboxInstance.option("value", true);
+    this.saveEditData();
     this.repaintRows([0]);
 
     // assert
@@ -5787,6 +5855,33 @@ QUnit.test("repaintRows should be skipped on saving", function(assert) {
 
     // assert
     assert.strictEqual(changeCount, 1, "data is changed once");
+});
+
+// T661354
+QUnit.test("saveEditData is not called automatically after call cellValue", function(assert) {
+    var testElement = $('#container'),
+        onRowUpdatingSpy = sinon.spy();
+
+    this.options.editing = {
+        allowUpdating: true,
+        mode: 'cell'
+    };
+
+    this.options.onRowUpdating = onRowUpdatingSpy;
+
+    this.columns.push({ dataField: "selected", dataType: "boolean" });
+
+    this.columnsController.init();
+
+    this.rowsView.render(testElement);
+    this.editingController.optionChanged({ name: "onRowUpdating" });
+
+    this.cellValue(0, "selected", true);
+    this.cellValue(1, "selected", true);
+    assert.strictEqual(onRowUpdatingSpy.callCount, 0);
+
+    this.saveEditData();
+    assert.strictEqual(onRowUpdatingSpy.callCount, 2);
 });
 
 // T607746
@@ -6567,6 +6662,27 @@ if(!devices.win8) {
     });
 }
 
+QUnit.test("hasChanges with rowIndex", function(assert) {
+    // arrange
+    var that = this,
+        rowsView = this.rowsView,
+        $testElement = $('#container');
+
+    that.options.editing = {
+        allowUpdating: true,
+        mode: 'batch'
+    };
+
+    rowsView.render($testElement);
+
+    // act
+    that.cellValue(1, 0, "test");
+
+    // assert
+    assert.notOk(that.editingController.hasChanges(0), "the first row hasn't changed");
+    assert.ok(that.editingController.hasChanges(1), "the second row has changed");
+});
+
 QUnit.module('Editing with validation', {
     beforeEach: function() {
         this.array = [
@@ -6596,7 +6712,7 @@ QUnit.module('Editing with validation', {
             return renderer(".dx-datagrid");
         };
 
-        setupDataGridModules(this, ['data', 'columns', 'columnHeaders', 'rows', 'editing', 'masterDetail', 'gridView', 'grouping', 'editorFactory', 'errorHandling', 'validating', 'filterRow', 'adaptivity'], {
+        setupDataGridModules(this, ['data', 'columns', 'columnHeaders', 'columnFixing', 'rows', 'editing', 'masterDetail', 'gridView', 'grouping', 'editorFactory', 'errorHandling', 'validating', 'filterRow', 'adaptivity'], {
             initViews: true
         });
 
@@ -7279,6 +7395,10 @@ QUnit.test("Cell's height is increasing on resize if validation applied and batc
     var that = this,
         rowsView = this.rowsView,
         testElement = $('#container');
+
+    that.columnHeadersView.element = function() {
+        return testElement;
+    };
 
     rowsView.render(testElement);
 
@@ -8296,6 +8416,7 @@ QUnit.testInActiveWindow("Show the revert button when an edit cell, server retur
     this.rowsView.render(testElement);
 
     this.applyOptions({
+        showColumnHeaders: true,
         editing: {
             mode: "cell"
         },
@@ -9710,6 +9831,53 @@ QUnit.test("Prevent cell validation if template with editor is used", function(a
     assert.ok(!validator, "only internal editor validator");
 });
 
+// T653933
+QUnit.test("Validation error message should not hide behind a grouped row when there are fixed columns", function(assert) {
+    // arrange
+    var that = this,
+        rowsView = that.rowsView,
+        $testElement = $('#container');
+
+    rowsView.render($testElement);
+
+    that.applyOptions({
+        grouping: {
+            autoExpandAll: true
+        },
+        dataSource: [
+            { name: 'Alex', age: "", lastName: "John" },
+            { name: 'Dan', age: 16, lastName: "Skip" }
+        ],
+        scrolling: {
+            mode: "standard"
+        },
+        editing: {
+            mode: "batch",
+            allowUpdating: true
+        },
+        columns: [{ dataField: "name", fixed: true, fixedPosition: "right" }, {
+            dataField: "age",
+            validationRules: [{ type: "required" }]
+        }, { dataField: "lastName", groupIndex: 0 }]
+    });
+
+    // act
+    that.editCell(1, 1);
+    that.clock.tick();
+
+    // assert
+    assert.strictEqual($(rowsView.getCellElement(1, 1)).find(".dx-overlay.dx-datagrid-invalid-message").length, 1, "has invalid message");
+    assert.strictEqual($(rowsView.getRowElement(2)).last().children().eq(1).css("visibility"), "hidden", "group cell isn't visible");
+
+    // act
+    that.closeEditCell();
+    that.clock.tick();
+
+    // assert
+    assert.strictEqual($(rowsView.getCellElement(1, 2)).find(".dx-overlay.dx-datagrid-invalid-message").length, 0, "hasn't invalid message");
+    assert.notStrictEqual($(rowsView.getRowElement(2)).last().children().eq(1).css("visibility"), "hidden", "group cell is visible");
+});
+
 
 QUnit.module('Editing with real dataController with grouping, masterDetail', {
     beforeEach: function() {
@@ -9802,21 +9970,6 @@ QUnit.test("When showing dxDataGrid in detail, 'select all' function of master g
     assert.ok(!testElement.find('.' + rowClass).first().hasClass(rowSelectionClass), 'row that editing now has no selection class');
     assert.equal(testElement.find('.' + rowClass).length, 13, "1 header row, 7 content rows, 3 detail row (1 header and 2 content), 2 freespace row");
     assert.equal(testElement.find('.' + rowSelectionClass).length, 6, "7 rows - 1 row that edit, 2 detail row doesn't selected");
-});
-
-// T579296
-QUnit.test("cancel edit row after expand row", function(assert) {
-    var testElement = $('#container');
-
-    this.rowsView.render(testElement);
-
-    this.editingController.editRow(2);
-
-    assert.ok(this.editingController.isEditing(), "editable row is showed");
-
-    this.dataController.expandRow(1);
-
-    assert.notOk(this.editingController.isEditing(), "editable row is removed");
 });
 
 // T174302
@@ -9975,6 +10128,31 @@ QUnit.test("Editable data should not be reset in batch edit mode when collapsing
 
     // assert
     assert.strictEqual(that.cellValue(1, "lastName"), "test", "value of the lastName column of the first row");
+});
+
+QUnit.test("Editing controller should correct the editing row index after expand the row above (T660472, T579296)", function(assert) {
+    // arrange
+    var that = this,
+        $testElement = $('#container');
+
+    that.rowsView.render($testElement);
+    that.applyOptions({
+        editing: {
+            mode: "row",
+            allowUpdating: true
+        }
+    });
+
+    // act
+    that.editRow(1);
+    that.expandRow(that.dataController.getKeyByRowIndex(0));
+    // assert
+    assert.equal(that.editingController.getEditRowIndex(), 2, "editing row index was increased");
+
+    // act
+    that.collapseRow(that.dataController.getKeyByRowIndex(0));
+    // assert
+    assert.equal(that.editingController.getEditRowIndex(), 2, "editing row index was not changed after collapse the above row");
 });
 
 var generateDataSource = function(countItem, countColumn) {

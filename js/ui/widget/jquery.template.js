@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     errors = require("../../core/errors"),
     typeUtils = require("../../core/utils/type"),
@@ -11,18 +9,6 @@ var registerTemplateEngine = function(name, templateEngine) {
     templateEngines[name] = templateEngine;
 };
 
-var outerHtml = function(element) {
-    element = $(element);
-
-    var templateTag = element.length && element[0].nodeName.toLowerCase();
-    if(templateTag === "script") {
-        return element.html();
-    } else {
-        element = $("<div>").append(element);
-        return element.html();
-    }
-};
-
 registerTemplateEngine("default", {
     compile: (element) => domUtils.normalizeTemplateElement(element),
     render: (template, model, index, transclude) => transclude ? template : template.clone()
@@ -30,7 +16,7 @@ registerTemplateEngine("default", {
 
 registerTemplateEngine("jquery-tmpl", {
     compile: function(element) {
-        return outerHtml(element);
+        return domUtils.extractTemplateMarkup(element);
     },
     render: function(template, data) {
         /* global jQuery */
@@ -42,7 +28,7 @@ registerTemplateEngine("jsrender", {
     compile: function(element) {
         /* global jQuery */
         /* global jsrender */
-        return (jQuery ? jQuery : jsrender).templates(outerHtml(element));
+        return (jQuery ? jQuery : jsrender).templates(domUtils.extractTemplateMarkup(element));
     },
     render: function(template, data) {
         return template.render(data);
@@ -52,7 +38,7 @@ registerTemplateEngine("jsrender", {
 registerTemplateEngine("mustache", {
     compile: function(element) {
         /* global Mustache */
-        return outerHtml(element);
+        return domUtils.extractTemplateMarkup(element);
     },
     render: function(template, data) {
         return Mustache.render(template, data);
@@ -62,7 +48,7 @@ registerTemplateEngine("mustache", {
 registerTemplateEngine("hogan", {
     compile: function(element) {
         /* global Hogan */
-        return Hogan.compile(outerHtml(element));
+        return Hogan.compile(domUtils.extractTemplateMarkup(element));
     },
     render: function(template, data) {
         return template.render(data);
@@ -72,7 +58,7 @@ registerTemplateEngine("hogan", {
 registerTemplateEngine("underscore", {
     compile: function(element) {
         /* global _ */
-        return _.template(outerHtml(element));
+        return _.template(domUtils.extractTemplateMarkup(element));
     },
     render: function(template, data) {
         return template(data);
@@ -82,7 +68,7 @@ registerTemplateEngine("underscore", {
 registerTemplateEngine("handlebars", {
     compile: function(element) {
         /* global Handlebars */
-        return Handlebars.compile(outerHtml(element));
+        return Handlebars.compile(domUtils.extractTemplateMarkup(element));
     },
     render: function(template, data) {
         return template(data);
@@ -92,7 +78,7 @@ registerTemplateEngine("handlebars", {
 registerTemplateEngine("doT", {
     compile: function(element) {
         /* global doT */
-        return doT.template(outerHtml(element));
+        return doT.template(domUtils.extractTemplateMarkup(element));
     },
     render: function(template, data) {
         return template(data);

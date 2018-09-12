@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     Class = require("../../core/class"),
@@ -111,8 +109,6 @@ var ModuleItem = Class.inherit({
         } else {
             $target.attr(prefix + name, value);
         }
-
-        // this.component.setAria.apply(this.component, arguments);
     },
 
     _createComponent: function() {
@@ -258,7 +254,7 @@ var View = ModuleItem.inherit({
             this._renderCore(options);
             this.component._optionCache = undefined;
             this._afterRender($parent);
-            this.renderCompleted.fire();
+            this.renderCompleted.fire(options);
         }
     },
 

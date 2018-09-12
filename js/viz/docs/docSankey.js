@@ -1,15 +1,10 @@
 /**
 * @name dxSankey
-* @inherits BaseWidget
+* @inherits BaseWidget, DataHelperMixin
 * @module viz/sankey
 * @export default
 */
 var dxSankey = {
-    /**
-    * @name dxSankey.Options
-    * @namespace DevExpress.viz.sankey
-    * @hidden
-    */
     /**
     * @name dxSankeyOptions.hoverEnabled
     * @type boolean
@@ -69,6 +64,24 @@ var dxSankey = {
     */
     sortData: undefined,
     /**
+    * @name dxSankeyOptions.sourceField
+    * @type string
+    * @default 'source'
+    */
+    sourceField: 'source',
+    /**
+    * @name dxSankeyOptions.targetField
+    * @type string
+    * @default 'target'
+    */
+    sourceField: 'target',
+    /**
+    * @name dxSankeyOptions.weightField
+    * @type string
+    * @default 'weight'
+    */
+    weightField: 'weight',
+    /**
     * @name dxSankeyOptions.label
     * @type object
     */
@@ -105,38 +118,14 @@ var dxSankey = {
         verticalOffset: 0,
         /**
         * @name dxSankeyOptions.label.font
-        * @type object
+        * @type Font
+        * @default '#FFFFFF' @prop color
         */
         font: {
-            /**
-            * @name dxSankeyOptions.label.font.color
-            * @type string
-            * @default '#ffffff'
-            */
             color: '#ffffff',
-            /**
-            * @name dxSankeyOptions.label.font.family
-            * @type string
-            * @default undefined
-            */
             family: undefined,
-            /**
-            * @name dxSankeyOptions.label.font.weight
-            * @type number
-            * @default undefined
-            */
             weight: undefined,
-            /**
-            * @name dxSankeyOptions.label.font.size
-            * @type number|string
-            * @default undefined
-            */
             size: undefined,
-            /**
-            * @name dxSankeyOptions.label.font.opacity
-            * @type number
-            * @default undefined
-            */
             opacity: undefined
         },
         /**
@@ -159,7 +148,7 @@ var dxSankey = {
             /**
             * @name dxSankeyOptions.label.border.color
             * @type string
-            * @default #000000
+            * @default '#000000'
             */
             color: '#000000'
         },
@@ -251,7 +240,7 @@ var dxSankey = {
     node: {
         /**
         * @name dxSankeyOptions.node.color
-        * @type number
+        * @type string
         * @default undefined
         */
         color: undefined,
@@ -293,7 +282,7 @@ var dxSankey = {
             /**
             * @name dxSankeyOptions.node.border.color
             * @type string
-            * @default #000000
+            * @default '#000000'
             */
             color: '#000000'
         },
@@ -302,6 +291,18 @@ var dxSankey = {
         * @type object
         */
         hoverStyle: {
+            /**
+            * @name dxSankeyOptions.node.hoverStyle.opacity
+            * @type number
+            * @default undefined
+            */
+            opacity: undefined,
+            /**
+            * @name dxSankeyOptions.node.hoverStyle.color
+            * @type string
+            * @default undefined
+            */
+            color: undefined,
             /**
             * @name dxSankeyOptions.node.hoverStyle.border
             * @type object
@@ -401,7 +402,7 @@ var dxSankey = {
             /**
             * @name dxSankeyOptions.link.border.color
             * @type string
-            * @default #000000
+            * @default '#000000'
             */
             color: '#000000'
         },
@@ -418,7 +419,7 @@ var dxSankey = {
             opacity: 0.5,
             /**
             * @name dxSankeyOptions.link.hoverStyle.color
-            * @type number
+            * @type string
             * @default undefined
             */
             color: undefined,
@@ -505,7 +506,7 @@ var dxSankey = {
     * @extends Action
     * @type function
     * @type_function_param1 e:object
-    * @type_function_param1_field4 item:dxSankeyNode
+    * @type_function_param1_field4 target:dxSankeyNode
     * @notUsedInTheme
     * @action
     */
@@ -515,7 +516,7 @@ var dxSankey = {
     * @extends Action
     * @type function
     * @type_function_param1 e:object
-    * @type_function_param1_field4 item:dxSankeyLink
+    * @type_function_param1_field4 target:dxSankeyLink
     * @notUsedInTheme
     * @action
     */
@@ -531,5 +532,10 @@ var dxSankey = {
     * @publicName getAllLinks()
     * @return Array<dxSankeyLink>
     */
-    getAllLinks: function() { }
+    getAllLinks: function() { },
+    /**
+    * @name dxSankeyMethods.hideTooltip
+    * @publicName hideTooltip()
+    */
+    hideTooltip: function() { }
 }

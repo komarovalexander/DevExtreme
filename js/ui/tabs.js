@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     eventsEngine = require("../events/core/events_engine"),
     devices = require("../core/devices"),
@@ -103,12 +101,6 @@ var Tabs = CollectionWidget.inherit({
             */
 
             /**
-            * @name dxTabsOptions.noDataText
-            * @hidden
-            * @inheritdoc
-            */
-
-            /**
             * @name dxTabsOptions.selectedItems
             * @type Array<string,number,Object>
             */
@@ -142,6 +134,8 @@ var Tabs = CollectionWidget.inherit({
     },
 
     _defaultOptionsRules: function() {
+        var themeName = themes.current();
+
         return this.callBase().concat([
             {
                 device: function() {
@@ -181,7 +175,7 @@ var Tabs = CollectionWidget.inherit({
             },
             {
                 device: function() {
-                    return themes.isAndroid5();
+                    return themes.isAndroid5(themeName);
                 },
                 options: {
                     useInkRipple: true
@@ -189,7 +183,7 @@ var Tabs = CollectionWidget.inherit({
             },
             {
                 device: function() {
-                    return themes.isMaterial();
+                    return themes.isMaterial(themeName);
                 },
                 options: {
                     useInkRipple: true,
@@ -365,10 +359,8 @@ var Tabs = CollectionWidget.inherit({
             return false;
         }
 
-        var tabItemsWidth = 0;
-        this._getAvailableItems().each(function(_, tabItem) {
-            tabItemsWidth += $(tabItem).outerWidth(true);
-        });
+        var tabItemsWidth = this._getSummaryItemsWidth(this._getAvailableItems(), true);
+
         // NOTE: "-1" is a hack fix for IE (T190044)
         return tabItemsWidth - 1 > this.$element().width();
     },

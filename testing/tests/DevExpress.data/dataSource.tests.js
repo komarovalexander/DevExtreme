@@ -1,15 +1,14 @@
-"use strict";
 
-import $ from "jquery";
-import { noop } from "core/utils/common";
-import typeUtils from "core/utils/type";
-import executeAsyncMock from "../../helpers/executeAsyncMock.js";
-import ajaxMock from "../../helpers/ajaxMock.js";
-import { DataSource } from "data/data_source/data_source";
-import Store from "data/abstract_store";
-import ArrayStore from "data/array_store";
-import ODataStore from "data/odata/store";
-import AggregateCalculator from "ui/data_grid/aggregate_calculator";
+var $ = require("jquery"),
+    noop = require("core/utils/common").noop,
+    typeUtils = require("core/utils/type"),
+    executeAsyncMock = require("../../helpers/executeAsyncMock.js"),
+    ajaxMock = require("../../helpers/ajaxMock.js"),
+    DataSource = require("data/data_source/data_source").DataSource,
+    Store = require("data/abstract_store"),
+    ArrayStore = require("data/array_store"),
+    ODataStore = require("data/odata/store"),
+    AggregateCalculator = require("ui/data_grid/aggregate_calculator");
 
 var TEN_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 

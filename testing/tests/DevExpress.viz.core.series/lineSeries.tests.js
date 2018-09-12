@@ -1,5 +1,3 @@
-"use strict";
-
 import $ from "jquery";
 import * as vizMocks from "../../helpers/vizMocks.js";
 import { noop } from "core/utils/common";
@@ -45,7 +43,8 @@ var createSeries = function(options, renderSettings) {
         labelsGroup: renderer.g(),
         seriesGroup: renderer.g(),
         eventTrigger: noop,
-        eventPipe: noop
+        eventPipe: noop,
+        incidentOccurred: noop
     }, renderSettings);
 
     renderer.stub("g").reset();

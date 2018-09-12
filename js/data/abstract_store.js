@@ -1,5 +1,3 @@
-"use strict";
-
 import Class, { abstract } from "../core/class";
 import EventsMixin from "../core/events_mixin";
 import { each } from "../core/utils/iterator";

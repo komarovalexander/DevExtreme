@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     noop = require("../../core/utils/common").noop,
     each = require("../../core/utils/iterator").each,
@@ -150,6 +148,11 @@ exports.FieldsArea = areaItem.AreaItem.inherit({
         } else {
             head.append(row);
         }
+    },
+
+    reset: function() {
+        this.callBase();
+        this.groupElement().css("marginTop", 0);
     },
 
     _renderVirtualContent: noop

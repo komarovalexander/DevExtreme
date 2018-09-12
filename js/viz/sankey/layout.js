@@ -1,5 +1,3 @@
-"use strict";
-
 const _SPLINE_TENSION = 0.3;
 const _ALIGNMENT_CENTER = 'center';
 const _ALIGNMENT_BOTTOM = 'bottom';
@@ -80,10 +78,8 @@ let layout = {
     },
 
     _getWeightForCascade: function(cascades, cascadeIdx) {
-        let wIn = 0, wOut = 0, wMax = 0, cascade = cascades[cascadeIdx];
+        let wMax = 0, cascade = cascades[cascadeIdx];
         Object.keys(cascade).forEach(nodeTitle => {
-            wIn += cascade[nodeTitle].inWeight;
-            wOut += cascade[nodeTitle].outWeight;
             wMax += Math.max(cascade[nodeTitle].inWeight, cascade[nodeTitle].outWeight);
         });
         return wMax;
@@ -92,11 +88,9 @@ let layout = {
     _getMaxWeightThroughCascades: function(cascades) {
         let max = [];
         cascades.forEach(cascade => {
-            let inW = 0, outW = 0, mW = 0;
+            let mW = 0;
             Object.keys(cascade).forEach(nodeTitle => {
                 let node = cascade[nodeTitle];
-                inW += node.inWeight;
-                outW += node.outWeight;
                 mW += Math.max(node.inWeight, node.outWeight);
             });
             max.push(mW);
@@ -178,6 +172,17 @@ let layout = {
         return null;
     },
 
+    _findIndexByName: function(rects, nodeTitle) {
+        let index = 0;
+        for(let c = 0; c < rects.length; c++) {
+            for(let r = 0; r < rects[c].length; r++) {
+                if(nodeTitle === rects[c][r]._name) return index;
+                index++;
+            }
+        }
+        return null;
+    },
+
     _computeLinks: function(links, rects, cascades) {
         let yOffsets = {}, paths = [], result = [];
 
@@ -187,22 +192,32 @@ let layout = {
             });
         });
 
-        links.forEach(link => {
-            let rectFrom = this._findRectByName(rects, link[0]),
-                rectTo = this._findRectByName(rects, link[1]),
-                height = Math.round(link[2] / this._weightPerPixel),
-                yOffsetFrom = yOffsets[link[0]].out,
-                yOffsetTo = yOffsets[link[1]].in,
-                // heights of left and right parts of the link must fit the nodes on it's left and right
-                heightFrom = (yOffsets[link[0]].out + height > rectFrom.height) ? rectFrom.height - yOffsets[link[0]].out : height,
-                heightTo = (yOffsets[link[1]].in + height > rectTo.height) ? rectTo.height - yOffsets[link[1]].in : height;
+        rects.forEach(rectsOfCascade => {
+            rectsOfCascade.forEach(nodeRect => {
+                let nodeTitle = nodeRect._name,
+                    rectFrom = this._findRectByName(rects, nodeTitle),
+                    linksFromNode = links.filter(link => { return link[0] === nodeTitle; }); // all outgoing links from the node
 
-            paths.push({
-                from: { x: rectFrom.x, y: rectFrom.y + yOffsetFrom, width: rectFrom.width, height: heightFrom, node: rectFrom, weight: link[2] },
-                to: { x: rectTo.x, y: rectTo.y + yOffsetTo, width: rectTo.width, height: heightTo, node: rectTo }
+                // all outgoing links should be sorted according to the order of their target nodes
+                linksFromNode.forEach(link => {
+                    link.sort = this._findIndexByName(rects, link[1]);
+                });
+                linksFromNode.sort((a, b) => { return a.sort - b.sort; }).forEach(link => {
+                    let rectTo = this._findRectByName(rects, link[1]),
+                        height = Math.round(link[2] / this._weightPerPixel),
+                        yOffsetFrom = yOffsets[link[0]].out,
+                        yOffsetTo = yOffsets[link[1]].in,
+                        // heights of left and right parts of the link must fit the nodes on it's left and right
+                        heightFrom = (yOffsets[link[0]].out + height > rectFrom.height) ? rectFrom.height - yOffsets[link[0]].out : height,
+                        heightTo = (yOffsets[link[1]].in + height > rectTo.height) ? rectTo.height - yOffsets[link[1]].in : height;
+                    paths.push({
+                        from: { x: rectFrom.x, y: rectFrom.y + yOffsetFrom, width: rectFrom.width, height: heightFrom, node: rectFrom, weight: link[2] },
+                        to: { x: rectTo.x, y: rectTo.y + yOffsetTo, width: rectTo.width, height: heightTo, node: rectTo }
+                    });
+                    yOffsets[link[0]].out += height;
+                    yOffsets[link[1]].in += height;
+                });
             });
-            yOffsets[link[0]].out += height;
-            yOffsets[link[1]].in += height;
         });
 
         paths.forEach(link => {

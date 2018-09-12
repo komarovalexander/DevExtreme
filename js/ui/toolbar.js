@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     themes = require("./themes"),
     registerComponent = require("../core/component_registrator"),
@@ -153,10 +151,12 @@ var Toolbar = ToolbarBase.inherit({
     },
 
     _defaultOptionsRules: function() {
+        var themeName = themes.current();
+
         return this.callBase().concat([
             {
                 device: function() {
-                    return themes.isIos7();
+                    return themes.isIos7(themeName);
                 },
                 options: {
                     submenuType: "actionSheet"
@@ -164,7 +164,7 @@ var Toolbar = ToolbarBase.inherit({
             },
             {
                 device: function() {
-                    return themes.isAndroid5();
+                    return themes.isAndroid5(themeName);
                 },
                 options: {
                     submenuType: "dropDownMenu"
@@ -172,7 +172,7 @@ var Toolbar = ToolbarBase.inherit({
             },
             {
                 device: function() {
-                    return themes.isWin8();
+                    return themes.isWin8(themeName);
                 },
                 options: {
                     submenuType: "listBottom"
@@ -180,7 +180,7 @@ var Toolbar = ToolbarBase.inherit({
             },
             {
                 device: function() {
-                    return themes.isWin10();
+                    return themes.isWin10(themeName);
                 },
                 options: {
                     submenuType: "listTop"
@@ -210,7 +210,7 @@ var Toolbar = ToolbarBase.inherit({
         this._renderMenu();
     },
 
-    _render: function() {
+    _renderAsync: function() {
         this._hideOverflowItems();
         this._menuStrategy._updateMenuVisibility();
         this.callBase();
@@ -231,6 +231,10 @@ var Toolbar = ToolbarBase.inherit({
         return itemElement;
     },
 
+    _getItemsWidth: function() {
+        return this._getSummaryItemsWidth([this._$beforeSection, this._$centerSection, this._$afterSection]);
+    },
+
     _hideOverflowItems: function(elementWidth) {
         var overflowItems = this.$element().find("." + TOOLBAR_AUTO_HIDE_ITEM_CLASS);
 
@@ -241,10 +245,7 @@ var Toolbar = ToolbarBase.inherit({
         elementWidth = elementWidth || this.$element().width();
         $(overflowItems).removeClass(TOOLBAR_HIDDEN_ITEM);
 
-        var beforeWidth = this._$beforeSection.outerWidth(),
-            centerWidth = this._$centerSection.outerWidth(),
-            afterWidth = this._$afterSection.outerWidth(),
-            itemsWidth = beforeWidth + centerWidth + afterWidth;
+        var itemsWidth = this._getItemsWidth();
 
         while(overflowItems.length && elementWidth < itemsWidth) {
             var $item = overflowItems.eq(-1);

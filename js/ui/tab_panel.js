@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../core/renderer"),
     support = require("../core/utils/support"),
     extend = require("../core/utils/extend").extend,
@@ -383,7 +381,6 @@ var TabPanel = MultiView.inherit({
                 var newItem = value ? this._tabs._itemElements().eq(id) : value;
                 this._setTabsOption("focusedElement", getPublicElement(newItem));
                 this.callBase(args);
-                this._tabs.focus();
                 break;
             case "itemTitleTemplate":
                 this._setTabsOption("itemTemplate", this._getTemplateByOption("itemTitleTemplate"));

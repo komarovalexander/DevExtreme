@@ -1,4 +1,25 @@
 /**
+ * @name PieChartSeries
+ * @type object
+ * @inherits dxPieChartSeriesTypes.CommonPieChartSeries
+ * @hidden
+ */
+var pieChartSeries = {
+    /**
+    * @name PieChartSeries.name
+    * @type string
+    * @default undefined
+    */
+    name: undefined,
+    /**
+    * @name PieChartSeries.tag
+    * @type any
+    * @default undefined
+    */
+    tag: undefined
+};
+
+/**
 * @name dxPieChartSeriesTypes
 * @type object
 */
@@ -315,37 +336,15 @@ var commonPieChartSeries = {
         position: 'outside',
         /**
         * @name dxPieChartSeriesTypes.CommonPieChartSeries.label.font
-        * @type object
+        * @type Font
+        * @default '#FFFFFF' @prop color
+        * @default 14 @prop size
         */
         font: {
-            /**
-            * @name dxPieChartSeriesTypes.CommonPieChartSeries.label.font.family
-            * @extends CommonVizFontFamily
-            */
             family: undefined,
-            /**
-            * @name dxPieChartSeriesTypes.CommonPieChartSeries.label.font.weight
-            * @type number
-            * @default 400
-            */
             weight: 400,
-            /**
-            * @name dxPieChartSeriesTypes.CommonPieChartSeries.label.font.color
-            * @type string
-            * @default '#FFFFFF'
-            */
             color: '#FFFFFF',
-            /**
-            * @name dxPieChartSeriesTypes.CommonPieChartSeries.label.font.size
-            * @type number|string
-            * @default 14
-            */
             size: 14,
-            /**
-            * @name dxPieChartSeriesTypes.CommonPieChartSeries.label.font.opacity
-            * @type number
-            * @default undefined
-            */
             opacity: undefined
         },
         /**

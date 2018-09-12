@@ -62,7 +62,7 @@
         }
     }
 
-    .dx-datagrid-rowsview .dx-data-row, .dx-datagrid-rowsview .dx-freespace-row, .dx-datagrid-headers .dx-row {
+    .dx-datagrid-rowsview .dx-data-row, .dx-datagrid-rowsview .dx-freespace-row, .dx-datagrid-rowsview .dx-virtual-row, .dx-datagrid-headers .dx-row {
         td.dx-pointer-events-none {
             border-left: 2px solid @datagrid-border-color;
             border-right: 2px solid @datagrid-border-color;
@@ -115,6 +115,15 @@
 
         .dx-error-message {
             .dx-datagrid-error-message();
+        }
+    }
+
+    .dx-column-lines > td {
+        &:first-child {
+            border-left: none;
+        }
+        &:last-child {
+            border-right: none;
         }
     }
 }
@@ -179,6 +188,18 @@
                 &[style*="text-align: left"]:before {
                     .scale(1);
                 }
+            }
+        }
+
+        .dx-column-lines > td {
+            &:first-child {
+                border-right: none;
+                border-left: @datagrid-border;
+            }
+
+            &:last-child {
+                border-left: none;
+                border-right: @datagrid-border;
             }
         }
     }

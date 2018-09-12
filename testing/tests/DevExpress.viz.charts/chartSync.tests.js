@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     noop = require("core/utils/common").noop,
     vizMocks = require("../../helpers/vizMocks.js"),
@@ -1405,7 +1403,7 @@ var environment = {
         $.each(chart._valueAxes, function(_, axis) { axis.dispose = function() { chart.verticalAxesDisposed = true; }; });
 
         // act
-        chart.zoomArgument(2, 4);
+        chart.getArgumentAxis().applyVisualRangeSetter.lastCall.args[0](chart.getArgumentAxis(), { startValue: 2, endValue: 4 });
 
         // assert
         assert.ok(chart.series);
@@ -1416,6 +1414,7 @@ var environment = {
         assert.ok(chart._argumentAxes[0].wasDrawn, "Horizontal axis was drawn");
         assert.ok(chart._valueAxes[0].wasDrawn, "Vertical axis was drawn");
         assert.ok(chart.series[0].wasDrawn, "Series was drawn");
+        assert.strictEqual(chart.series[0].draw.lastCall.args[0], false);
         assert.ok(!chart._legendGroup.stub("linkRemove").called, "Legend group should not be detached");
         assert.ok(!chart._legendGroup.stub("clear").called, "Legend group should not be cleared");
         assert.ok(!chart._seriesGroup.stub("linkRemove").called, "Series group should be detached");

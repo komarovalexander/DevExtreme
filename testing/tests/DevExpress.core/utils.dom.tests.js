@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     domUtils = require("core/utils/dom"),
     support = require("core/utils/support"),
@@ -148,4 +146,19 @@ QUnit.test("dont prevent touch move on win10 devices", function(assert) {
     } finally {
         devices.real(originalRealDevice);
     }
+});
+
+
+QUnit.module("Contains");
+
+QUnit.test("it correctly detect the html element", function(assert) {
+    var html = document.documentElement;
+
+    assert.ok(domUtils.contains(document, html), "Document contains the html element");
+});
+
+QUnit.test("it correctly detect the body element", function(assert) {
+    var body = document.body;
+
+    assert.ok(domUtils.contains(document, body), "Document contains the body element");
 });

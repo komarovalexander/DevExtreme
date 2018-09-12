@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     window = require("../../core/utils/window").getWindow(),
     domAdapter = require("../../core/dom_adapter"),
@@ -562,11 +560,10 @@ extend(ChartTracker.prototype, baseTrackerPrototype, {
                 translator = that._argumentAxis.getTranslator(),
                 scale = translator.getMinScale(e.delta > 0),
                 translate = x - x * scale,
-                zoom = translator.zoom(-translate, scale);
+                zoom = translator.zoom(-translate, scale, that._chart.getArgumentAxis().getZoomBounds());
             that._pointerOut();
 
-            that._eventTrigger(ZOOM_START);
-            that._chart.zoomArgument(zoom.min, zoom.max);
+            that._chart.getArgumentAxis().visualRange([zoom.min, zoom.max]);
 
             e.preventDefault();
             e.stopPropagation(); // T249548
@@ -642,10 +639,15 @@ extend(ChartTracker.prototype, baseTrackerPrototype, {
             startGesture.scroll = (gestureParams.center - startGesture.center);
         }
 
-        if(gestureChanged) {
+        if(gestureChanged && !startGesture.cancel) {
             if(that._startScroll) {
-                that._eventTrigger(ZOOM_START);
+                const eventArg = that._chart.getArgumentAxis().getZoomEventArg();
+                that._eventTrigger(ZOOM_START, eventArg);
                 that._startScroll = false;
+                if(eventArg.cancel) {
+                    startGesture.cancel = true;
+                    return false;
+                }
             }
 
             startGesture.changed = gestureChanged;
@@ -662,12 +664,14 @@ extend(ChartTracker.prototype, baseTrackerPrototype, {
         that._startGesture = null;
         that._startScroll = false;
 
+        const argumentAxis = that._argumentAxis;
+
         function complete() {
-            that._chart.zoomArgument(zoom.min, zoom.max);
+            argumentAxis.visualRange([zoom.min, zoom.max], { start: true });
         }
 
         if(startGesture && startGesture.changed) {
-            zoom = that._argumentAxis._translator.zoom(-startGesture.scroll, startGesture.scale);
+            zoom = argumentAxis.getTranslator().zoom(-startGesture.scroll, startGesture.scale, argumentAxis.getZoomBounds());
 
             if(renderer.animationEnabled() && (-startGesture.scroll !== zoom.translate || startGesture.scale !== zoom.scale)) {
                 var translateDelta = -(startGesture.scroll + zoom.translate),
@@ -761,21 +765,6 @@ extend(ChartTracker.prototype, baseTrackerPrototype, {
             that._startScroll = false;
         }
         that._gestureStartTimeStamp = e.timeStamp;
-    },
-
-    _handleScrollGesture: function(e) {
-        var that = this,
-            scale = that._startGesture.scale,
-            scroll = that._startGesture.scroll,
-            touches = that._startGesture.touches;
-
-        that._pointerOut();
-        if(that._argumentAxis.getTranslator().checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, scale, scroll, touches, that._argumentAxis.isZoomed())) {
-            that._chart._transformArgument(that._startGesture.scroll, that._startGesture.scale);
-            that._stopEvent(e);
-        } else {
-            that._startGesture.changed = false;
-        }
     },
 
     _stopEvent: function(e) {

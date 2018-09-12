@@ -1,5 +1,3 @@
-"use strict";
-
 import { isDefined } from "../../core/utils/type";
 
 var modules = require("./ui.grid_core.modules"),
@@ -103,8 +101,14 @@ var FilterSyncController = modules.Controller.inherit((function() {
 
     var updateFilterRowCondition = function(columnsController, column, condition) {
         var filterRowOptions,
-            selectedFilterOperation = condition && condition[1];
-        if(FILTER_ROW_OPERATIONS.indexOf(selectedFilterOperation) >= 0) {
+            selectedFilterOperation = condition && condition[1],
+            filterOperations = column.filterOperations || column.defaultFilterOperations;
+
+        if((!filterOperations || filterOperations.indexOf(selectedFilterOperation) >= 0 || selectedFilterOperation === column.defaultFilterOperation)
+            && FILTER_ROW_OPERATIONS.indexOf(selectedFilterOperation) >= 0) {
+            if(selectedFilterOperation === column.defaultFilterOperation && !isDefined(column.selectedFilterOperation)) {
+                selectedFilterOperation = column.selectedFilterOperation;
+            }
             filterRowOptions = {
                 filterValue: condition[2],
                 selectedFilterOperation: selectedFilterOperation
@@ -193,7 +197,7 @@ var FilterSyncController = modules.Controller.inherit((function() {
                 headerFilter && utils.addItem(headerFilter, filterValue);
                 filterRow && utils.addItem(filterRow, filterValue);
             });
-            return utils.getNormalizedFilter(filterValue, columns);
+            return utils.getNormalizedFilter(filterValue);
         },
 
         syncFilterRow: function(column, value) {
@@ -255,6 +259,20 @@ var DataControllerFilterSyncExtender = {
     _parseColumnPropertyName: function(fullName) {
         var matched = fullName.match(/.*\.(.*)/);
         return matched[1];
+    },
+
+    clearFilter: function(filterName) {
+        this.component.beginUpdate();
+        if(arguments.length > 0) {
+            if(filterName === "filterValue") {
+                this.option("filterValue", null);
+            }
+            this.callBase(filterName);
+        } else {
+            this.option("filterValue", null);
+            this.callBase();
+        }
+        this.component.endUpdate();
     },
 
     optionChanged: function(args) {

@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     Callbacks = require("../../core/utils/callbacks"),
     isWrapped = require("../../core/utils/variable_wrapper").isWrapped,
@@ -39,6 +37,8 @@ var USER_STATE_FIELD_NAMES_15_1 = ["filterValues", "filterType", "fixed", "fixed
     MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || 9007199254740991/* IE11 */;
 
 var regExp = /columns\[(\d+)\]\.?/gi;
+
+var globalColumnId = 1;
 
 module.exports = {
     defaultOptions: function() {
@@ -433,6 +433,11 @@ module.exports = {
              * @default true
              */
             /**
+             * @name GridBaseColumn.renderAsync
+             * @type boolean
+             * @default false
+             */
+            /**
              * @name dxDataGridColumn.resized
              * @type function
              * @hidden
@@ -588,7 +593,7 @@ module.exports = {
                         }
                         calculatedColumnOptions = that._createCalculatedColumnOptions(columnOptions, bandColumn);
 
-                        return extend(true, {}, DEFAULT_COLUMN_OPTIONS, commonColumnOptions, calculatedColumnOptions, columnOptions, { selector: null });
+                        return extend(true, { id: `dx-col-${globalColumnId++}` }, DEFAULT_COLUMN_OPTIONS, commonColumnOptions, calculatedColumnOptions, columnOptions, { selector: null });
                     }
                 }
             };
@@ -1078,7 +1083,7 @@ module.exports = {
                         that._updateLockCount--;
                     }
                     that._columnChanges = undefined;
-                    if(columnChanges.optionNames && (columnChanges.optionNames.dataField || columnChanges.optionNames.lookup)) {
+                    if(columnChanges.optionNames && (columnChanges.optionNames.dataField || columnChanges.optionNames.lookup || columnChanges.optionNames.dataType)) {
                         that.reinit();
                     } else {
                         that.columnsChanged.fire(columnChanges);
@@ -1406,6 +1411,8 @@ module.exports = {
                                 } else {
                                     this._columnOptionChanged(args);
                                 }
+                            } else {
+                                this._updateRequireResize(args);
                             }
                             break;
                         case "commonColumnSettings":
@@ -1445,11 +1452,15 @@ module.exports = {
                         } else {
                             columnOptionValue = args.value;
                         }
-
                         this.columnOption(column.index, columnOptionValue);
-                        if(columnOptionName === "width") {
-                            this.component._requireResize = true;
-                        }
+                    }
+                },
+
+                _updateRequireResize: function(args) {
+                    var component = this.component;
+
+                    if(args.fullName.replace(regExp, "") === "width" && component._updateLockCount) {
+                        component._requireResize = true;
                     }
                 },
 
@@ -2112,7 +2123,7 @@ module.exports = {
                         column.alignment = column.alignment || getAlignmentByDataType(dataType, this.option("rtlEnabled"));
                         column.format = column.format || gridCoreUtils.getFormatByDataType(dataType);
                         column.customizeText = column.customizeText || getCustomizeTextByDataType(dataType);
-                        column.defaultFilterOperations = !lookup && DATATYPE_OPERATIONS[dataType] || [];
+                        column.defaultFilterOperations = column.defaultFilterOperations || !lookup && DATATYPE_OPERATIONS[dataType] || [];
                         if(!isDefined(column.filterOperations)) {
                             column.filterOperations = column.defaultFilterOperations;
                         }
@@ -2525,10 +2536,17 @@ module.exports = {
                  */
                 deleteColumn: function(id) {
                     var that = this,
-                        columnIndex = that.columnOption(id, "index");
+                        childIndexes,
+                        column = that.columnOption(id);
 
-                    if(columnIndex >= 0) {
-                        that._columns.splice(columnIndex, 1);
+                    if(column && column.index >= 0) {
+                        that._columns.splice(column.index, 1);
+
+                        if(column.isBand) {
+                            childIndexes = that.getChildrenByBandColumn(column.index).map((column) => column.index);
+                            that._columns = that._columns.filter((column) => childIndexes.indexOf(column.index) < 0);
+                        }
+
                         updateIndexes(that);
                         that.updateColumns(that._dataSource);
                     }
@@ -2612,13 +2630,13 @@ module.exports = {
                                         parsedValue;
 
                                     if(column.dataType === "number") {
-                                        if(typeUtils.isString(text)) {
+                                        if(typeUtils.isString(text) && column.format) {
                                             parsedValue = numberLocalization.parse(text);
 
                                             if(typeUtils.isNumeric(parsedValue)) {
                                                 result = parsedValue;
                                             }
-                                        } else if(isDefined(text)) {
+                                        } else if(isDefined(text) && typeUtils.isNumeric(text)) {
                                             result = Number(text);
                                         }
                                     } else if(column.dataType === "boolean") {

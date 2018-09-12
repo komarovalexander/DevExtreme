@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("jquery"),
     noop = require("core/utils/common").noop,
     isRenderer = require("core/utils/type").isRenderer,
@@ -676,6 +674,17 @@ QUnit.test("item.disabled property changing should not re-render whole item", fu
     assert.ok($item.is(instance.$element().find(".item")));
 });
 
+QUnit.test("_getSummaryItemsWidth function returns right values", function(assert) {
+    var instance = new TestComponent("#cmp", {
+        items: [
+            { html: '<div class="test-width" style="width: 20px; padding-left: 7px"></div>' },
+            { html: '<div class="test-width" style="width: 10px; margin-left: 5px"></div>' }
+        ]
+    });
+
+    assert.equal(instance._getSummaryItemsWidth($("#cmp .test-width")), 37, "done");
+    assert.equal(instance._getSummaryItemsWidth($("#cmp .test-width"), true), 42, "done");
+});
 
 QUnit.module("events", {
     beforeEach: function() {
@@ -713,15 +722,13 @@ QUnit.test("onItemClick should be fired when item is clicked", function(assert) 
 });
 
 QUnit.test("onItemClick should have correct item index when placed near another collection", function(assert) {
-    var actionFired,
-        actionData;
+    var actionData;
 
     var $element = $("#cmp");
 
     new TestComponent($element, {
         items: ["0", "1", "2"],
         onItemClick: function(args) {
-            actionFired = true;
             actionData = args;
         }
     });

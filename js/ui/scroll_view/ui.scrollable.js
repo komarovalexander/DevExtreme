@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
     support = require("../../core/utils/support"),
@@ -634,6 +632,10 @@ var Scrollable = DOMComponent.inherit({
     */
     scrollTo: function(targetLocation) {
         targetLocation = this._normalizeLocation(targetLocation);
+
+        if(!this.option("useNative")) {
+            targetLocation = this._strategy._applyScaleRatio(targetLocation);
+        }
 
         this._updateIfNeed();
 

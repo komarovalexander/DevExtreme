@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     array = require("../../core/utils/array"),
     recurrenceUtils = require("./utils.recurrence"),
@@ -412,10 +410,7 @@ var subscribes = {
     mapAppointmentFields: function(config) {
         var result = {
             appointmentData: config.itemData,
-            appointmentElement: config.itemElement,
-            itemData: undefined,
-            itemElement: undefined,
-            itemIndex: undefined
+            appointmentElement: config.itemElement
         };
 
         if(config.itemData) {
@@ -718,7 +713,7 @@ var subscribes = {
             appointmentDuration = endDate.getTime() - startDate.getTime();
 
         var dayDuration = toMs("day"),
-            visibleDayDuration = this._getDayDuration() * toMs("hour"),
+            visibleDayDuration = this._workSpace.getVisibleDayDuration(),
             result = 0;
 
         if(allDay) {

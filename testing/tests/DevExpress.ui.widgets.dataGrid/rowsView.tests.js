@@ -1,5 +1,3 @@
-"use strict";
-
 QUnit.testStart(function() {
     var markup =
 '<style>\
@@ -249,8 +247,8 @@ QUnit.test('Render scrollable', function(assert) {
     assert.strictEqual(scrollable.option("useNative"), false, 'scrollable useNative');
     assert.strictEqual(scrollable.option("showScrollbar"), "always", 'scrollable showScrollbar');
     assert.strictEqual(scrollable.option("test"), "test", 'scrollable test');
-    // T572392
-    assert.strictEqual(scrollable.option("updateManually"), true, 'scrollable updateManually');
+    // T654402
+    assert.strictEqual(scrollable.option("updateManually"), false, 'scrollable updateManually');
 });
 
 QUnit.test('Check WAI-ARIA attributes for data rows/cells after render rows', function(assert) {
@@ -430,7 +428,6 @@ QUnit.test('Resized event on second resize when container resized and columns wi
             { dataField: 'test2', resizedCallbacks: $.Callbacks().add(function() { resizedColumns.push('test2'); }) },
             { dataField: 'test3', resizedCallbacks: $.Callbacks().add(function() { resizedColumns.push('test3'); }) }
         ]),
-        cells,
         resizedColumns = [],
         testElement = $('#container');
 
@@ -441,7 +438,7 @@ QUnit.test('Resized event on second resize when container resized and columns wi
     this.setColumnWidths([100, 50, 50]);
     // act
     rowsView.resize();
-    cells = getCells(testElement);
+    getCells(testElement);
 
     // assert
     assert.deepEqual(resizedColumns, ['test2', 'test3'], 'resized event raised for columns with changed width after change container width ');
@@ -1474,11 +1471,14 @@ QUnit.test('Custom extern column template without allowRenderToDetachedContainer
     // act
 
     var contentPositionUpdated = false;
-    rowsView._updateContentPosition = function() {
-        contentPositionUpdated = true;
+    rowsView._updateContentPosition = function(isRender) {
+        if(!isRender) {
+            contentPositionUpdated = true;
+        }
     };
 
     rowsView.render(testElement);
+    rowsView.resize();
     cells = testElement.find('td');
 
     // assert
@@ -3299,7 +3299,7 @@ QUnit.test("onCellPrepared for group rows", function(assert) {
     assert.strictEqual(resultOptions.displayValue, 1, "displayValue");
     assert.deepEqual(resultOptions.data, { isContinuationOnNextPage: true }, "data");
     assert.strictEqual(resultOptions.rowType, "group", "rowType");
-    assert.deepEqual(resultOptions.column, { groupIndex: 0, caption: 'column 1', allowCollapsing: true, command: null, colspan: 2, "alignment": "left", "index": 0, "cssClass": null, showWhenGrouped: false }, "column");
+    assert.deepEqual(resultOptions.column, { groupIndex: 0, caption: 'column 1', allowCollapsing: true, command: null, width: null, colspan: 2, "alignment": "left", "index": 0, "cssClass": null, showWhenGrouped: false }, "column");
 });
 
 QUnit.test("onCellPrepared for group rows (RTL)", function(assert) {
@@ -3335,7 +3335,7 @@ QUnit.test("onCellPrepared for group rows (RTL)", function(assert) {
     assert.strictEqual(resultOptions.displayValue, 1, "displayValue");
     assert.deepEqual(resultOptions.data, { isContinuationOnNextPage: true }, "data");
     assert.strictEqual(resultOptions.rowType, "group", "rowType");
-    assert.deepEqual(resultOptions.column, { groupIndex: 0, caption: 'column 1', allowCollapsing: true, command: null, colspan: 2, "alignment": "right", "index": 0, "cssClass": null, showWhenGrouped: false }, "column");
+    assert.deepEqual(resultOptions.column, { groupIndex: 0, caption: 'column 1', allowCollapsing: true, command: null, width: null, colspan: 2, "alignment": "right", "index": 0, "cssClass": null, showWhenGrouped: false }, "column");
 });
 
 QUnit.test("onCellPrepared for called for command columns", function(assert) {
@@ -3913,14 +3913,12 @@ QUnit.test("Calculate widths when there is only group rows", function(assert) {
     ];
 
     var rowsView = this.createRowsView(this.items, null, [{ allowCollapsing: true, cssClass: "dx-command-expand", groupIndex: 0, command: "expand" }, { width: 100 }, { width: 100 }]),
-        $tableElement,
         $testElement = $("#container").width(230);
 
     // act
     rowsView.render($testElement);
 
     // assert
-    $tableElement = $testElement.find("table");
     assert.deepEqual(rowsView.getColumnWidths(), [30, 100, 100], "calculate widths");
 });
 
@@ -5246,9 +5244,11 @@ QUnit.module('Virtual scrolling', {
             rowsView._dataController.getVirtualContentSize = x.getVirtualContentSize;
             rowsView._dataController.getContentOffset = x.getContentOffset;
             rowsView._dataController.getItemSize = x.getItemSize;
+            rowsView._dataController.getItemSizes = x.getItemSizes;
             rowsView._dataController.viewportItemSize = x.viewportItemSize;
             rowsView._dataController.setContentSize = x.setContentSize;
             rowsView._dataController.setViewportPosition = x.setViewportPosition;
+            rowsView._dataController.getItemIndexByPosition = x.getItemIndexByPosition;
             rowsView._dataController._setViewportPositionCore = x._setViewportPositionCore;
             rowsView._dataController.option = rowsView.option.bind(rowsView);
             rowsView._dataController._dataSource = {
@@ -5563,12 +5563,14 @@ QUnit.test('setViewportItemIndex to far for virtual scrolling when rowsView heig
 
     dataController.setViewportItemIndex = function(itemIndex) {
         assert.ok(heightRatio > 0 && heightRatio < 1, "heightRatio is defined and in (0, 1)");
-        assert.roughEqual(itemIndex, 9000000, 1);
+        assert.roughEqual(itemIndex, 9000000, 2.1);
         done();
     };
 
     // act
-    rowsView.scrollTo({ y: rowHeight * heightRatio * 9000000 });
+    var itemSizes = dataController.getItemSizes();
+    var definedItemSizes = Object.keys(itemSizes).map(function(key) { return itemSizes[key]; });
+    rowsView.scrollTo({ y: rowHeight * heightRatio * (9000000 - definedItemSizes.length) + definedItemSizes[0] * definedItemSizes.length });
 });
 
 // T154003

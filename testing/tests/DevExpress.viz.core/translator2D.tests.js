@@ -1,9 +1,6 @@
-"use strict";
-
-var $ = require("jquery"),
-    translator2DModule = require("viz/translators/translator2d"),
-    adjust = require("core/utils/math").adjust,
-    SCROLL_THRESHOLD = 10;
+import $ from "jquery";
+import translator2DModule from "viz/translators/translator2d";
+import { adjust } from "core/utils/math";
 
 function prepareScaleBreaks(array, breakSize) {
     var breaks = [],
@@ -95,7 +92,7 @@ QUnit.test('Create vertical translator', function(assert) {
     assert.deepEqual(translator._businessRange, { min: 0, minVisible: 10, max: 100, maxVisible: 90, interval: 20, axisType: 'continuous', dataType: 'numeric', invert: true });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.equal(translator._canvasOptions.rangeMin, 0);
@@ -124,7 +121,7 @@ QUnit.test('Create horizontal translator', function(assert) {
     assert.deepEqual(translator._businessRange, { min: 0, minVisible: 10, max: 100, maxVisible: 90, interval: 20, axisType: 'continuous', dataType: 'numeric', invert: true });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.equal(translator._canvasOptions.rangeMin, 0);
@@ -153,11 +150,11 @@ QUnit.test('Create numeric translator', function(assert) {
     assert.deepEqual(translator._businessRange, { min: 0, minVisible: 0, max: 100, maxVisible: 100, interval: 20, axisType: 'continuous', dataType: 'numeric' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 });
 
-QUnit.test('Create numeric translator when business range delta = 0, Min = max = minVisible = maxVisible != 0', function(assert) {
+QUnit.test('Create numeric translator when business range delta = 0, Min = max = minVisible = maxVisible', function(assert) {
     var range = {
             min: 100,
             max: 100,
@@ -171,32 +168,10 @@ QUnit.test('Create numeric translator when business range delta = 0, Min = max =
     translator = this.createTranslator(range, canvas);
 
     assert.ok(translator);
-    assert.equal(translator._canvasOptions.rangeMin, 99, 'range min is correct');
-    assert.equal(translator._canvasOptions.rangeMax, 101, 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible, 99, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible, 101, 'range max visible is correct');
-});
-
-QUnit.test('Create numeric translator when business range delta = 0, Min = max = minVisible = maxVisible = 0', function(assert) {
-    var range = {
-            min: 0,
-            max: 0,
-            minVisible: 0,
-            maxVisible: 0,
-            interval: 0,
-            axisType: 'continuous',
-            dataType: 'numeric'
-        },
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = this.createTranslator(range, canvas);
-
-    assert.ok(translator);
-    assert.equal(translator._canvasOptions.rangeMin, 0, 'range min is correct');
-    assert.equal(translator._canvasOptions.rangeMax, 1, 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible, 0, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible, 1, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMin, 100, 'range min is correct');
+    assert.equal(translator._canvasOptions.rangeMax, 100, 'range max is correct');
+    assert.equal(translator._canvasOptions.rangeMinVisible, 100, 'range min visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible, 100, 'range max visible is correct');
 });
 
 QUnit.test('Create numeric translator when business range delta = 0, min < minVisible = maxVisible != 0 < max', function(assert) {
@@ -217,8 +192,8 @@ QUnit.test('Create numeric translator when business range delta = 0, min < minVi
     assert.ok(translator);
     assert.equal(translator._canvasOptions.rangeMin, 10, 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax, 100, 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible, 49, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible, 51, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMinVisible, 50, 'range min visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible, 50, 'range max visible is correct');
 });
 
 QUnit.test('Create numeric translator when business range delta = 0, min < minVisible = maxVisible = 0 < max', function(assert) {
@@ -240,7 +215,7 @@ QUnit.test('Create numeric translator when business range delta = 0, min < minVi
     assert.equal(translator._canvasOptions.rangeMin, -10, 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax, 10, 'range max is correct');
     assert.equal(translator._canvasOptions.rangeMinVisible, 0, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible, 1, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible, 0, 'range max visible is correct');
 });
 
 QUnit.test('Create numeric translator when business range delta = 0, min = minVisible = maxVisible < max', function(assert) {
@@ -262,7 +237,7 @@ QUnit.test('Create numeric translator when business range delta = 0, min = minVi
     assert.equal(translator._canvasOptions.rangeMin, 10, 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax, 100, 'range max is correct');
     assert.equal(translator._canvasOptions.rangeMinVisible, 10, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible, 11, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible, 10, 'range max visible is correct');
 });
 
 QUnit.test('Create numeric translator when business range delta = 0, min < minVisible = maxVisible = max', function(assert) {
@@ -283,7 +258,7 @@ QUnit.test('Create numeric translator when business range delta = 0, min < minVi
     assert.ok(translator);
     assert.equal(translator._canvasOptions.rangeMin, 10, 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax, 100, 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible, 99, 'range min visible is correct');
+    assert.equal(translator._canvasOptions.rangeMinVisible, 100, 'range min visible is correct');
     assert.equal(translator._canvasOptions.rangeMaxVisible, 100, 'range max visible is correct');
 });
 
@@ -299,13 +274,12 @@ QUnit.test('Create datetime translator', function(assert) {
     assert.deepEqual(translator._businessRange, { min: new Date(2012, 9, 1), max: new Date(2012, 9, 2), minVisible: new Date(2012, 9, 1), maxVisible: new Date(2012, 9, 2), interval: new Date(2012, 9, 2) - new Date(2012, 9, 1), axisType: 'continuous', dataType: 'datetime' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 });
 
 QUnit.test('Create datetime translator when business range delta = 0. min = minVisible = maxVisible = max', function(assert) {
-    var correction = 60000,
-        range = {
+    var range = {
             min: new Date(2000, 1, 1),
             max: new Date(2000, 1, 1),
             minVisible: new Date(2000, 1, 1),
@@ -320,15 +294,14 @@ QUnit.test('Create datetime translator when business range delta = 0. min = minV
     translator = this.createTranslator(range, canvas);
 
     assert.ok(translator);
-    assert.equal(translator._canvasOptions.rangeMin.valueOf(), new Date(2000, 1, 1).valueOf() - correction, 'range min is correct');
-    assert.equal(translator._canvasOptions.rangeMax.valueOf(), new Date(2000, 1, 1).valueOf() + correction, 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf() - correction, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf() + correction, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMin.valueOf(), new Date(2000, 1, 1).valueOf(), 'range min is correct');
+    assert.equal(translator._canvasOptions.rangeMax.valueOf(), new Date(2000, 1, 1).valueOf(), 'range max is correct');
+    assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range min visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range max visible is correct');
 });
 
 QUnit.test('Create datetime translator when business range delta = 0. min < minVisible = maxVisible < max', function(assert) {
-    var correction = 60000,
-        range = {
+    var range = {
             min: new Date(1990, 1, 1),
             max: new Date(2010, 1, 1),
             minVisible: new Date(2000, 1, 1),
@@ -345,13 +318,12 @@ QUnit.test('Create datetime translator when business range delta = 0. min < minV
     assert.ok(translator);
     assert.equal(translator._canvasOptions.rangeMin.valueOf(), new Date(1990, 1, 1).valueOf(), 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax.valueOf(), new Date(2010, 1, 1).valueOf(), 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf() - correction, 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf() + correction, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range min visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range max visible is correct');
 });
 
 QUnit.test('Create datetime translator when business range delta = 0. min = minVisible = maxVisible < max', function(assert) {
-    var correction = 60000,
-        range = {
+    var range = {
             min: new Date(2000, 1, 1),
             max: new Date(2010, 1, 1),
             minVisible: new Date(2000, 1, 1),
@@ -369,12 +341,11 @@ QUnit.test('Create datetime translator when business range delta = 0. min = minV
     assert.equal(translator._canvasOptions.rangeMin.valueOf(), new Date(2000, 1, 1).valueOf(), 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax.valueOf(), new Date(2010, 1, 1).valueOf(), 'range max is correct');
     assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range min visible is correct');
-    assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf() + correction, 'range max visible is correct');
+    assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range max visible is correct');
 });
 
 QUnit.test('Create datetime translator when business range delta = 0. min < minVisible = maxVisible = max', function(assert) {
-    var correction = 60000,
-        range = {
+    var range = {
             min: new Date(1990, 1, 1),
             max: new Date(2000, 1, 1),
             minVisible: new Date(2000, 1, 1),
@@ -391,7 +362,7 @@ QUnit.test('Create datetime translator when business range delta = 0. min < minV
     assert.ok(translator);
     assert.equal(translator._canvasOptions.rangeMin.valueOf(), new Date(1990, 1, 1).valueOf(), 'range min is correct');
     assert.equal(translator._canvasOptions.rangeMax.valueOf(), new Date(2000, 1, 1).valueOf(), 'range max is correct');
-    assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf() - correction, 'range min visible is correct');
+    assert.equal(translator._canvasOptions.rangeMinVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range min visible is correct');
     assert.equal(translator._canvasOptions.rangeMaxVisible.valueOf(), new Date(2000, 1, 1).valueOf(), 'range max visible is correct');
 });
 
@@ -407,7 +378,7 @@ QUnit.test('Create discrete translator (Stick = false, invert = false)', functio
     assert.deepEqual(translator._businessRange, { categories: ['First', 'Second', 'Third', 'Fourth'], axisType: 'discrete', dataType: 'string' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.deepEqual(translator._categories, ['First', 'Second', 'Third', 'Fourth']);
@@ -461,7 +432,7 @@ QUnit.test('Can create Discrete translator without categories. B253644', functio
 
     assert.ok(translator);
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.deepEqual(translator._categories, []);
@@ -480,7 +451,7 @@ QUnit.test('Create logarithmic translator', function(assert) {
     assert.deepEqual(translator._businessRange, { min: 10, minVisible: 100, max: 10000, maxVisible: 1000, interval: 1, base: 10, axisType: 'logarithmic', dataType: 'numeric' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.roughEqual(translator._canvasOptions.rangeMaxVisible, 3, 0.00001);
@@ -494,7 +465,7 @@ QUnit.test('Create logarithmic translator', function(assert) {
 });
 
 QUnit.test('Create logarithmic translator. Min = max = minVisible = maxVisible = 1', function(assert) {
-    var range = $.extend({}, logarithmicRange, { min: 1, max: 1, minVisible: 1, maxVisible: 1 }),
+    var range = $.extend({}, logarithmicRange, { min: 10, max: 10, minVisible: 10, maxVisible: 10 }),
         canvas = $.extend({}, canvasTemplate),
         translator;
 
@@ -502,20 +473,20 @@ QUnit.test('Create logarithmic translator. Min = max = minVisible = maxVisible =
 
     assert.ok(translator);
     assert.deepEqual(translator._canvas, { width: 610, height: 400, left: 70, top: 10, right: 30, bottom: 60 });
-    assert.deepEqual(translator._businessRange, { min: 1, minVisible: 1, max: 1, maxVisible: 1, interval: 1, base: 10, axisType: 'logarithmic', dataType: 'numeric' });
+    assert.deepEqual(translator._businessRange, { min: 10, minVisible: 10, max: 10, maxVisible: 10, interval: 1, base: 10, axisType: 'logarithmic', dataType: 'numeric' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.equal(translator._canvasOptions.rangeMaxVisible, 1);
-    assert.equal(translator._canvasOptions.rangeMinVisible, -1);
-    assert.equal(translator._canvasOptions.rangeMin, -1);
+    assert.equal(translator._canvasOptions.rangeMinVisible, 1);
+    assert.equal(translator._canvasOptions.rangeMin, 1);
     assert.equal(translator._canvasOptions.rangeMax, 1);
     assert.equal(translator._canvasOptions.base, 10);
 
     assert.roughEqual(translator._canvasOptions.rangeDoubleError, 0.0001, 0.000001);
-    assert.roughEqual(translator._canvasOptions.ratioOfCanvasRange, 165, 0.00001);
+    assert.equal(translator._canvasOptions.ratioOfCanvasRange, Infinity);
 });
 
 QUnit.test('Create logarithmic translator. Base = 2', function(assert) {
@@ -530,7 +501,7 @@ QUnit.test('Create logarithmic translator. Base = 2', function(assert) {
     assert.deepEqual(translator._businessRange, { min: 2, minVisible: 4, max: 32, maxVisible: 16, interval: 1, base: 2, axisType: 'logarithmic', dataType: 'numeric' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.roughEqual(translator._canvasOptions.rangeMaxVisible, 4, 0.00001);
@@ -578,7 +549,7 @@ QUnit.test('Update business range', function(assert) {
     assert.deepEqual(translator._businessRange, { min: -1000, minVisible: -600, maxVisible: -90, max: -10, invert: false, axisType: 'continuous', dataType: 'numeric' });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.equal(translator._canvasOptions.rangeMin, -1000);
@@ -606,7 +577,7 @@ QUnit.test('Update canvas', function(assert) {
     assert.deepEqual(translator._canvas, { width: 333, height: 444, left: 13, top: 15, right: 14, bottom: 16 });
 
     assert.ok($.isFunction(translator.translate));
-    assert.ok($.isFunction(translator.untranslate));
+    assert.ok($.isFunction(translator.from));
     assert.ok($.isFunction(translator.getInterval));
 
     assert.equal(translator._canvasOptions.rangeMin, 0);
@@ -643,54 +614,6 @@ QUnit.test('Get canvas visible area', function(assert) {
 
     assert.ok(visibleArea);
     assert.deepEqual(visibleArea, { min: 70, max: 580 });
-});
-
-QUnit.test('Compare numeric business range', function(assert) {
-    var canvas = $.extend({}, canvasTemplate),
-        translator = new translator2DModule.Translator2D($.extend({}, numericRange), canvas, optionsHorizontal);
-
-    assert.ok(translator.constructor.prototype.isEqualRange.call(translator, { min: 0, max: 100 }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: 10 }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: 0, max: 90 }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: 50, max: 70 }));
-    assert.ok(translator.constructor.prototype.isEqualRange.call(translator, {}));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, null));
-});
-
-QUnit.test('Compare logarithmic business range', function(assert) {
-    var canvas = $.extend({}, canvasTemplate),
-        translator = new translator2DModule.Translator2D($.extend({}, logarithmicRange), canvas, optionsHorizontal);
-
-    assert.ok(translator.constructor.prototype.isEqualRange.call(translator, { min: 10, max: 10000 }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: 100, max: 10000 }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { max: 9000 }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: 500, max: 7000 }));
-    assert.ok(translator.constructor.prototype.isEqualRange.call(translator, {}));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, null));
-});
-
-QUnit.test('Compare datetime business range', function(assert) {
-    var canvas = $.extend({}, canvasTemplate),
-        translator = new translator2DModule.Translator2D($.extend({}, datetimeRange), canvas, optionsHorizontal);
-
-    assert.ok(translator.constructor.prototype.isEqualRange.call(translator, { min: new Date(2012, 9, 1), max: new Date(2012, 9, 2) }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: new Date(2012, 9, 1, 13), max: new Date(2012, 9, 2) }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: new Date(2012, 9, 1), max: new Date(2012, 9, 1, 13) }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: new Date(2012, 9, 1, 10), max: new Date(2012, 9, 1, 22) }));
-    assert.ok(translator.constructor.prototype.isEqualRange.call(translator, {}));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, null));
-});
-
-QUnit.test('Compare discrete business range', function(assert) {
-    var canvas = $.extend({}, canvasTemplate),
-        translator = new translator2DModule.Translator2D($.extend({}, discreteRange), canvas, optionsHorizontal);
-
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: "First", max: "Fourth" }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: "Second", max: "Fourth" }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: "First", max: "Third" }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, { min: "Second", max: "Third" }));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, {}));
-    assert.ok(!translator.constructor.prototype.isEqualRange.call(translator, null));
 });
 
 QUnit.module('Numeric translator', environment);
@@ -763,64 +686,44 @@ QUnit.test("translate. conversion is not a function", function(assert) {
     assert.equal(translator.translate(322.33), 745, 'value should rounded');
 });
 
-QUnit.test('Untranslate. Positive values. Invert = false', function(assert) {
+QUnit.test('from. Positive values. Invert = false', function(assert) {
     var translator = this.createTranslator({ min: 200, max: 700 });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(300, undefined, true), 100, 'Coord less than min');
-    assert.equal(translator.untranslate(1800, undefined, true), 850, 'Coord more than min');
-    assert.equal(translator.untranslate(500), 200, 'Coord on the min');
-    assert.equal(translator.untranslate(1500), 700, 'Coord on the max');
-    assert.equal(translator.untranslate(1000), 450, 'Coord inside range');
+    assert.equal(translator.from(300), 100, 'Coord less than min');
+    assert.equal(translator.from(1800), 850, 'Coord more than min');
+    assert.equal(translator.from(500), 200, 'Coord on the min');
+    assert.equal(translator.from(1500), 700, 'Coord on the max');
+    assert.equal(translator.from(1000), 450, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Positive values. Invert = true', function(assert) {
+QUnit.test('from. Positive values. Invert = true', function(assert) {
     var translator = this.createTranslator({ min: 200, max: 700, invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(300, undefined, true), 800, 'Coord less than min');
-    assert.equal(translator.untranslate(1800, undefined, true), 50, 'Coord more than min');
-    assert.equal(translator.untranslate(500), 700, 'Coord on the min');
-    assert.equal(translator.untranslate(1500), 200, 'Coord on the max');
-    assert.equal(translator.untranslate(1000), 450, 'Coord inside range');
+    assert.equal(translator.from(300), 800, 'Coord less than min');
+    assert.equal(translator.from(1800), 50, 'Coord more than min');
+    assert.equal(translator.from(500), 700, 'Coord on the min');
+    assert.equal(translator.from(1500), 200, 'Coord on the max');
+    assert.equal(translator.from(1000), 450, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Negative values. Invert = false', function(assert) {
+QUnit.test('from. Negative values. Invert = false', function(assert) {
     var translator = this.createTranslator({ min: -700, max: -200 });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(300, undefined, true), -800, 'Coord less than min');
-    assert.equal(translator.untranslate(1800, undefined, true), -50, 'Coord more than min');
-    assert.equal(translator.untranslate(500), -700, 'Coord on the min');
-    assert.equal(translator.untranslate(1500), -200, 'Coord on the max');
-    assert.equal(translator.untranslate(1000), -450, 'Coord inside range');
+    assert.equal(translator.from(300), -800, 'Coord less than min');
+    assert.equal(translator.from(1800), -50, 'Coord more than min');
+    assert.equal(translator.from(500), -700, 'Coord on the min');
+    assert.equal(translator.from(1500), -200, 'Coord on the max');
+    assert.equal(translator.from(1000), -450, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Negative values. Invert = true', function(assert) {
+QUnit.test('from. Negative values. Invert = true', function(assert) {
     var translator = this.createTranslator({ min: -700, max: -200, invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(300, undefined, true), -100, 'Coord less than min');
-    assert.equal(translator.untranslate(1800, undefined, true), -850, 'Coord more than min');
-    assert.equal(translator.untranslate(500), -200, 'Coord on the min');
-    assert.equal(translator.untranslate(1500), -700, 'Coord on the max');
-    assert.equal(translator.untranslate(1000), -450, 'Coord inside range');
-});
-
-QUnit.test('Untranslate. T176895. Range min/max are undefined', function(assert) {
-    var translator = this.createTranslator({});
-
-    assert.equal(translator.untranslate(300), null);
-    assert.equal(translator.untranslate(1800), null);
-    assert.equal(translator.untranslate(300, undefined, true), null);
-    assert.equal(translator.untranslate(1800, undefined, true), null);
-    assert.equal(translator.untranslate(500), null);
-    assert.equal(translator.untranslate(1500), null);
-    assert.equal(translator.untranslate(1000), null);
+    assert.equal(translator.from(300), -100, 'Coord less than min');
+    assert.equal(translator.from(1800), -850, 'Coord more than min');
+    assert.equal(translator.from(500), -200, 'Coord on the min');
+    assert.equal(translator.from(1500), -700, 'Coord on the max');
+    assert.equal(translator.from(1000), -450, 'Coord inside range');
 });
 
 QUnit.test('Translate. Scale breaks is empty array', function(assert) {
@@ -883,57 +786,56 @@ QUnit.test("Translate. Scale breaks. Values on the breaks and should be translat
     assert.strictEqual(translator.translate(150, -1), 620);
 });
 
-QUnit.test("Untranslate. Scale breaks. Values not on the breaks and should be untranslated", function(assert) {
+QUnit.test("from. Scale breaks. Values not on the breaks and should be untranslated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {});
 
-    assert.strictEqual(translator.untranslate(500), 100);
-    assert.strictEqual(translator.untranslate(820), 300);
-    assert.strictEqual(translator.untranslate(1100), 450);
-    assert.strictEqual(translator.untranslate(1500), 700);
+    assert.strictEqual(translator.from(500), 100);
+    assert.strictEqual(translator.from(820), 300);
+    assert.strictEqual(translator.from(1100), 450);
+    assert.strictEqual(translator.from(1500), 700);
 });
 
-QUnit.test("Untranslate. Scale breaks. Values on the breaks and should not be untranslated", function(assert) {
+QUnit.test("from. Scale breaks. Values on the breaks and should not be untranslated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {});
 
-    assert.strictEqual(translator.untranslate(610), null);
-    assert.strictEqual(translator.untranslate(1390), null);
+    assert.strictEqual(translator.from(610), null);
+    assert.strictEqual(translator.from(1390), null);
 });
 
-QUnit.test("Untranslate (from). Scale breaks. Values on the breaks and should be untranslated to left side of break if direction<0", function(assert) {
+QUnit.test("from. Scale breaks. Values on the breaks and should be untranslated to left side of break if direction<0", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {});
 
     assert.strictEqual(translator.from(610, -1), 150);
     assert.strictEqual(translator.from(1390, -1), 590);
 });
 
-QUnit.test("Untranslate (from). Scale breaks. Values on the breaks and should be untranslated to right side of break if direction>0", function(assert) {
+QUnit.test("from. Scale breaks. Values on the breaks and should be untranslated to right side of break if direction>0", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {});
 
     assert.strictEqual(translator.from(610, 1), 200);
     assert.strictEqual(translator.from(1390, 1), 650);
 });
 
-QUnit.test("Untranslate. Scale breaks. Inverted axis. Values on the breaks and should be untranslated", function(assert) {
+QUnit.test("from. Scale breaks. Inverted axis. Values on the breaks and should be untranslated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         invert: true
     });
 
-    assert.strictEqual(translator.untranslate(500), 700);
-    assert.strictEqual(translator.untranslate(600), 650);
-    assert.strictEqual(translator.untranslate(700), 550);
-    assert.strictEqual(translator.untranslate(820), 490);
-    assert.strictEqual(translator.untranslate(1180), 300);
-    assert.strictEqual(translator.untranslate(1500), 100);
+    assert.strictEqual(translator.from(500), 700);
+    assert.strictEqual(translator.from(600), 650);
+    assert.strictEqual(translator.from(700), 550);
+    assert.strictEqual(translator.from(820), 490);
+    assert.strictEqual(translator.from(1180), 300);
+    assert.strictEqual(translator.from(1500), 100);
 });
 
-QUnit.test("Untranslate. Scale breaks. Inverted axis. Values on the breaks and should not be untranslated", function(assert) {
+QUnit.test("from. Scale breaks. Inverted axis. Values in the breaks and should not be untranslated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         invert: true
     });
 
-    assert.strictEqual(translator.untranslate(402), null);
-    assert.strictEqual(translator.untranslate(1062), null);
-    assert.strictEqual(translator.untranslate(1382), null);
+    assert.strictEqual(translator.from(1062), null);
+    assert.strictEqual(translator.from(1382), null);
 });
 
 QUnit.test('GetInterval', function(assert) {
@@ -954,6 +856,13 @@ QUnit.test("isValid", function(assert) {
     assert.strictEqual(translator.isValid(null), false, "null");
     assert.strictEqual(translator.isValid(undefined), false, "undefined");
     assert.strictEqual(translator.isValid({}), false, "object");
+});
+
+
+QUnit.test("Default positioin when 0 is in break", function(assert) {
+    var translator = createTranslatorWithScaleBreaks.call(this, { min: -200, max: 700, breaks: [{ from: -100, to: 100 }] });
+
+    assert.equal(translator.translate("canvas_position_default"), 640, 'BP inside range');
 });
 
 QUnit.module('Datetime translator', {
@@ -992,32 +901,28 @@ QUnit.test('Translate. Invert = true', function(assert) {
     assert.equal(translator.translate(new Date(new Date(2012, 8, 2).valueOf() + 1e2)), 500, 'BP on the max with double error (B253861)');
 });
 
-QUnit.test('Untranslate. Invert = false', function(assert) {
+QUnit.test('from. Invert = false', function(assert) {
     var translator = this.createTranslator({ min: new Date(2012, 8, 1), max: new Date(2012, 8, 2) });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
     assert.equal(translator.translate(undefined), null, 'BP undefined');
-    assert.deepEqual(translator.untranslate(300, undefined, true), new Date(2012, 7, 31, 19, 12), 'Coord less than min');
-    assert.deepEqual(translator.untranslate(1800, undefined, true), new Date(2012, 8, 2, 7, 12), 'Coord more than min');
-    assert.deepEqual(translator.untranslate(500), new Date(2012, 8, 1), 'Coord on the min');
-    assert.deepEqual(translator.untranslate(1500), new Date(2012, 8, 2), 'Coord on the max');
-    assert.deepEqual(translator.untranslate(1000), new Date(2012, 8, 1, 12), 'Coord inside range');
+    assert.deepEqual(translator.from(300), new Date(2012, 7, 31, 19, 12), 'Coord less than min');
+    assert.deepEqual(translator.from(1800), new Date(2012, 8, 2, 7, 12), 'Coord more than min');
+    assert.deepEqual(translator.from(500), new Date(2012, 8, 1), 'Coord on the min');
+    assert.deepEqual(translator.from(1500), new Date(2012, 8, 2), 'Coord on the max');
+    assert.deepEqual(translator.from(1000), new Date(2012, 8, 1, 12), 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Invert = true', function(assert) {
+QUnit.test('from. Invert = true', function(assert) {
     var translator = this.createTranslator({ min: new Date(2012, 8, 1), max: new Date(2012, 8, 2), invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.deepEqual(translator.untranslate(1800, undefined, true), new Date(2012, 7, 31, 16, 48), 'Coord less than min');
-    assert.deepEqual(translator.untranslate(300, undefined, true), new Date(2012, 8, 2, 4, 48), 'Coord more than min');
-    assert.deepEqual(translator.untranslate(500), new Date(2012, 8, 2), 'Coord on the min');
-    assert.deepEqual(translator.untranslate(1500), new Date(2012, 8, 1), 'Coord on the max');
-    assert.deepEqual(translator.untranslate(1000), new Date(2012, 8, 1, 12), 'Coord inside range');
+    assert.deepEqual(translator.from(1800), new Date(2012, 7, 31, 16, 48), 'Coord more than max');
+    assert.deepEqual(translator.from(300), new Date(2012, 8, 2, 4, 48), 'Coord less than min');
+    assert.deepEqual(translator.from(500), new Date(2012, 8, 2), 'Coord on the min');
+    assert.deepEqual(translator.from(1500), new Date(2012, 8, 1), 'Coord on the max');
+    assert.deepEqual(translator.from(1000), new Date(2012, 8, 1, 12), 'Coord inside range');
 });
 
-QUnit.test("Untranslate. With scale breaks. Values not in the breaks and translated. Mix scale breaks and gaps(weekends)", function(assert) {
+QUnit.test("from. With scale breaks. Values not in the breaks and translated. Mix scale breaks and gaps(weekends)", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         min: new Date(2012, 8, 1), max: new Date(2012, 8, 2),
         breaks: [
@@ -1027,22 +932,22 @@ QUnit.test("Untranslate. With scale breaks. Values not in the breaks and transla
         ]
     });
 
-    assert.deepEqual(translator.untranslate(500), new Date(2012, 8, 1));
-    assert.deepEqual(translator.untranslate(1160), new Date(2012, 8, 1, 15));
-    assert.deepEqual(translator.untranslate(1400), new Date(2012, 8, 1, 21, 15));
-    assert.deepEqual(translator.untranslate(1500), new Date(2012, 8, 2));
+    assert.deepEqual(translator.from(500), new Date(2012, 8, 1));
+    assert.deepEqual(translator.from(1160), new Date(2012, 8, 1, 15));
+    assert.deepEqual(translator.from(1400), new Date(2012, 8, 1, 21, 15));
+    assert.deepEqual(translator.from(1500), new Date(2012, 8, 2));
 });
 
-QUnit.test("Untranslate. With scale breaks. Value in the scale break and shouldn't translated", function(assert) {
+QUnit.test("from. With scale breaks. Value in the scale break and shouldn't translated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         min: new Date(2012, 8, 1), max: new Date(2012, 8, 2),
         breaks: [{ from: new Date(2012, 8, 1, 10), to: new Date(2012, 8, 1, 11) }, { from: new Date(2012, 8, 1, 20), to: new Date(2012, 8, 1, 21) }]
     });
 
-    assert.deepEqual(translator.untranslate(950), null);
+    assert.deepEqual(translator.from(950), null);
 });
 
-QUnit.test("Untranslate (from). Scale breaks. Values in the breaks and should be untranslated to left side of break if direction<0", function(assert) {
+QUnit.test("from. Scale breaks. Values in the breaks and should be untranslated to left side of break if direction<0", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         min: new Date(2012, 8, 1), max: new Date(2012, 8, 2),
         breaks: [{ from: new Date(2012, 8, 1, 10), to: new Date(2012, 8, 1, 11) }, { from: new Date(2012, 8, 1, 20), to: new Date(2012, 8, 1, 21) }]
@@ -1051,7 +956,7 @@ QUnit.test("Untranslate (from). Scale breaks. Values in the breaks and should be
     assert.deepEqual(translator.from(950, -1), new Date(2012, 8, 1, 10));
 });
 
-QUnit.test("Untranslate (from). Scale breaks. Values in the breaks and should be untranslated to right side of break if direction>0", function(assert) {
+QUnit.test("from. Scale breaks. Values in the breaks and should be untranslated to right side of break if direction>0", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         min: new Date(2012, 8, 1), max: new Date(2012, 8, 2),
         breaks: [{ from: new Date(2012, 8, 1, 10), to: new Date(2012, 8, 1, 11) }, { from: new Date(2012, 8, 1, 20), to: new Date(2012, 8, 1, 21) }]
@@ -1137,56 +1042,48 @@ QUnit.test('Translate. Small numbers. Invert = true', function(assert) {
     assert.equal(translator.translate(0.01 + doubleDelta * 0.01), 500, 'BP on the max with double error (B253861)');
 });
 
-QUnit.test('Untranslate. Big numbers. Invert = false', function(assert) {
+QUnit.test('from. Big numbers. Invert = false', function(assert) {
     var doubleDelta = 0.00002,
         translator = this.createTranslator({ min: 100, max: 10000 });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(0, undefined, true), 10, 'Coord less than min');
-    assert.equal(translator.untranslate(2000, undefined, true), 100000, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 100, doubleDelta, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 10000, doubleDelta, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 1000, doubleDelta, 'Coord inside range');
+    assert.equal(translator.from(0), 10, 'Coord less than min');
+    assert.equal(translator.from(2000), 100000, 'Coord more than max');
+    assert.roughEqual(translator.from(500), 100, doubleDelta, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 10000, doubleDelta, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 1000, doubleDelta, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Big numbers. Invert = true', function(assert) {
+QUnit.test('from. Big numbers. Invert = true', function(assert) {
     var doubleDelta = 0.00002,
         translator = this.createTranslator({ min: 100, max: 10000, invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(0, undefined, true), 100000, 'Coord less than min');
-    assert.equal(translator.untranslate(2000, undefined, true), 10, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 10000, doubleDelta, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 100, doubleDelta, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 1000, doubleDelta, 'Coord inside range');
+    assert.equal(translator.from(0), 100000, 'Coord less than min');
+    assert.equal(translator.from(2000), 10, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 10000, doubleDelta, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 100, doubleDelta, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 1000, doubleDelta, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Small numbers. Invert = false', function(assert) {
+QUnit.test('from. Small numbers. Invert = false', function(assert) {
     var doubleDelta = 0.00002,
         translator = this.createTranslator({ min: 0.0001, max: 0.01 });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(2000, undefined, true), 0.1, doubleDelta * 0.01, 'Coord less than min');
-    assert.roughEqual(translator.untranslate(0, undefined, true), 0.00001, doubleDelta * 0.01, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 0.0001, doubleDelta * 0.0001, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 0.01, doubleDelta * 0.01, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 0.001, doubleDelta * 0.001, 'Coord inside range');
+    assert.roughEqual(translator.from(2000), 0.1, doubleDelta * 0.01, 'Coord less than min');
+    assert.roughEqual(translator.from(0), 0.00001, doubleDelta * 0.01, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 0.0001, doubleDelta * 0.0001, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 0.01, doubleDelta * 0.01, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 0.001, doubleDelta * 0.001, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Small numbers. Invert = true', function(assert) {
+QUnit.test('from. Small numbers. Invert = true', function(assert) {
     var doubleDelta = 0.00002,
         translator = this.createTranslator({ min: 0.0001, max: 0.01, invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(0, undefined, true), 0.1, doubleDelta * 0.01, 'Coord less than min');
-    assert.roughEqual(translator.untranslate(2000, undefined, true), 0.00001, doubleDelta * 0.01, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 0.01, doubleDelta * 0.01, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 0.0001, doubleDelta * 0.0001, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 0.001, doubleDelta * 0.001, 'Coord inside range');
+    assert.roughEqual(translator.from(0), 0.1, doubleDelta * 0.01, 'Coord less than min');
+    assert.roughEqual(translator.from(2000), 0.00001, doubleDelta * 0.01, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 0.01, doubleDelta * 0.01, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 0.0001, doubleDelta * 0.0001, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 0.001, doubleDelta * 0.001, 'Coord inside range');
 });
 
 QUnit.test("Translate. Scale breaks. Values inside of the breaks and should be translated", function(assert) {
@@ -1234,7 +1131,7 @@ QUnit.test("Translate. Scale breaks. Values on the breaks and should be translat
     assert.strictEqual(translator.translate(0.01, -1), 700);
 });
 
-QUnit.test("Untranslate. Scale breaks. Values not on the breaks and should be untranslated", function(assert) {
+QUnit.test("from. Scale breaks. Values not on the breaks and should be untranslated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
             min: 0.0001, max: 1000000,
             breaks: [{ from: 0.001, to: 0.1 }, { from: 100, to: 10000 }],
@@ -1242,25 +1139,25 @@ QUnit.test("Untranslate. Scale breaks. Values not on the breaks and should be un
         }),
         doubleDelta = 0.00001;
 
-    assert.roughEqual(translator.untranslate(500), 0.0001, doubleDelta);
-    assert.roughEqual(translator.untranslate(850), 1, doubleDelta);
-    assert.roughEqual(translator.untranslate(1000), 10, doubleDelta);
-    assert.roughEqual(translator.untranslate(1350), 100000, doubleDelta);
-    assert.roughEqual(translator.untranslate(1500), 1000000, doubleDelta);
+    assert.roughEqual(translator.from(500), 0.0001, doubleDelta);
+    assert.roughEqual(translator.from(850), 1, doubleDelta);
+    assert.roughEqual(translator.from(1000), 10, doubleDelta);
+    assert.roughEqual(translator.from(1350), 100000, doubleDelta);
+    assert.roughEqual(translator.from(1500), 1000000, doubleDelta);
 });
 
-QUnit.test("Untranslate. Scale breaks. Values on the breaks and should not be untranslated", function(assert) {
+QUnit.test("from. Scale breaks. Values on the breaks and should not be untranslated", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
         min: 0.0001, max: 1000000,
         breaks: [{ from: 0.001, to: 0.1 }, { from: 100, to: 10000 }],
         breakSize: 50
     });
 
-    assert.strictEqual(translator.untranslate(670), null);
-    assert.strictEqual(translator.untranslate(1170), null);
+    assert.strictEqual(translator.from(670), null);
+    assert.strictEqual(translator.from(1170), null);
 });
 
-QUnit.test("Untranslate (from). Scale breaks. Values in the breaks and should be untranslated to left side of break if direction<0", function(assert) {
+QUnit.test("from. Scale breaks. Values in the breaks and should be untranslated to left side of break if direction<0", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
             min: 0.0001, max: 1000000,
             breaks: [{ from: 0.001, to: 0.1 }, { from: 100, to: 10000 }],
@@ -1271,7 +1168,7 @@ QUnit.test("Untranslate (from). Scale breaks. Values in the breaks and should be
     assert.roughEqual(translator.from(670, -1), 0.001, doubleDelta);
 });
 
-QUnit.test("Untranslate (from). Scale breaks. Values in the breaks and should be untranslated to right side of break if direction>0", function(assert) {
+QUnit.test("from. Scale breaks. Values in the breaks and should be untranslated to right side of break if direction>0", function(assert) {
     var translator = createTranslatorWithScaleBreaks.call(this, {
             min: 0.0001, max: 1000000,
             breaks: [{ from: 0.001, to: 0.1 }, { from: 100, to: 10000 }],
@@ -1340,48 +1237,48 @@ QUnit.test('Translate. Small numbers. Invert = true. Base = 2', function(assert)
     assert.equal(translator.translate(0.25 + doubleDelta * 0.25), 500, 'BP on the max with double error (B253861)');
 });
 
-QUnit.test('Untranslate. Big numbers. Invert = false. Base = 2', function(assert) {
+QUnit.test('from. Big numbers. Invert = false. Base = 2', function(assert) {
     var doubleDelta = 0.0000069,
         translator = this.createTranslator({ min: 4, max: 16, base: 2 });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 4, doubleDelta, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 16, doubleDelta, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 8, doubleDelta, 'Coord inside range');
+    assert.roughEqual(translator.from(-1000), 0.5, doubleDelta, 'Coord less than min');
+    assert.roughEqual(translator.from(2000), 32, doubleDelta, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 4, doubleDelta, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 16, doubleDelta, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 8, doubleDelta, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Big numbers. Invert = true. Base = 2', function(assert) {
+QUnit.test('from. Big numbers. Invert = true. Base = 2', function(assert) {
     var doubleDelta = 0.0000069,
         translator = this.createTranslator({ min: 4, max: 16, base: 2, invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 16, doubleDelta, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 4, doubleDelta, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 8, doubleDelta, 'Coord inside range');
+    assert.roughEqual(translator.from(0), 32, doubleDelta, 'Coord less than min');
+    assert.roughEqual(translator.from(3000), 0.5, doubleDelta, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 16, doubleDelta, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 4, doubleDelta, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 8, doubleDelta, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Small numbers. Invert = false. Base = 2', function(assert) {
+QUnit.test('from. Small numbers. Invert = false. Base = 2', function(assert) {
     var doubleDelta = 0.0000069,
         translator = this.createTranslator({ min: 0.0625, max: 0.25, base: 2 });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 0.0625, doubleDelta * 0.0625, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 0.25, doubleDelta * 0.25, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 0.125, doubleDelta * 0.125, 'Coord inside range');
+    assert.roughEqual(translator.from(0), 0.03125, doubleDelta * 0.03125, 'Coord less than min');
+    assert.roughEqual(translator.from(2000), 0.5, doubleDelta * 0.5, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 0.0625, doubleDelta * 0.0625, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 0.25, doubleDelta * 0.25, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 0.125, doubleDelta * 0.125, 'Coord inside range');
 });
 
-QUnit.test('Untranslate. Small numbers. Invert = true. Base = 2', function(assert) {
+QUnit.test('from. Small numbers. Invert = true. Base = 2', function(assert) {
     var doubleDelta = 0.0000069,
         translator = this.createTranslator({ min: 0.0625, max: 0.25, base: 2, invert: true });
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.roughEqual(translator.untranslate(500), 0.25, doubleDelta * 0.25, 'Coord on the min');
-    assert.roughEqual(translator.untranslate(1500), 0.0625, doubleDelta * 0.0625, 'Coord on the max');
-    assert.roughEqual(translator.untranslate(1000), 0.125, doubleDelta * 0.125, 'Coord inside range');
+    assert.roughEqual(translator.from(2000), 0.03125, doubleDelta * 0.03125, 'Coord less than min');
+    assert.roughEqual(translator.from(0), 0.5, doubleDelta * 0.5, 'Coord more than min');
+    assert.roughEqual(translator.from(500), 0.25, doubleDelta * 0.25, 'Coord on the min');
+    assert.roughEqual(translator.from(1500), 0.0625, doubleDelta * 0.0625, 'Coord on the max');
+    assert.roughEqual(translator.from(1000), 0.125, doubleDelta * 0.125, 'Coord inside range');
 });
 
 QUnit.test('GetInterval. Base = 2', function(assert) {
@@ -1445,153 +1342,159 @@ QUnit.test('Translate. AddSpiderCategory = true. Stick = true.', function(assert
     assert.equal(translator.translate('a5'), 1300, 'BP is last category');
 });
 
-QUnit.test('Untranslate. Invert = false. Stick = false.', function(assert) {
+QUnit.test('from. Invert = false. Stick = false.', function(assert) {
     var start = 500,
         end = 1500,
         delta = 200,
         center = 100,
         translator = this.createTranslator({});
 
-    assert.equal(translator.untranslate(start - 100), null, 'Coord less than min');
-    assert.equal(translator.untranslate(end + 100), null, 'Coord more than min');
+    assert.equal(translator.from(start - 10 * delta), "a1", 'Coord less than min');
+    assert.equal(translator.from(end + 10 * delta), "a5", 'Coord more than min');
 
-    assert.strictEqual(translator.untranslate(start), 'a1');
+    assert.strictEqual(translator.from(start), 'a1');
 
-    assert.strictEqual(translator.untranslate(start + delta), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 2), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 3), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 4), 'a5');
+    assert.strictEqual(translator.from(start + delta), 'a2');
+    assert.strictEqual(translator.from(start + delta * 2), 'a3');
+    assert.strictEqual(translator.from(start + delta * 3), 'a4');
+    assert.strictEqual(translator.from(start + delta * 4), 'a5');
 
-    assert.strictEqual(translator.untranslate(start + center), 'a1');
-    assert.strictEqual(translator.untranslate(start + delta + center), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 2 + center), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 3 + center), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 4 + center), 'a5');
+    assert.strictEqual(translator.from(start + center), 'a1');
+    assert.strictEqual(translator.from(start + delta + center), 'a2');
+    assert.strictEqual(translator.from(start + delta * 2 + center), 'a3');
+    assert.strictEqual(translator.from(start + delta * 3 + center), 'a4');
+    assert.strictEqual(translator.from(start + delta * 4 + center), 'a5');
 });
 
-QUnit.test('Untranslate. border values.', function(assert) {
+QUnit.test('from. border values.', function(assert) {
     var start = 27,
         delta = 141,
         translator = this.createTranslator({ categories: ['1q', '2q', '3q', '4q', '5q', '6q', '7q'] }, { bottom: 22, height: 200, left: 27, right: 27, top: 29, width: 1041 });
 
-    assert.strictEqual(translator.untranslate(start + delta - 1), '1q');
-    assert.strictEqual(translator.untranslate(start + delta + 1), '2q');
-    assert.strictEqual(translator.untranslate(start + 2 * delta - 1), '2q');
-    assert.strictEqual(translator.untranslate(start + 2 * delta + 1), '3q');
-    assert.strictEqual(translator.untranslate(start + 3 * delta - 1), '3q');
-    assert.strictEqual(translator.untranslate(start + 3 * delta + 1), '4q');
-    assert.strictEqual(translator.untranslate(start + 4 * delta - 1), '4q');
-    assert.strictEqual(translator.untranslate(start + 4 * delta + 1), '5q');
-    assert.strictEqual(translator.untranslate(start + 5 * delta - 1), '5q');
-    assert.strictEqual(translator.untranslate(start + 5 * delta + 1), '6q');
-    assert.strictEqual(translator.untranslate(start + 6 * delta - 1), '6q');
-    assert.strictEqual(translator.untranslate(start + 6 * delta + 1), '7q');
+    assert.strictEqual(translator.from(start - 3 * delta), '1q');
+    assert.strictEqual(translator.from(start + delta - 1), '1q');
+    assert.strictEqual(translator.from(start + delta + 1), '2q');
+    assert.strictEqual(translator.from(start + 2 * delta - 1), '2q');
+    assert.strictEqual(translator.from(start + 2 * delta + 1), '3q');
+    assert.strictEqual(translator.from(start + 3 * delta - 1), '3q');
+    assert.strictEqual(translator.from(start + 3 * delta + 1), '4q');
+    assert.strictEqual(translator.from(start + 4 * delta - 1), '4q');
+    assert.strictEqual(translator.from(start + 4 * delta + 1), '5q');
+    assert.strictEqual(translator.from(start + 5 * delta - 1), '5q');
+    assert.strictEqual(translator.from(start + 5 * delta + 1), '6q');
+    assert.strictEqual(translator.from(start + 6 * delta - 1), '6q');
+    assert.strictEqual(translator.from(start + 6 * delta + 1), '7q');
+    assert.strictEqual(translator.from(start + 10 * delta), '7q');
 });
 
-QUnit.test('Untranslate. Invert = true. Stick = false.', function(assert) {
+QUnit.test('from. Invert = true. Stick = false.', function(assert) {
     var start = 500,
         end = 1500,
         delta = 200,
         center = 100,
         translator = this.createTranslator({ invert: true });
 
-    assert.equal(translator.untranslate(start - 100), null, 'Coord less than min');
-    assert.equal(translator.untranslate(end + 100), null, 'Coord more than min');
+    assert.equal(translator.from(start - 10 * delta), "a5", 'Coord less than min');
+    assert.equal(translator.from(end + 10 * delta), "a1", 'Coord more than min');
 
-    assert.strictEqual(translator.untranslate(start), 'a5');
-    assert.strictEqual(translator.untranslate(start + delta), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 2), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 3), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 4), 'a1');
+    assert.strictEqual(translator.from(start), 'a5');
+    assert.strictEqual(translator.from(start + delta), 'a4');
+    assert.strictEqual(translator.from(start + delta * 2), 'a3');
+    assert.strictEqual(translator.from(start + delta * 3), 'a2');
+    assert.strictEqual(translator.from(start + delta * 4), 'a1');
 
-    assert.strictEqual(translator.untranslate(start + center), 'a5');
-    assert.strictEqual(translator.untranslate(start + delta + center), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 2 + center), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 3 + center), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 4 + center), 'a1');
+    assert.strictEqual(translator.from(start + center), 'a5');
+    assert.strictEqual(translator.from(start + delta + center), 'a4');
+    assert.strictEqual(translator.from(start + delta * 2 + center), 'a3');
+    assert.strictEqual(translator.from(start + delta * 3 + center), 'a2');
+    assert.strictEqual(translator.from(start + delta * 4 + center), 'a1');
 });
 
-QUnit.test('Untranslate. Invert = false. Stick = true.', function(assert) {
+QUnit.test('from. Invert = false. Stick = true.', function(assert) {
     var start = 500,
         end = 1500,
         delta = 250,
         center = 125,
         translator = this.createTranslator(undefined, undefined, { stick: true });
 
-    assert.equal(translator.untranslate(start - 100), null, 'Coord less than min');
-    assert.equal(translator.untranslate(end + 100), null, 'Coord more than min');
+    assert.equal(translator.from(start - 10 * delta), "a1", 'Coord less than min');
+    assert.equal(translator.from(end + 10 * delta), "a5", 'Coord more than min');
 
-    assert.strictEqual(translator.untranslate(start), 'a1');
-    assert.strictEqual(translator.untranslate(start + delta), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 2), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 3), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 4), 'a5');
+    assert.strictEqual(translator.from(start), 'a1');
+    assert.strictEqual(translator.from(start + delta), 'a2');
+    assert.strictEqual(translator.from(start + delta * 2), 'a3');
+    assert.strictEqual(translator.from(start + delta * 3), 'a4');
+    assert.strictEqual(translator.from(start + delta * 4), 'a5');
 
-    assert.strictEqual(translator.untranslate(start + center / 2), 'a1');
-    assert.strictEqual(translator.untranslate(start + center), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta + center), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 2 + center), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 3 + center), 'a5');
+    assert.strictEqual(translator.from(start + center / 2), 'a1');
+    assert.strictEqual(translator.from(start + center), 'a2');
+    assert.strictEqual(translator.from(start + delta + center), 'a3');
+    assert.strictEqual(translator.from(start + delta * 2 + center), 'a4');
+    assert.strictEqual(translator.from(start + delta * 3 + center), 'a5');
 });
 
-QUnit.test('Untranslate. Invert = true. Stick = true.', function(assert) {
+QUnit.test('from. Invert = true. Stick = true.', function(assert) {
     var start = 500,
         end = 1500,
         delta = 250,
         center = 125,
         translator = this.createTranslator({ invert: true }, undefined, { stick: true });
 
-    assert.equal(translator.untranslate(start - 100), null, 'Coord less than min');
-    assert.equal(translator.untranslate(end + 100), null, 'Coord more than min');
+    assert.equal(translator.from(start - 10 * delta), "a5", 'Coord less than min');
+    assert.equal(translator.from(end + 10 * delta), "a1", 'Coord more than min');
 
-    assert.strictEqual(translator.untranslate(start), 'a5');
-    assert.strictEqual(translator.untranslate(start + delta), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 2), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 3), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 4), 'a1');
+    assert.strictEqual(translator.from(start), 'a5');
+    assert.strictEqual(translator.from(start + delta), 'a4');
+    assert.strictEqual(translator.from(start + delta * 2), 'a3');
+    assert.strictEqual(translator.from(start + delta * 3), 'a2');
+    assert.strictEqual(translator.from(start + delta * 4), 'a1');
 
-    assert.strictEqual(translator.untranslate(start + center / 2), 'a5');
-    assert.strictEqual(translator.untranslate(start + center), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta + center), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 2 + center), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 3 + center), 'a1');
+    assert.strictEqual(translator.from(start + center / 2), 'a5');
+    assert.strictEqual(translator.from(start + center), 'a4');
+    assert.strictEqual(translator.from(start + delta + center), 'a3');
+    assert.strictEqual(translator.from(start + delta * 2 + center), 'a2');
+    assert.strictEqual(translator.from(start + delta * 3 + center), 'a1');
 });
 
-QUnit.test('Untranslate. AddSpiderCategory = true. Stick = true.', function(assert) {
+QUnit.test('from. AddSpiderCategory = true. Stick = true.', function(assert) {
     var start = 500,
         end = 1500,
         delta = 250,
         center = 125,
         translator = this.createTranslator(undefined, undefined, { addSpiderCategory: true, stick: true });
 
-    assert.equal(translator.untranslate(start - 100), null, 'Coord less than min');
-    assert.equal(translator.untranslate(end + 100), null, 'Coord more than min');
+    assert.equal(translator.from(start - 10 * delta), "a1", 'Coord less than min');
+    assert.equal(translator.from(end + 10 * delta), "a5", 'Coord more than max');
 
-    assert.strictEqual(translator.untranslate(start), 'a1');
-    assert.strictEqual(translator.untranslate(start + delta), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta * 2), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 3), 'a5');
-    assert.strictEqual(translator.untranslate(start + delta * 4), 'a5');
+    assert.strictEqual(translator.from(start), 'a1');
+    assert.strictEqual(translator.from(start + delta), 'a2');
+    assert.strictEqual(translator.from(start + delta * 2), 'a4');
+    assert.strictEqual(translator.from(start + delta * 3), 'a5');
+    assert.strictEqual(translator.from(start + delta * 4), 'a5');
 
-    assert.strictEqual(translator.untranslate(start + center / 2), 'a1');
-    assert.strictEqual(translator.untranslate(start + center), 'a2');
-    assert.strictEqual(translator.untranslate(start + delta + center), 'a3');
-    assert.strictEqual(translator.untranslate(start + delta * 2 + center), 'a4');
-    assert.strictEqual(translator.untranslate(start + delta * 3 + center), 'a5');
+    assert.strictEqual(translator.from(start + center / 2), 'a1');
+    assert.strictEqual(translator.from(start + center), 'a2');
+    assert.strictEqual(translator.from(start + delta + center), 'a3');
+    assert.strictEqual(translator.from(start + delta * 2 + center), 'a4');
+    assert.strictEqual(translator.from(start + delta * 3 + center), 'a5');
 });
 
-QUnit.test('Untranslate. Visible categories', function(assert) {
+QUnit.test('from. Visible categories', function(assert) {
     var start = 500,
         delta = 250,
         translator = this.createTranslator({ minVisible: 'a2', maxVisible: 'a4' });
 
-    assert.equal(translator.untranslate(start - delta), undefined);
-    assert.equal(translator.untranslate(start), 'a2');
-    assert.equal(translator.untranslate(start + delta), 'a2');
-    assert.equal(translator.untranslate(start + delta * 2), 'a3');
-    assert.equal(translator.untranslate(start + delta * 3), 'a4');
-    assert.equal(translator.untranslate(start + delta * 4), 'a4');
-    assert.equal(translator.untranslate(start + delta * 5), undefined);
+    assert.equal(translator.from(start - 10 * delta), "a2");
+    assert.equal(translator.from(start - delta), "a2");
+
+    assert.equal(translator.from(start), 'a2');
+    assert.equal(translator.from(start + delta), 'a2');
+    assert.equal(translator.from(start + delta * 2), 'a3');
+    assert.equal(translator.from(start + delta * 3), 'a4');
+    assert.equal(translator.from(start + delta * 4), 'a4');
+
+    assert.equal(translator.from(start + delta * 5), "a4");
+    assert.equal(translator.from(start + delta * 10), "a4");
 });
 
 QUnit.test('GetInterval (Stick = false)', function(assert) {
@@ -1724,14 +1627,14 @@ QUnit.test('discrete zooming. invert. translate', function(assert) {
     assert.strictEqual(translator.translate('a1'), 1750);
 });
 
-QUnit.test('discrete zooming. invert. untranslate', function(assert) {
+QUnit.test('discrete zooming. invert. from', function(assert) {
     var translator = this.createTranslator({ minVisible: 'a2', maxVisible: 'a3', invert: true });
 
-    assert.strictEqual(translator.untranslate(250), null);
-    assert.strictEqual(translator.untranslate(750), 'a3');
-    assert.strictEqual(translator.untranslate(1250), 'a2');
-    assert.strictEqual(translator.untranslate(1500), 'a2');
-    assert.strictEqual(translator.untranslate(1700), null);
+    assert.strictEqual(translator.from(250), 'a3');
+    assert.strictEqual(translator.from(750), 'a3');
+    assert.strictEqual(translator.from(1250), 'a2');
+    assert.strictEqual(translator.from(1500), 'a2');
+    assert.strictEqual(translator.from(1700), 'a2');
 });
 
 QUnit.test('translate. directionOffset = -1', function(assert) {
@@ -1773,37 +1676,37 @@ QUnit.test("translate. invert", function(assert) {
     assert.equal(translator.translate("a4", 1), 700);
 });
 
-QUnit.test('untranslate. directionOffset = -1', function(assert) {
+QUnit.test('from. directionOffset = -1', function(assert) {
     var translator = this.createTranslator({});
 
-    assert.equal(translator.untranslate(0, -1), null);
-    assert.equal(translator.untranslate(500, -1), 'a1');
-    assert.equal(translator.untranslate(700, -1), 'a2');
-    assert.equal(translator.untranslate(900, -1), 'a3');
-    assert.equal(translator.untranslate(1100, -1), 'a4');
-    assert.equal(translator.untranslate(1500, -1), 'a5');
+    assert.equal(translator.from(0, -1), 'a1');
+    assert.equal(translator.from(500, -1), 'a1');
+    assert.equal(translator.from(700, -1), 'a2');
+    assert.equal(translator.from(900, -1), 'a3');
+    assert.equal(translator.from(1100, -1), 'a4');
+    assert.equal(translator.from(1500, -1), 'a5');
 });
 
-QUnit.test('untranslate. directionOffset = 1', function(assert) {
+QUnit.test('from. directionOffset = 1', function(assert) {
     var translator = this.createTranslator({});
 
-    assert.equal(translator.untranslate(0, 1), null);
-    assert.equal(translator.untranslate(500, 1), 'a1');
-    assert.equal(translator.untranslate(700, 1), 'a1');
-    assert.equal(translator.untranslate(900, 1), 'a2');
-    assert.equal(translator.untranslate(1100, 1), 'a3');
-    assert.equal(translator.untranslate(1500, 1), 'a5');
+    assert.equal(translator.from(0, 1), 'a1');
+    assert.equal(translator.from(500, 1), 'a1');
+    assert.equal(translator.from(700, 1), 'a1');
+    assert.equal(translator.from(900, 1), 'a2');
+    assert.equal(translator.from(1100, 1), 'a3');
+    assert.equal(translator.from(1500, 1), 'a5');
 });
 
-QUnit.test('untranslate. directionOffset = 0', function(assert) {
+QUnit.test('from. directionOffset = 0', function(assert) {
     var translator = this.createTranslator({});
 
-    assert.equal(translator.untranslate(0, 0), null);
-    assert.equal(translator.untranslate(500, 0), 'a1');
-    assert.equal(translator.untranslate(700, 0), 'a2');
-    assert.equal(translator.untranslate(900, 0), 'a3');
-    assert.equal(translator.untranslate(1100, 0), 'a4');
-    assert.equal(translator.untranslate(1500, 0), 'a5');
+    assert.equal(translator.from(0, 0), 'a1');
+    assert.equal(translator.from(500, 0), 'a1');
+    assert.equal(translator.from(700, 0), 'a2');
+    assert.equal(translator.from(900, 0), 'a3');
+    assert.equal(translator.from(1100, 0), 'a4');
+    assert.equal(translator.from(1500, 0), 'a5');
 });
 
 QUnit.test('discrete zooming. categories is not contains minVisible', function(assert) {
@@ -2019,17 +1922,17 @@ QUnit.test('Translate. Datetime, interval week', function(assert) {
 
 QUnit.test('Translate. Datetime, interval month', function(assert) {
     var translator = this.createTranslator({
-        min: new Date(2015, 5, 1, 0, 0, 0, 0),
-        max: new Date(2015, 9, 1, 0, 0, 0, 0),
+        min: new Date(2015, 4, 1, 0, 0, 0, 0),
+        max: new Date(2015, 8, 1, 0, 0, 0, 0),
         dataType: 'datetime'
     }, "month");
 
-    assert.equal(translator.translate(new Date(2015, 4, 1, 0, 0, 0, 0)), null, 'BP less than min');
+    assert.equal(translator.translate(new Date(2015, 3, 1, 0, 0, 0, 0)), null, 'BP less than min');
     assert.equal(translator.translate(undefined), null, 'BP undefined');
-    assert.equal(translator.translate(new Date(2015, 10, 1, 0, 0, 0, 0)), null, 'BP more than max');
-    assert.equal(translator.translate(new Date(2015, 7, 11, 15, 10, 50, 236)), 1000, 'BP inside range');// 3
-    assert.equal(translator.translate(new Date(2015, 5, 11, 15, 10, 50, 236)), 598 /* 600 */, 'BP on the min');// 1
-    assert.equal(translator.translate(new Date(2015, 9, 11, 15, 10, 50, 236)), 1398 /* 1400 */, 'BP on the max');// 5
+    assert.equal(translator.translate(new Date(2015, 9, 1, 0, 0, 0, 0)), null, 'BP more than max');
+    assert.equal(translator.translate(new Date(2015, 6, 11, 15, 10, 50, 236)), 1000, 'BP inside range');// 3
+    assert.equal(translator.translate(new Date(2015, 4, 11, 15, 10, 50, 236)), 601 /* 600 */, 'BP on the min');// 1
+    assert.equal(translator.translate(new Date(2015, 8, 11, 15, 10, 50, 236)), 1402 /* 1400 */, 'BP on the max');// 5
 });
 
 QUnit.test('Translate. Datetime, interval quarter', function(assert) {
@@ -2088,56 +1991,42 @@ QUnit.test('Translate with interval. With direction, Numeric, interval 5', funct
     assert.equal(translator.translate(29, 1, 10), 1500, 'BP on the max');
 });
 
-QUnit.test('Untranslate.', function(assert) {
+QUnit.test('from.', function(assert) {
     var translator = this.createTranslator({ min: 10, max: 30 }); // 10, 15, 20, 25, 30
 
-    assert.equal(translator.untranslate(300), null, 'Coord less than min');
-    assert.equal(translator.untranslate(1800), null, 'Coord more than min');
-    assert.equal(translator.untranslate(300, undefined, true), 10, 'Coord less than min');
-    assert.equal(translator.untranslate(1800, undefined, true), 30, 'Coord more than min');
-    assert.equal(translator.untranslate(1000), 25, 'Coord inside range');
-    assert.equal(translator.untranslate(1000, -1), 25, 'Coord inside range. negative offset');
-    assert.equal(translator.untranslate(1000, 1), 20, 'Coord inside range. positive offset');
+    assert.equal(translator.from(300), 10, 'Coord less than min');
+    assert.equal(translator.from(1800), 30, 'Coord more than min');
+    assert.equal(translator.from(1000), 25, 'Coord inside range');
+    assert.equal(translator.from(1000, -1), 25, 'Coord inside range. negative offset');
+    assert.equal(translator.from(1000, 1), 20, 'Coord inside range. positive offset');
 
-    assert.equal(translator.untranslate(500, -1), 10, 'Coord on the min. negative offset');
-    assert.equal(translator.untranslate(500, 1), 10, 'Coord on the min. positive offset');
+    assert.equal(translator.from(500, -1), 10, 'Coord on the min. negative offset');
+    assert.equal(translator.from(500, 1), 10, 'Coord on the min. positive offset');
 
-    assert.equal(translator.untranslate(1500, -1), 30, 'Coord on the max. negative offset');
-    assert.equal(translator.untranslate(1500, 1), 30, 'Coord on the max. positive offset');
+    assert.equal(translator.from(1500, -1), 30, 'Coord on the max. negative offset');
+    assert.equal(translator.from(1500, 1), 30, 'Coord on the max. positive offset');
 
 });
 
-QUnit.test('Untranslate. T176895. Range min/max are undefined', function(assert) {
-    var translator = this.createTranslator({});
-
-    assert.equal(translator.untranslate(300), null);
-    assert.equal(translator.untranslate(1800), null);
-    assert.equal(translator.untranslate(300, undefined, true), null);
-    assert.equal(translator.untranslate(1800, undefined, true), null);
-    assert.equal(translator.untranslate(500), null);
-    assert.equal(translator.untranslate(1500), null);
-    assert.equal(translator.untranslate(1000), null);
-});
-
-QUnit.test('Untranslate. DateTime', function(assert) {
+QUnit.test('from. DateTime', function(assert) {
     var translator = this.createTranslator({
         min: new Date(2013, 0, 1),
         max: new Date(2016, 0, 1),
         dataType: 'datetime'
     }, "year");
 
-    assert.deepEqual(translator.untranslate(300, undefined, true), new Date(2013, 0, 1), 'Coord less than min');
-    assert.deepEqual(translator.untranslate(1800, undefined, true), new Date(2016, 0, 1), 'Coord more than min');
+    assert.deepEqual(translator.from(300), new Date(2013, 0, 1), 'Coord less than min');
+    assert.deepEqual(translator.from(1800), new Date(2016, 0, 1), 'Coord more than min');
 
-    assert.deepEqual(translator.untranslate(875), new Date(2015, 0, 1), 'Coord inside range');
-    assert.deepEqual(translator.untranslate(875, -1), new Date(2015, 0, 1), 'Coord inside range. negative offset');
-    assert.deepEqual(translator.untranslate(875, 1), new Date(2014, 0, 1), 'Coord inside range. positive offset');
+    assert.deepEqual(translator.from(875), new Date(2015, 0, 1), 'Coord inside range');
+    assert.deepEqual(translator.from(875, -1), new Date(2015, 0, 1), 'Coord inside range. negative offset');
+    assert.deepEqual(translator.from(875, 1), new Date(2014, 0, 1), 'Coord inside range. positive offset');
 
-    assert.deepEqual(translator.untranslate(500, -1), new Date(2013, 0, 1), 'Coord on the min. negative offset');
-    assert.deepEqual(translator.untranslate(500, 1), new Date(2013, 0, 1), 'Coord on the min. positive offset');
+    assert.deepEqual(translator.from(500, -1), new Date(2013, 0, 1), 'Coord on the min. negative offset');
+    assert.deepEqual(translator.from(500, 1), new Date(2013, 0, 1), 'Coord on the min. positive offset');
 
-    assert.deepEqual(translator.untranslate(1500, -1), new Date(2016, 0, 1), 'Coord on the max. negative offset');
-    assert.deepEqual(translator.untranslate(1500, 1), new Date(2016, 0, 1), 'Coord on the max. positive offset');
+    assert.deepEqual(translator.from(1500, -1), new Date(2016, 0, 1), 'Coord on the max. negative offset');
+    assert.deepEqual(translator.from(1500, 1), new Date(2016, 0, 1), 'Coord on the max. positive offset');
 });
 
 QUnit.test('GetInterval', function(assert) {
@@ -2211,6 +2100,9 @@ QUnit.test('Default value', function(assert) {
     checkTranslator(500, { min: 100, max: 200, invert: true, axisType: 'continuous', dataType: 'numeric' }, { isHorizontal: false }, 'Invert = true. Position = vertical. Range is positive');
     checkTranslator(1500, { min: -200, max: -100, invert: true, axisType: 'continuous', dataType: 'numeric' }, { isHorizontal: false }, 'Invert = true. Position = vertical. Range is negative');
     checkTranslator(1000, { min: -200, max: 200, invert: true, axisType: 'continuous', dataType: 'numeric' }, { isHorizontal: false }, 'Invert = true. Position = vertical. Range includes zero');
+
+    checkTranslator(1000, { min: 180, max: 180, axisType: 'continuous', dataType: 'numeric' }, { }, 'Invert = false. Position = horizontal. Middle of the canvas is default');
+    checkTranslator(1000, { min: new Date(10000), max: new Date(10000), invert: true, axisType: 'continuous', dataType: 'datetime' }, 'Datetime. Invert = true. Position = horizontal. Middle of the canvas is default');
 });
 
 QUnit.test('Other values', function(assert) {
@@ -2268,7 +2160,7 @@ QUnit.test('All translators process special cases', function(assert) {
     var that = this;
     function checkTranslator(value, expected, message, range) {
         var original = translator2DModule.Translator2D.prototype.translateSpecialCase;
-        translator2DModule.Translator2D.prototype.translateSpecialCase = function(value) { return value + '_processed'; };
+        translator2DModule.Translator2D.prototype.translateSpecialCase = function(value) { return parseInt(value + '500'); };
 
         try {
             var translator = that.createTranslator(range);
@@ -2278,203 +2170,13 @@ QUnit.test('All translators process special cases', function(assert) {
         }
     }
 
-    checkTranslator('special_case', 'special_case_processed', 'Numeric translator can process special case', { min: 100, max: 1000, axisType: 'continuous', dataType: 'numeric' });
-    checkTranslator('special_case', 'special_case_processed', 'Datetime translator can process special case', { min: new Date(1000), max: new Date(10000), axisType: 'continuous', dataType: 'datetime' });
-    checkTranslator('special_case', 'special_case_processed', 'Logarithmic translator can process special case', { min: 1, max: 1000, axisType: 'logarithmic', dataType: 'numeric' });
-    checkTranslator('special_case', 'special_case_processed', 'Discrete translator can process special case', { categories: ['a1', 'a2'], axisType: 'discrete', dataType: 'string' });
+    checkTranslator('100', 100500, 'Numeric translator can process special case', { min: 100, max: 1000, axisType: 'continuous', dataType: 'numeric' });
+    checkTranslator('100', 100500, 'Datetime translator can process special case', { min: new Date(1000), max: new Date(10000), axisType: 'continuous', dataType: 'datetime' });
+    checkTranslator('100', 100500, 'Logarithmic translator can process special case', { min: 1, max: 1000, axisType: 'logarithmic', dataType: 'numeric' });
+    checkTranslator('100', 100500, 'Discrete translator can process special case', { categories: ['a1', 'a2'], axisType: 'discrete', dataType: 'string' });
 });
 
 QUnit.module("Zooming and scrolling", environment);
-
-QUnit.test('scroll. Scrolling page at right side (right edge of the chart, event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: 70, maxVisible: 99.5, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, {}));
-});
-
-QUnit.test('scroll. Scrolling chart at left side (right edge of the chart, event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 70, maxVisible: 99.5, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, 23, 1, {}));
-});
-
-QUnit.test('scroll. Scrolling page at left side (left edge of the chart,event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: 0.5, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, 23, 1, {}));
-});
-
-QUnit.test('scroll. Scrolling chart at right side (right edge of the chart, event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 0.5, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, {}));
-});
-
-QUnit.test('scroll. Rotated logarithmic chart. Scrolling page at bottom side (bottom edge of the chart,event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: 9.8, maxVisible: 90, invert: false, rotated: true }, logarithmicRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, {}));
-});
-
-QUnit.test('scroll. Rotated logarithmic chart. Scrolling chart at top side (bottom edge of the chart, event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 9.8, maxVisible: 90, invert: false, rotated: true }, logarithmicRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, 23, 1, {}));
-});
-
-QUnit.test('scroll. Rotated logarithmic chart with inverted axis. Scrolling page at top side (top edge of the chart,event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: 9.8, maxVisible: 90, invert: true, rotated: true }, logarithmicRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, 23, 1, {}));
-});
-
-QUnit.test('scroll. Rotated logarithmic chart with inverted axis. Scrolling chart at bottom side (top edge of the chart, event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 9.8, maxVisible: 90, invert: true, rotated: true }, logarithmicRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, {}));
-});
-
-QUnit.test('scroll. Discrete axis. Scrolling page at right side (right edge of the chart, event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: "Third", maxVisible: "Fourth", invert: false }, discreteRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, null));
-});
-
-QUnit.test('scroll. Discrete axis. Scrolling chart at left side (center, event canceled)', function(assert) {
-    var range = $.extend({ minVisible: "Second", maxVisible: "Third", invert: false }, discreteRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, 23, 1, null));
-});
-
-QUnit.test('scroll. Scrolling chart at center (event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 10, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, {}));
-});
-
-QUnit.test('scroll. Scrolling chart at center by 2 fingers (event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 10, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 2, {}));
-});
-
-QUnit.test('scroll. Scrolling chart at center when zoomArgs is null, but min/max options are exists', function(assert) {
-    var range = $.extend({ minVisible: 10, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1, -23, 1, null));
-});
-
-QUnit.test('zoom. Zooming out chart (event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 10, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 0.8, 0, 2, {}));
-});
-
-QUnit.test('zoom. Zooming in chart (event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 10, maxVisible: 90, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1.2, 0, 2, {}));
-});
-
-QUnit.test('zoom. Zooming in chart (scale 1:1, event canceled)', function(assert) {
-    var range = $.extend({ minVisible: 0, maxVisible: 100, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1.2, 0, 2, {}));
-});
-
-QUnit.test('zoom. Zooming out page (scale 1:1, event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: 0, maxVisible: 100, invert: false }, numericRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 0.8, 0, 2, {}));
-});
-
-QUnit.test('zoom. Discrete axis. Zooming in chart (event canceled)', function(assert) {
-    var range = $.extend({ minVisible: "Second", maxVisible: "Third", invert: false }, discreteRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 1.2, 0, 2, null));
-});
-
-QUnit.test('zoom. Discrete axis. Zooming out page (scale 1:1, event not canceled)', function(assert) {
-    var range = $.extend({ minVisible: "First", maxVisible: "Fourth", invert: false }, discreteRange),
-        canvas = $.extend({}, canvasTemplate),
-        translator;
-
-    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
-
-    assert.ok(!translator.checkGestureEventsForScaleEdges(SCROLL_THRESHOLD, 0.8, 0, 2, null));
-});
 
 QUnit.test('scroll', function(assert) {
     var range = $.extend({ minVisible: 10, maxVisible: 90, invert: false }, numericRange),
@@ -2519,17 +2221,17 @@ QUnit.test('scroll', function(assert) {
 
     zoom = translator.zoom(100, 1);
 
-    assert.roughEqual(zoom.min.toFixed(2), 20, 0.1, "positive big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), 100, 0.1, "positive big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), (10 + 80 / 510 * 100), 0.1, "positive big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), (90 + 80 / 510 * 100), 0.1, "positive big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), 10.00 / 80 * 510, 1, "positive big scroll translate");
+    assert.equal(zoom.translate.toFixed(2), 100, "positive big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "positive big scroll scale");
 
     zoom = translator.zoom(-100, 1);
-    assert.roughEqual(zoom.min.toFixed(2), 0, 0.1, "negative big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), 80, 0.1, "negative big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), (10 - 80 / 510 * 100), 0.1, "negative big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), (90 - 80 / 510 * 100), 0.1, "negative big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), -10.00 / 80 * 510, 1, "negative big scroll translate");
+    assert.equal(zoom.translate.toFixed(2), -100, "negative big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "negative big scroll scale");
 });
 
@@ -2553,15 +2255,15 @@ QUnit.test('scroll. Logarithmic axis', function(assert) {
 
     zoom = translator.zoom(10, 1);
 
-    assert.equal(zoom.min.toFixed(2), translator.untranslate(80, undefined, true).toFixed(2), "positive scroll min");
-    assert.equal(zoom.max.toFixed(2), translator.untranslate(590, undefined, true).toFixed(2), "positive scroll max");
+    assert.equal(zoom.min.toFixed(2), translator.from(80).toFixed(2), "positive scroll min");
+    assert.equal(zoom.max.toFixed(2), translator.from(590).toFixed(2), "positive scroll max");
 
     assert.equal(zoom.translate.toFixed(2), 10.00, "positive scroll translate");
     assert.equal(zoom.scale.toFixed(2), 1.00, "positive scroll scale");
 
     zoom = translator.zoom(-10, 1);
-    assert.equal(zoom.min.toFixed(2), translator.untranslate(60, undefined, true).toFixed(2), "negative scroll min");
-    assert.equal(zoom.max.toFixed(2), translator.untranslate(570, undefined, true).toFixed(2), "negative scroll max");
+    assert.equal(zoom.min.toFixed(2), translator.from(60).toFixed(2), "negative scroll min");
+    assert.equal(zoom.max.toFixed(2), translator.from(570).toFixed(2), "negative scroll max");
 
     assert.equal(zoom.translate.toFixed(2), -10.00, "negative scroll translate");
     assert.equal(zoom.scale.toFixed(2), 1.00, "negative scroll scale");
@@ -2569,17 +2271,17 @@ QUnit.test('scroll. Logarithmic axis', function(assert) {
 
     zoom = translator.zoom(600, 1);
 
-    assert.roughEqual(zoom.min.toFixed(2), translator.untranslate(580, undefined, true).toFixed(2), 0.1, "positive big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), translator.untranslate(1090, undefined, true).toFixed(2), 0.1, "positive big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), translator.from(670).toFixed(2), 0.1, "positive big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), translator.from(1180).toFixed(2), 0.1, "positive big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), 510, 1, "positive big scroll translate");
+    assert.equal(zoom.translate.toFixed(2), 600, "positive big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "positive big scroll scale");
 
     zoom = translator.zoom(-600, 1);
-    assert.roughEqual(zoom.min.toFixed(2), translator.untranslate(-440, undefined, true).toFixed(2), 0.1, "negative big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), translator.untranslate(70, undefined, true).toFixed(2), 0.1, 0.1, "negative big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), translator.from(-530).toFixed(2), 0.1, "negative big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), translator.from(-20).toFixed(2), 0.1, 0.1, "negative big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), -510, 1, "negative big scroll translate");
+    assert.equal(zoom.translate.toFixed(2), -600, "negative big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "negative big scroll scale");
 });
 
@@ -2602,10 +2304,10 @@ QUnit.test('scroll. Canvas start point is zero', function(assert) {
     assert.equal(translator._canvasOptions.endPoint, 580);
 
     zoom = translator.zoom(-100, 1);
-    assert.roughEqual(zoom.min.toFixed(2), 0, 0.1, "negative big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), 100, 0.1, "negative big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), 0 - 100 / 580 * 100, 0.1, "negative big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), 100 - 100 / 580 * 100, 0.1, "negative big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), 0, 1, "negative big scroll translate");
+    assert.roughEqual(zoom.translate.toFixed(2), -100, 1, "negative big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "negative big scroll scale");
 });
 
@@ -2652,19 +2354,51 @@ QUnit.test('scroll inverted range', function(assert) {
 
     zoom = translator.zoom(100, 1);
 
-    assert.roughEqual(zoom.min.toFixed(2), 80, 0.1, "positive big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), 0, 0.1, "positive big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), 90 - 80 / 510 * 100, 0.1, "positive big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), 10 - 80 / 510 * 100, 0.1, "positive big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), 10.00 / 80 * 510, 1, "positive big scroll translate");
+    assert.equal(zoom.translate.toFixed(2), 100, "positive big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "positive big scroll scale");
 
     zoom = translator.zoom(-100, 1);
-    assert.roughEqual(zoom.min.toFixed(2), 100, 0.1, "negative big scroll min");
-    assert.roughEqual(zoom.max.toFixed(2), 20, 0.1, "negative big scroll max");
+    assert.roughEqual(zoom.min.toFixed(2), 90 + 80 / 510 * 100, 0.1, "negative big scroll min");
+    assert.roughEqual(zoom.max.toFixed(2), 10 + 80 / 510 * 100, 0.1, "negative big scroll max");
 
-    assert.roughEqual(zoom.translate.toFixed(2), -10.00 / 80 * 510, 1, "negative big scroll translate");
+    assert.equal(zoom.translate.toFixed(2), -100, "negative big scroll translate");
     assert.roughEqual(zoom.scale.toFixed(2), 1.00, 0.1, "negative big scroll scale");
 
+});
+
+QUnit.test('zoom single point range', function(assert) {
+    var range = $.extend({}, numericRange, { min: 100, max: 100 }),
+        canvas = $.extend({}, canvasTemplate),
+        translator,
+        zoom;
+
+    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true });
+
+    zoom = translator.zoom(48, 1.1);
+
+    assert.deepEqual(zoom, {
+        min: 100,
+        max: 100,
+        translate: 48,
+        scale: 1.1
+    }, "zoom point scroll");
+});
+
+QUnit.test('scroll null size visual range', function(assert) {
+    var range = $.extend({}, numericRange, { minVisible: 50, maxVisible: 50 }),
+        canvas = $.extend({}, canvasTemplate),
+        translator,
+        zoom;
+
+    translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true });
+
+    zoom = translator.zoom(100, 1);
+
+    assert.roughEqual(zoom.max, 50.196, 0.001, "scroll null size visual range");
+    assert.roughEqual(zoom.min, 49.804, 0.001, "scroll null size visual range");
 });
 
 QUnit.test('scale without scroll', function(assert) {
@@ -2698,10 +2432,94 @@ QUnit.test('scale without scroll', function(assert) {
     assert.roughEqual(zoom.scale.toFixed(2), 0.98, 0.001, "zoom out scale");
 
     zoom = translator.zoom(0, 0.5);
-    assert.roughEqual(zoom.min.toFixed(2), 0, 0.1, "big zoom out min");
-    assert.roughEqual(zoom.max.toFixed(2), 100, 0.1, "big zoom ot max");
-    assert.roughEqual(zoom.translate.toFixed(2), -65.20, 0.001, "big zoom in translate");
-    assert.roughEqual(zoom.scale.toFixed(2), 0.8, 0.001, " big zoom in scale");
+    assert.roughEqual(zoom.min.toFixed(2), 10 + 80 / 510 * 70, 0.1, "big zoom out min");
+    assert.roughEqual(zoom.max.toFixed(2), 90 + 80 / 510 * 580, 0.1, "big zoom ot max");
+    assert.equal(zoom.translate.toFixed(2), 0, "big zoom in translate");
+    assert.equal(zoom.scale.toFixed(2), 0.5, " big zoom in scale");
+});
+
+QUnit.test("Scroll with whole range", function(assert) {
+    const range = $.extend({ minVisible: 10, maxVisible: 110, invert: false }, numericRange);
+    const canvas = { left: 0, right: 0, width: 100 };
+
+    const translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
+
+    assert.deepEqual(translator.zoom(-10, 1, { startValue: 5, endValue: 300 }), {
+        min: 5,
+        max: 105,
+        scale: 1,
+        translate: -5
+    });
+
+    assert.deepEqual(translator.zoom(10, 1, { startValue: 5, endValue: 115 }), {
+        min: 15,
+        max: 115,
+        scale: 1,
+        translate: 5
+    });
+});
+
+QUnit.test("Scroll with whole range. inverted", function(assert) {
+    const range = $.extend({ minVisible: 10, maxVisible: 110, invert: true }, numericRange);
+    const canvas = { left: 0, right: 0, width: 100 };
+
+    const translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
+
+    assert.deepEqual(translator.zoom(10, 1, { startValue: 5, endValue: 300 }), {
+        max: 5,
+        min: 105,
+        scale: 1,
+        translate: 5
+    });
+
+    assert.deepEqual(translator.zoom(-10, 1, { startValue: 5, endValue: 115 }), {
+        max: 15,
+        min: 115,
+        scale: 1,
+        translate: -5
+    });
+});
+
+QUnit.test("Scroll with whole range endless whole range with one side", function(assert) {
+    const range = $.extend({ minVisible: 10, maxVisible: 110, invert: false }, numericRange);
+    const canvas = { left: 0, right: 0, width: 100 };
+
+    const translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
+
+    assert.deepEqual(translator.zoom(-10, 1, { startValue: undefined, endValue: 300 }), {
+        min: 0,
+        max: 100,
+        scale: 1,
+        translate: -10
+    });
+
+    assert.deepEqual(translator.zoom(10, 1, { startValue: 5, endValue: undefined }), {
+        min: 20,
+        max: 120,
+        scale: 1,
+        translate: 10
+    });
+});
+
+QUnit.test("Scroll with whole range endless whole range with one side. Inverted", function(assert) {
+    const range = $.extend({ minVisible: 10, maxVisible: 110, invert: true }, numericRange);
+    const canvas = { left: 0, right: 0, width: 100 };
+
+    const translator = new translator2DModule.Translator2D(range, canvas, { isHorizontal: true, breaksSize: 0 });
+
+    assert.deepEqual(translator.zoom(10, 1, { startValue: undefined, endValue: 300 }), {
+        max: 0,
+        min: 100,
+        scale: 1,
+        translate: 10
+    });
+
+    assert.deepEqual(translator.zoom(-10, 1, { startValue: 5, endValue: undefined }), {
+        max: 20,
+        min: 120,
+        scale: 1,
+        translate: -10
+    });
 });
 
 QUnit.test('get scale. Numeric', function(assert) {
@@ -2748,34 +2566,6 @@ QUnit.test('getMinScale', function(assert) {
 
     assert.strictEqual(new translator2DModule.Translator2D(logarithmicRange, canvas, optionsHorizontal).getMinScale(false), 0.9, "logarithmic zoom out");
     assert.strictEqual(new translator2DModule.Translator2D(logarithmicRange, canvas, optionsHorizontal).getMinScale(true), 1.1, "logarithmic zoom in");
-});
-
-QUnit.test('check reset zoom for single point. Numeric', function(assert) {
-    var range = $.extend({}, numericRange, { min: 100, minVisible: 99, maxVisible: 101 }),
-        canvas = $.extend({}, canvasTemplate),
-        translator = new translator2DModule.Translator2D(range, canvas, optionsHorizontal),
-        zoomInfo;
-
-    zoomInfo = translator.zoom(50, 1.1);
-    translator.updateBusinessRange($.extend({}, numericRange, { min: 99, max: 101, minVisible: zoomInfo.min, maxVisible: zoomInfo.max }));
-    zoomInfo = translator.zoom(-50, 0.9);
-    translator.updateBusinessRange($.extend({}, numericRange, { min: 100, max: 100, minVisible: zoomInfo.min, maxVisible: zoomInfo.max }));
-
-    assert.ok(translator.zoomIsEqualCanvas(zoomInfo));
-});
-
-QUnit.test('check reset zoom for single point. DateTime', function(assert) {
-    var range = $.extend({}, datetimeRange, { min: new Date(2012, 9, 2), minVisible: new Date(2012, 9, 1, 23, 59), maxVisible: new Date(2012, 9, 2, 0, 1) }),
-        canvas = $.extend({}, canvasTemplate),
-        translator = new translator2DModule.Translator2D(range, canvas, optionsHorizontal),
-        zoomInfo;
-
-    zoomInfo = translator.zoom(50, 1.1);
-    translator.updateBusinessRange($.extend({}, datetimeRange, { min: new Date(2012, 9, 1, 23, 59), max: new Date(2012, 9, 2, 0, 1), minVisible: zoomInfo.min, maxVisible: zoomInfo.max }));
-    zoomInfo = translator.zoom(-50, 0.9);
-    translator.updateBusinessRange($.extend({}, datetimeRange, { min: new Date(2012, 9, 2), max: new Date(2012, 9, 2), minVisible: zoomInfo.min, maxVisible: zoomInfo.max }));
-
-    assert.ok(translator.zoomIsEqualCanvas(zoomInfo));
 });
 
 QUnit.test("Zoom. Min in the break after zoom", function(assert) {
@@ -3259,8 +3049,8 @@ QUnit.test("Simple use", function(assert) {
 QUnit.test("min bar size more visible area", function(assert) {
     var translator = this.createTranslator({ min: 10, minVisible: 10, max: 90, maxVisible: 90 });
 
-    assert.equal(translator.getMinBarSize(1500), 80);
-    assert.equal(translator.getMinBarSize(2000), 80);
+    assert.equal(translator.getMinBarSize(1500), 120);
+    assert.equal(translator.getMinBarSize(2000), 160);
 });
 
 QUnit.test('Simple use (logarithmic translator)', function(assert) {
@@ -3299,3 +3089,18 @@ QUnit.test('Simple use (logarithmic translator)', function(assert) {
     assert.equal(adjust(translator.checkMinBarSize(5, 2, 8)), 5);
     assert.equal(adjust(translator.checkMinBarSize(5, 7, 12)), 42);
 });
+
+QUnit.module("Change translator type on the fly", environment);
+
+QUnit.test("From discrete to continuous", function(assert) {
+    var translator = this.createTranslator({ categories: [new Date(100000), new Date(200000), new Date(300000), new Date(400000), new Date(500000)], axisType: 'discrete', dataType: 'datetime' });
+
+    assert.equal(translator.translate(new Date(200000)), 800);
+    assert.equal(translator.translate(new Date(400000)), 1200);
+
+    translator.updateBusinessRange({ axisType: 'continuous', dataType: 'numeric', min: 200, max: 700 });
+
+    assert.equal(translator.translate(300), 700);
+    assert.equal(translator.translate(200), 500);
+});
+

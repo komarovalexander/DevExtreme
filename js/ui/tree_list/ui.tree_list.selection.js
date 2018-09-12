@@ -1,5 +1,3 @@
-"use strict";
-
 var $ = require("../../core/renderer"),
     treeListCore = require("./ui.tree_list.core"),
     commonUtils = require("../../core/utils/common"),
@@ -523,7 +521,7 @@ treeListCore.registerModule("selection", extend(true, {}, selectionModule, {
 
                     var firstDataColumnIndex = that._columnsController.getFirstDataColumnIndex();
 
-                    if(renderingTemplate && options.column.index === firstDataColumnIndex) {
+                    if(renderingTemplate && options.rowType === "header" && options.column.index === firstDataColumnIndex) {
                         resultTemplate = {
                             render: function(options) {
                                 if(that.option("selection.mode") === "multiple") {

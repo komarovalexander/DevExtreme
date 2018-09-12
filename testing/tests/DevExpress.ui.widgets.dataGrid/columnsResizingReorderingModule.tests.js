@@ -1,5 +1,3 @@
-"use strict";
-
 QUnit.testStart(function() {
 
     var markup =
@@ -17,7 +15,13 @@ QUnit.testStart(function() {
     <div id="container2" class="dx-datagrid"></div>\
 </div>\
 <div id="itemsContainer" style="font-size: 0"><div style="width:125px; display: inline-block;"></div><div style="width:125px; display: inline-block;"></div></div>\
-<div id="itemsContainerVertical"><div style="width:125px; height: 50px;" ></div><div style="width:125px; height: 50px;" ></div></div>';
+<div id="itemsContainerVertical"><div style="width:125px; height: 50px;" ></div><div style="width:125px; height: 50px;" ></div></div>\
+\
+<div class="dx-swatch-1">\
+    <div id="gridInSwatch">\
+    <div id="swatchitemsContainer" style="font-size: 0"><div style="width:125px; display: inline-block;"></div><div style="width:125px; display: inline-block;"></div></div>\
+    </div>\
+</div>';
 
     $("#qunit-fixture").html(markup);
 });
@@ -3294,14 +3298,11 @@ function getEvent(options) {
     QUnit.test("Check dragging header visibility after loading", function(assert) {
         // arrange
         var testElement = $("#container"),
-            options,
             draggingHeader,
             $draggingHeader,
             controller = this.createDraggingHeaderViewController();
 
-        controller.dock = function(params) {
-            options = params;
-        };
+        controller.dock = function() { };
         draggingHeader = new TestDraggingHeader(this.component);
         draggingHeader.init();
         draggingHeader.render(testElement);
@@ -4994,16 +4995,11 @@ function getEvent(options) {
     QUnit.test('Highlight column headers with allowReordering false, allowGrouping true when move the column from group panel in headers', function(assert) {
         // arrange
         var that = this,
-            testElement = $('#container'),
-            columnIndexOpacity,
-            opacityValue;
+            testElement = $('#container');
 
         that.controller._rowsView = {};
         that.controller._columnHeadersView = {};
-        that.controller._rowsView.setRowsOpacity = function(columnIndex, value) {
-            columnIndexOpacity = columnIndex;
-            opacityValue = value;
-        };
+        that.controller._rowsView.setRowsOpacity = function() {};
         that.controller._columnHeadersView.element = function() {
             return that.draggingPanels[0].element().append($('<div />').addClass('dx-header-row'));
         };
@@ -5066,16 +5062,11 @@ function getEvent(options) {
     QUnit.test('Highlight column headers when move the column with allowReordering false from group panel in headers', function(assert) {
         // arrange
         var that = this,
-            testElement = $('#container'),
-            columnIndexOpacity,
-            opacityValue;
+            testElement = $('#container');
 
         that.controller._rowsView = {};
         that.controller._columnHeadersView = {};
-        that.controller._rowsView.setRowsOpacity = function(columnIndex, value) {
-            columnIndexOpacity = columnIndex;
-            opacityValue = value;
-        };
+        that.controller._rowsView.setRowsOpacity = function() {};
         that.controller._columnHeadersView.element = function() {
             return that.draggingPanels[0].element().append($('<div />').addClass('dx-header-row'));
         };
@@ -5120,16 +5111,11 @@ function getEvent(options) {
     QUnit.test('Not highlight column headers with allowReordering false, allowGrouping true when drop the column from group panel in headers', function(assert) {
         // arrange
         var that = this,
-            testElement = $('#container'),
-            columnIndexOpacity,
-            opacityValue;
+            testElement = $('#container');
 
         that.controller._rowsView = {};
         that.controller._columnHeadersView = { setRowsOpacity: noop };
-        that.controller._rowsView.setRowsOpacity = function(columnIndex, value) {
-            columnIndexOpacity = columnIndex;
-            opacityValue = value;
-        };
+        that.controller._rowsView.setRowsOpacity = function() {};
         that.controller._columnHeadersView.element = function() {
             return that.draggingPanels[0].element().append($('<div />').addClass('dx-header-row'));
         };
@@ -5189,16 +5175,11 @@ function getEvent(options) {
     QUnit.test('Not highlight column headers with allowReordering false, allowGrouping true when move the column from headers in headers', function(assert) {
         // arrange
         var that = this,
-            testElement = $('#container'),
-            columnIndexOpacity,
-            opacityValue;
+            testElement = $('#container');
 
         that.controller._rowsView = {};
         that.controller._columnHeadersView = { setRowsOpacity: noop };
-        that.controller._rowsView.setRowsOpacity = function(columnIndex, value) {
-            columnIndexOpacity = columnIndex;
-            opacityValue = value;
-        };
+        that.controller._rowsView.setRowsOpacity = function() {};
         that.controller._columnHeadersView.element = function() {
             return that.draggingPanels[0].element().append($('<div />').addClass('dx-header-row'));
         };
@@ -5243,16 +5224,11 @@ function getEvent(options) {
     QUnit.test('Not highlight column headers with allowReordering true, allowGrouping true', function(assert) {
         // arrange
         var that = this,
-            testElement = $('#container'),
-            columnIndexOpacity,
-            opacityValue;
+            testElement = $('#container');
 
         that.controller._rowsView = {};
         that.controller._columnHeadersView = {};
-        that.controller._rowsView.setRowsOpacity = function(columnIndex, value) {
-            columnIndexOpacity = columnIndex;
-            opacityValue = value;
-        };
+        that.controller._rowsView.setRowsOpacity = function() {};
         that.controller._columnHeadersView.element = function() {
             return that.draggingPanels[0].element().append($('<div />').addClass('dx-header-row'));
         };
@@ -6167,5 +6143,168 @@ function getEvent(options) {
         } finally {
             fx.off = false;
         }
+    });
+})();
+
+// Headers reordering inside color swatch///
+(function() {
+    QUnit.module('Headers reordering inside color swatch', {
+        beforeEach: function() {
+            var that = this;
+
+            that.commonColumnSettings = {
+                allowReordering: true,
+                allowGrouping: true
+            };
+
+            that.options = {
+                showColumnHeaders: true,
+                commonColumnSettings: that.commonColumnSettings,
+                groupPanel: { visible: false }
+            };
+
+            $('#gridInSwatch').css({ height: '500px' });
+
+            that.draggingPanels = [new MockDraggingPanel({
+                $element: $('<div/>'),
+                columnElements: $("#swatchitemsContainer").children(),
+                columns: [{ allowReordering: true }, { allowReordering: true }],
+                offset: {
+                    left: -10000,
+                    top: 40,
+                    bottom: 70
+                },
+                location: 'headers'
+            }), new MockDraggingPanel({
+                $element: $('<div/>'),
+                columnElements: $("#swatchitemsContainer").children(),
+                columns: [{ allowReordering: true }, { allowReordering: true }],
+                offset: {
+                    left: -10000,
+                    top: 0,
+                    bottom: 30
+                },
+                location: 'group'
+            })];
+
+            that.component = {
+                NAME: "dxDataGrid",
+
+                $element: function() {
+                    return $("#gridInSwatch");
+                },
+
+                _suppressDeprecatedWarnings: noop,
+
+                _resumeDeprecatedWarnings: noop,
+
+                _controllers: {
+                    data: new MockDataController({
+                        rows: [{ values: ['', ''] }]
+                    }),
+
+                    tablePosition: new MockTablePositionViewController()
+                },
+
+                option: function(value) {
+                    return that.options[value];
+                },
+
+                _createAction: function(handler) {
+                    return handler;
+                },
+
+                _createActionByOption: function() {
+                    return function() { };
+                }
+            };
+
+            that.component._views = {
+                columnsSeparatorView: new columnResizingReordering.ColumnsSeparatorView(that.component),
+                draggingHeaderView: new columnResizingReordering.DraggingHeaderView(that.component),
+                columnHeadersView: new ColumnHeadersView(that.component),
+                headerPanel: new (HeaderPanel.inherit(GroupingHeaderPanelExtender))(that.component),
+                columnChooserView: new ColumnChooserView(that.component)
+            };
+
+            that.createDraggingHeaderViewController = function(columns) {
+                that.component._controllers.columns = new MockColumnsController(columns, that.commonColumnSettings);
+                var controller = new columnResizingReordering.DraggingHeaderViewController(that.component);
+
+                controller.init();
+
+                that.component._controllers.draggingHeader = controller;
+
+                that.initViews();
+
+                return controller;
+            };
+
+            that.initViews = function() {
+                $.each(that.component._views, function(key, value) {
+                    value.init();
+                });
+            };
+
+            that.renderViews = function($container) {
+                $.each(that.component._views, function(key, value) {
+                    value.render($container);
+                });
+            };
+        },
+        afterEach: function() {
+            $(".dx-datagrid-drag-header").remove();
+        }
+    });
+
+    QUnit.test('Header renders inside swatch', function(assert) {
+        var testElement = $('#gridInSwatch'),
+            draggingHeader,
+            controller = this.createDraggingHeaderViewController();
+
+        controller._columnHeadersView.element = function() {
+            return $('<div/>');
+        };
+
+        draggingHeader = new TestDraggingHeader(this.component);
+
+        draggingHeader.init();
+
+        this.component._views.columnsSeparatorView.render(testElement);
+        draggingHeader.render(testElement);
+
+        draggingHeader.dragHeader({
+            sourceLocation: 'headers',
+            draggingPanels: this.draggingPanels,
+            deltaX: 2,
+            deltaY: 1,
+            columnIndex: 1,
+            index: 1,
+            columnElement: $('<td />').appendTo(testElement),
+            sourceColumn: {
+                caption: "TestDrag",
+                allowReordering: true
+            }
+        });
+
+        draggingHeader.moveHeader({
+            event: {
+                data: {
+                    that: draggingHeader,
+                    rootElement: testElement
+                },
+                preventDefault: function() { },
+                pageX: -9900,
+                pageY: 55,
+                type: 'mouse'
+            }
+        });
+
+        var draggingHeaderParent = draggingHeader.element().parent();
+        var viewport = draggingHeaderParent.parent();
+
+        // assert
+        assert.ok(draggingHeaderParent.hasClass("dx-swatch-1"), "Dragging header rendered in element with swatch class");
+        assert.equal(viewport.get(0).tagName.toLowerCase(), "body", "Div with swatch class rendered on body");
     });
 })();
