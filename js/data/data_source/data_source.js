@@ -214,7 +214,6 @@ var DataSource = Class.inherit({
 
         this._onPushHandler = (e) => { this._pushThrottle.execute(e.changes); };
 
-
         /**
         * @name DataSourceOptions.store
         * @type Store|StoreOptions|Array<any>|any
