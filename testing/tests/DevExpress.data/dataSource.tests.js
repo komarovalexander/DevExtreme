@@ -1647,7 +1647,8 @@ QUnit.test("StoreLoadOptionAccessors: null and undefined (based on T304670)", fu
 
 QUnit.module("live update", {
     beforeEach: function() {
-        this.loadSpy = sinon.spy();
+        var loadSpy = sinon.spy();
+        this.loadSpy = loadSpy;
         var itemRemove = { field: 1 },
             itemUpdate = { field: 2 };
         this.insertChange = { type: "insert", data: { field: 3 } };
@@ -1657,8 +1658,8 @@ QUnit.module("live update", {
 
         this.initDataSource = function(options) {
             return new DataSource($.extend({
-                load: () => {
-                    this.loadSpy();
+                load: function() {
+                    loadSpy();
                     return [itemRemove, itemUpdate];
                 }
             }, options));
