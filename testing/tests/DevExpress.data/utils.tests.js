@@ -3,7 +3,7 @@ var Guid = require("core/guid"),
     keysEqual = dataUtils.keysEqual,
     processRequestResultLock = dataUtils.processRequestResultLock,
     b64 = dataUtils.base64_encode,
-    accumulateDataWhileThrottle = dataUtils.accumulateDataWhileThrottle,
+    ThrottleWithAggregation = dataUtils.ThrottleWithAggregation,
     odataUtils = require("data/odata/utils");
 
 QUnit.module("keysEqual");
@@ -115,14 +115,26 @@ QUnit.module("Throttling", {
 }, function() {
     QUnit.test("push with timeout", function(assert) {
         var spy = sinon.spy(),
-            push = accumulateDataWhileThrottle(spy, 100);
+            throttle = new ThrottleWithAggregation(spy, 100);
         for(var i = 0; i < 10; i++) {
-            push([i]);
+            throttle.execute([i]);
         }
         assert.equal(spy.callCount, 1);
         this.clock.tick(100);
         assert.equal(spy.callCount, 2);
         assert.equal(spy.firstCall.args[0].length, 1);
         assert.equal(spy.secondCall.args[0].length, 9);
+    });
+
+    QUnit.test("dispose", function(assert) {
+        var spy = sinon.spy(),
+            throttle = new ThrottleWithAggregation(spy, 100);
+        for(var i = 0; i < 10; i++) {
+            throttle.execute([i]);
+        }
+        assert.equal(spy.callCount, 1);
+        throttle.dispose();
+        this.clock.tick(100);
+        assert.equal(spy.callCount, 1);
     });
 });

@@ -336,16 +336,20 @@ function ArrayHelper() {
     };
 }
 
-const throttle = (func, timeout) => {
-    let inThrottle,
+function NoopThrottle(func) {
+    this.execute = func;
+    this.dispose = function() {};
+}
+
+function Throttle(func, timeout) {
+    let timeoutId,
         lastArgs;
-    return function() {
+    this.execute = function() {
         const context = this;
-        if(!inThrottle) {
+        if(!timeoutId) {
             func.apply(context, arguments);
-            inThrottle = true;
-            setTimeout(() => {
-                inThrottle = false;
+            timeoutId = setTimeout(() => {
+                timeoutId = undefined;
                 if(lastArgs) {
                     func.apply(context, lastArgs);
                     lastArgs = undefined;
@@ -355,21 +359,28 @@ const throttle = (func, timeout) => {
             lastArgs = arguments;
         }
     };
+    this.dispose = function() {
+        clearTimeout(timeoutId);
+    };
 };
 
-function accumulateDataWhileThrottle(func, timeout) {
+function ThrottleWithAggregation(func, timeout) {
     const context = this;
     let cache = [],
-        throttleFunc = throttle(() => {
+        throttle = new Throttle(() => {
             func.call(context, cache);
             cache = [];
         }, timeout);
 
-    return function(changes) {
+    this.execute = function(changes) {
         if(Array.isArray(changes)) {
             cache.push(...changes);
         }
-        return throttleFunc(cache);
+        throttle.execute(cache);
+    };
+
+    this.dispose = function() {
+        throttle.dispose();
     };
 }
 
@@ -386,8 +397,9 @@ var utils = {
 
     keysEqual: keysEqual,
     arrayHelper: new ArrayHelper(),
-    accumulateDataWhileThrottle: accumulateDataWhileThrottle,
-    throttle: throttle,
+    ThrottleWithAggregation: ThrottleWithAggregation,
+    Throttle: Throttle,
+    NoopThrottle: NoopThrottle,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
 

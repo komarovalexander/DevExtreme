@@ -206,11 +206,22 @@ var DataSource = Class.inherit({
         */
 
         /**
+        * @name DataSourceOptions.pushAggregationTimeout
+        * @type number
+        * @default undefined
+        */
+        this._pushAggregationTimeout = options.pushAggregationTimeout;
+        this._pushThrottle = this._pushAggregationTimeout
+            ? new dataUtils.ThrottleWithAggregation(this._onPush, this._pushAggregationTimeout)
+            : new dataUtils.NoopThrottle(this._onPush);
+        this._onPushHandler = (e) => { this._pushThrottle.execute(e.changes); };
+
+
+        /**
         * @name DataSourceOptions.store
         * @type Store|StoreOptions|Array<any>|any
         */
         this._store = options.store;
-        this._onPushHandler = this._onPush.bind(this);
         this._store.on("push", this._onPushHandler);
 
         /**
@@ -311,21 +322,6 @@ var DataSource = Class.inherit({
         */
         this.reshapeOnPush = __isDefined(options.reshapeOnPush) ? options.reshapeOnPush : false;
 
-        /**
-        * @name DataSourceOptions.pushAggregationTimeout
-        * @type number
-        * @default undefined
-        */
-        this._pushAggregationTimeout = options.pushAggregationTimeout;
-
-        this._loadThrottle = this._pushAggregationTimeout ? dataUtils.throttle(this.load, this._pushAggregationTimeout) : this.load;
-
-        let push = (changes) => {
-            dataUtils.arrayHelper.push(this.items(), changes, this.store());
-            this.fireEvent("changed", [{ changes: changes }]);
-        };
-        this._pushThrottle = this._pushAggregationTimeout ? dataUtils.accumulateDataWhileThrottle(push, this._pushAggregationTimeout) : push;
-
         iteratorUtils.each(
             [
                 /**
@@ -385,6 +381,7 @@ var DataSource = Class.inherit({
     dispose: function() {
         this._store.off("push", this._onPushHandler);
         this._disposeEvents();
+        this._pushThrottle.dispose();
 
         delete this._store;
 
@@ -831,17 +828,16 @@ var DataSource = Class.inherit({
         });
     },
 
-    _onPush: function(e) {
+    _onPush: function(changes) {
         if(this.reshapeOnPush) {
-            this._loadThrottle();
+            this.load();
         } else {
-            let changes = e.changes;
-
             if(this.paginate()) {
                 changes = changes.filter(item => item.type === "update");
             }
 
-            this._pushThrottle(changes);
+            dataUtils.arrayHelper.push(this.items(), changes, this.store());
+            this.fireEvent("changed", [{ changes: changes }]);
         }
     },
 
