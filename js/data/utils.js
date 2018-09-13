@@ -256,7 +256,7 @@ function ArrayHelper() {
         return false;
     };
 
-    this.changeArrayByBatch = function(array, batchData, keyInfo) {
+    this.push = function(array, batchData, keyInfo) {
         batchData.forEach(item => {
             switch(item.type) {
                 case "update": this.updateArrayItem(array, item.key, item.data, keyInfo); break;

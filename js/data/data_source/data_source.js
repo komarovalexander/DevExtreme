@@ -321,7 +321,7 @@ var DataSource = Class.inherit({
         this._loadThrottle = this._pushAggregationTimeout ? dataUtils.throttle(this.load, this._pushAggregationTimeout) : this.load;
 
         let push = (changes) => {
-            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.store());
+            dataUtils.arrayHelper.push(this.items(), changes, this.store());
             this.fireEvent("changed", [{ changes: changes }]);
         };
         this._pushThrottle = this._pushAggregationTimeout ? dataUtils.accumulateDataWhileThrottle(push, this._pushAggregationTimeout) : push;
