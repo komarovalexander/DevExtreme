@@ -1736,9 +1736,9 @@ QUnit.module("live update", {
         dataSource.store().push(this.changes);
 
         assert.equal(changedSpy.callCount, 1);
+
         this.clock.tick(100);
         assert.equal(changedSpy.callCount, 2);
-
         assert.equal(changedSpy.lastCall.args[0].changes.length, 6);
     });
 });

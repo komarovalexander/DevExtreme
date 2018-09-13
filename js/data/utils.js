@@ -241,7 +241,7 @@ var rejectedPromise = function() {
     return d.reject.apply(d, arguments).promise();
 };
 
-function ArrayHelper(keyExpr, keyGetter) {
+function ArrayHelper() {
     var hasKey = function(target, keyOrKeys) {
         var key,
             keys = typeof keyOrKeys === "string" ? keyOrKeys.split() : keyOrKeys.slice();
@@ -256,26 +256,27 @@ function ArrayHelper(keyExpr, keyGetter) {
         return false;
     };
 
-    this.changeArrayByBatch = function(array, batchData) {
+    this.changeArrayByBatch = function(array, batchData, keyInfo) {
         batchData.forEach(item => {
             switch(item.type) {
-                case "update": this.updateArrayItem(array, item.key, item.data); break;
-                case "insert": this.insertItemToArray(array, item.data); break;
-                case "remove": this.removeItemFromArray(array, item.key); break;
+                case "update": this.updateArrayItem(array, item.key, item.data, keyInfo); break;
+                case "insert": this.insertItemToArray(array, item.data, keyInfo); break;
+                case "remove": this.removeItemFromArray(array, item.key, keyInfo); break;
             }
         });
     };
 
-    this.updateArrayItem = function(array, key, data) {
+    this.updateArrayItem = function(array, key, data, keyInfo) {
         var target,
-            extendComplexObject = true;
+            extendComplexObject = true,
+            keyExpr = keyInfo.key();
 
         if(keyExpr) {
-            if(hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyGetter(data))) {
+            if(hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyInfo.keyOf(data))) {
                 return rejectedPromise(errors.Error("E4017"));
             }
 
-            let index = this.indexByKey(array, key);
+            let index = this.indexByKey(array, key, keyInfo);
             if(index < 0) {
                 return rejectedPromise(errors.Error("E4009"));
             }
@@ -289,21 +290,22 @@ function ArrayHelper(keyExpr, keyGetter) {
         return trivialPromise(key, data);
     };
 
-    this.insertItemToArray = function(array, data) {
+    this.insertItemToArray = function(array, data, keyInfo) {
         var keyValue,
-            obj;
+            obj,
+            keyExpr = keyInfo.key();
 
         obj = isPlainObject(data) ? extend({}, data) : data;
 
         if(keyExpr) {
-            keyValue = keyGetter(obj);
+            keyValue = keyInfo.keyOf(obj);
             if(keyValue === undefined || typeof keyValue === "object" && isEmptyObject(keyValue)) {
                 if(Array.isArray(keyExpr)) {
                     throw errors.Error("E4007");
                 }
                 keyValue = obj[keyExpr] = String(new Guid());
             } else {
-                if(array[this.indexByKey(array, keyValue)] !== undefined) {
+                if(array[this.indexByKey(array, keyValue, keyInfo)] !== undefined) {
                     return rejectedPromise(errors.Error("E4008"));
                 }
             }
@@ -315,17 +317,18 @@ function ArrayHelper(keyExpr, keyGetter) {
         return trivialPromise(data, keyValue);
     };
 
-    this.removeItemFromArray = function(array, key) {
-        var index = this.indexByKey(array, key);
+    this.removeItemFromArray = function(array, key, keyInfo) {
+        var index = this.indexByKey(array, key, keyInfo);
         if(index > -1) {
             array.splice(index, 1);
         }
         return trivialPromise(key);
     };
 
-    this.indexByKey = function(array, key) {
+    this.indexByKey = function(array, key, keyInfo) {
+        var keyExpr = keyInfo.key();
         for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
-            if(keysEqual(keyExpr, keyGetter(array[i]), key)) {
+            if(keysEqual(keyExpr, keyInfo.keyOf(array[i]), key)) {
                 return i;
             }
         }
@@ -382,7 +385,7 @@ var utils = {
     aggregators: aggregators,
 
     keysEqual: keysEqual,
-    ArrayHelper: ArrayHelper,
+    arrayHelper: new ArrayHelper(),
     accumulateDataWhileThrottle: accumulateDataWhileThrottle,
     throttle: throttle,
     trivialPromise: trivialPromise,

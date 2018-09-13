@@ -363,8 +363,6 @@ var CustomStore = Store.inherit({
          * @type_function_return Promise<void>
          */
         this._removeFunc = options[REMOVE];
-
-        this._arrayHelper = new dataUtils.ArrayHelper(this.key(), this.keyOf.bind(this));
     },
 
     createQuery: function() {
@@ -396,7 +394,7 @@ var CustomStore = Store.inherit({
 
     _pushImpl: function(changes) {
         if(this.__rawData) {
-            this._arrayHelper.changeArrayByBatch(this.__rawData, changes);
+            dataUtils.arrayHelper.changeArrayByBatch(this.__rawData, changes, this);
         }
     },
 
