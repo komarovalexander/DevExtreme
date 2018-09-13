@@ -178,12 +178,14 @@ var Store = Class.inherit({
     * @return Promise<any>
     */
     load: function(options) {
+        var that = this;
+
         options = options || {};
 
         this.fireEvent("loading", [options]);
 
-        return this._withLock(this._loadImpl(options)).done((result) => {
-            this.fireEvent("loaded", [result, options]);
+        return this._withLock(this._loadImpl(options)).done(function(result) {
+            that.fireEvent("loaded", [result, options]);
         });
     },
 
