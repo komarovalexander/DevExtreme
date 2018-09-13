@@ -9,6 +9,7 @@ import { errors } from "./errors";
 import objectUtils from "../core/utils/object";
 import { toComparable } from "../core/utils/data";
 import { Deferred } from "../core/utils/deferred";
+import { noop } from "../core/utils/common";
 
 var window = windowUtils.getWindow();
 
@@ -338,7 +339,7 @@ function ArrayHelper() {
 
 function NoopThrottle(func) {
     this.execute = func;
-    this.dispose = function() {};
+    this.dispose = noop;
 }
 
 function Throttle(func, timeout) {

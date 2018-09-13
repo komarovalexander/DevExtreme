@@ -8,6 +8,7 @@ var Class = require("../core/class"),
     storeHelper = require("./store_helper"),
     queryByOptions = storeHelper.queryByOptions,
     Deferred = require("../core/utils/deferred").Deferred,
+    noop = require("../core/utils/common").noop,
 
     storeImpl = {};
 
@@ -295,7 +296,7 @@ var Store = Class.inherit({
         this.fireEvent("push", [{ changes }]);
     },
 
-    _pushImpl: function(changes) { },
+    _pushImpl: noop,
 
     /**
     * @name StoreMethods.remove
