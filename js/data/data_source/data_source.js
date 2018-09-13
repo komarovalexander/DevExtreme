@@ -210,10 +210,8 @@ var DataSource = Class.inherit({
         * @type number
         * @default undefined
         */
-        this._pushAggregationTimeout = options.pushAggregationTimeout;
-        this._pushThrottle = this._pushAggregationTimeout
-            ? new dataUtils.ThrottleWithAggregation(this._onPush, this._pushAggregationTimeout)
-            : new dataUtils.NoopThrottle(this._onPush);
+        this._pushThrottle = new dataUtils.ThrottleWithAggregation(this._onPush, options.pushAggregationTimeout);
+
         this._onPushHandler = (e) => { this._pushThrottle.execute(e.changes); };
 
 

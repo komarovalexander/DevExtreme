@@ -337,11 +337,6 @@ function ArrayHelper() {
     };
 }
 
-function NoopThrottle(func) {
-    this.execute = func;
-    this.dispose = noop;
-}
-
 function Throttle(func, timeout) {
     let timeoutId,
         lastArgs;
@@ -366,23 +361,28 @@ function Throttle(func, timeout) {
 };
 
 function ThrottleWithAggregation(func, timeout) {
-    const context = this;
-    let cache = [],
-        throttle = new Throttle(() => {
-            func.call(context, cache);
-            cache = [];
-        }, timeout);
+    if(!timeout) {
+        this.execute = func;
+        this.dispose = noop;
+    } else {
+        const context = this;
+        let cache = [],
+            throttle = new Throttle(() => {
+                func.call(context, cache);
+                cache = [];
+            }, timeout);
 
-    this.execute = function(changes) {
-        if(Array.isArray(changes)) {
-            cache.push(...changes);
-        }
-        throttle.execute(cache);
-    };
+        this.execute = function(changes) {
+            if(Array.isArray(changes)) {
+                cache.push(...changes);
+            }
+            throttle.execute(cache);
+        };
 
-    this.dispose = function() {
-        throttle.dispose();
-    };
+        this.dispose = function() {
+            throttle.dispose();
+        };
+    }
 }
 
 /**
@@ -400,7 +400,6 @@ var utils = {
     arrayHelper: new ArrayHelper(),
     ThrottleWithAggregation: ThrottleWithAggregation,
     Throttle: Throttle,
-    NoopThrottle: NoopThrottle,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
 
