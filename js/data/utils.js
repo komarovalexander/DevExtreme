@@ -241,7 +241,7 @@ var rejectedPromise = function() {
     return d.reject.apply(d, arguments).promise();
 };
 
-function ArrayHelper() {
+function ArrayHelper(keyExpr, keyGetter) {
     var hasKey = function(target, keyOrKeys) {
         var key,
             keys = typeof keyOrKeys === "string" ? keyOrKeys.split() : keyOrKeys.slice();
@@ -256,32 +256,28 @@ function ArrayHelper() {
         return false;
     };
 
-    this.changeArrayByBatch = function(array, batchData, keyExpr, keyGetter) {
+    this.changeArrayByBatch = function(array, batchData) {
         batchData.forEach(item => {
             switch(item.type) {
-                case "update": this.updateArrayItem(array, item.key, item.data, keyExpr, keyGetter); break;
-                case "insert": this.insertItemToArray(array, item.data, keyExpr, keyGetter); break;
-                case "remove": this.removeItemFromArray(array, item.key, keyExpr, keyGetter); break;
+                case "update": this.updateArrayItem(array, item.key, item.data); break;
+                case "insert": this.insertItemToArray(array, item.data); break;
+                case "remove": this.removeItemFromArray(array, item.key); break;
             }
         });
     };
 
-    this.updateArrayItem = function(array, key, data, keyExpr, keyGetter, checkErrors) {
+    this.updateArrayItem = function(array, key, data) {
         var target,
             extendComplexObject = true;
 
         if(keyExpr) {
-            if(checkErrors && hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyGetter(data))) {
+            if(hasKey(data, keyExpr) && !keysEqual(keyExpr, key, keyGetter(data))) {
                 return rejectedPromise(errors.Error("E4017"));
             }
 
-            let index = this.indexByKey(array, key, keyExpr, keyGetter);
+            let index = this.indexByKey(array, key);
             if(index < 0) {
-                if(checkErrors) {
-                    return rejectedPromise(errors.Error("E4009"));
-                } else {
-                    return trivialPromise(key, data);
-                }
+                return rejectedPromise(errors.Error("E4009"));
             }
 
             target = array[index];
@@ -293,7 +289,7 @@ function ArrayHelper() {
         return trivialPromise(key, data);
     };
 
-    this.insertItemToArray = function(array, data, keyExpr, keyGetter) {
+    this.insertItemToArray = function(array, data) {
         var keyValue,
             obj;
 
@@ -307,7 +303,7 @@ function ArrayHelper() {
                 }
                 keyValue = obj[keyExpr] = String(new Guid());
             } else {
-                if(array[this.indexByKey(array, keyValue, keyExpr, keyGetter)] !== undefined) {
+                if(array[this.indexByKey(array, keyValue)] !== undefined) {
                     return rejectedPromise(errors.Error("E4008"));
                 }
             }
@@ -319,15 +315,15 @@ function ArrayHelper() {
         return trivialPromise(data, keyValue);
     };
 
-    this.removeItemFromArray = function(array, key, keyExpr, keyGetter) {
-        var index = this.indexByKey(array, key, keyExpr, keyGetter);
+    this.removeItemFromArray = function(array, key) {
+        var index = this.indexByKey(array, key);
         if(index > -1) {
             array.splice(index, 1);
         }
         return trivialPromise(key);
     };
 
-    this.indexByKey = function(array, key, keyExpr, keyGetter) {
+    this.indexByKey = function(array, key) {
         for(var i = 0, arrayLength = array.length; i < arrayLength; i++) {
             if(keysEqual(keyExpr, keyGetter(array[i]), key)) {
                 return i;
@@ -371,7 +367,7 @@ var utils = {
     aggregators: aggregators,
 
     keysEqual: keysEqual,
-    arrayHelper: new ArrayHelper(),
+    ArrayHelper: ArrayHelper,
     createAggregationFunc: createAggregationFunc,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,

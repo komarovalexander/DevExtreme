@@ -311,8 +311,9 @@ var DataSource = Class.inherit({
         */
         this.reshapeOnPush = __isDefined(options.reshapeOnPush) ? options.reshapeOnPush : false;
 
+        this._arrayHelper = new dataUtils.ArrayHelper(this.key(), this.store().keyOf.bind(this.store()));
         let pushFunc = (changes) => {
-            dataUtils.arrayHelper.changeArrayByBatch(this.items(), changes, this.key(), this.store().keyOf.bind(this.store()));
+            this._arrayHelper.changeArrayByBatch(this.items(), changes);
             this.fireEvent("changed", [{ changes: changes }]);
         };
         /**
