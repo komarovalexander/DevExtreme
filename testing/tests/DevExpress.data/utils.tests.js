@@ -3,7 +3,7 @@ var Guid = require("core/guid"),
     keysEqual = dataUtils.keysEqual,
     processRequestResultLock = dataUtils.processRequestResultLock,
     b64 = dataUtils.base64_encode,
-    createAggregationFunc = dataUtils.createAggregationFunc,
+    accumulateDataWhileThrottle = dataUtils.accumulateDataWhileThrottle,
     odataUtils = require("data/odata/utils");
 
 QUnit.module("keysEqual");
@@ -105,7 +105,7 @@ QUnit.test("encode", function(assert) {
     assert.equal(b64([65]), "QQ==");
 });
 
-QUnit.module("PushHelper", {
+QUnit.module("Throttling", {
     beforeEach: function() {
         this.clock = sinon.useFakeTimers();
     },
@@ -115,13 +115,14 @@ QUnit.module("PushHelper", {
 }, function() {
     QUnit.test("push with timeout", function(assert) {
         var spy = sinon.spy(),
-            pushHelper = createAggregationFunc(spy, 100);
+            push = accumulateDataWhileThrottle(spy, 100);
         for(var i = 0; i < 10; i++) {
-            pushHelper([i]);
+            push([i]);
         }
-        assert.equal(spy.callCount, 0);
-        this.clock.tick(100);
         assert.equal(spy.callCount, 1);
-        assert.equal(spy.firstCall.args[0].length, 10);
+        this.clock.tick(100);
+        assert.equal(spy.callCount, 2);
+        assert.equal(spy.firstCall.args[0].length, 1);
+        assert.equal(spy.secondCall.args[0].length, 9);
     });
 });

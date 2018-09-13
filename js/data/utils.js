@@ -333,25 +333,40 @@ function ArrayHelper(keyExpr, keyGetter) {
     };
 }
 
-function createAggregationFunc(func, timeout) {
-    let cache,
-        timeoutId,
-        clearCache = function() {
-            cache = [],
-            timeoutId = undefined;
-        };
-    clearCache();
+const throttle = (func, timeout) => {
+    let inThrottle,
+        lastArgs;
+    return function() {
+        const context = this;
+        if(!inThrottle) {
+            func.apply(context, arguments);
+            inThrottle = true;
+            setTimeout(() => {
+                inThrottle = false;
+                if(lastArgs) {
+                    func.apply(context, lastArgs);
+                    lastArgs = undefined;
+                }
+            }, timeout);
+        } else {
+            lastArgs = arguments;
+        }
+    };
+};
+
+function accumulateDataWhileThrottle(func, timeout) {
+    const context = this;
+    let cache = [],
+        throttleFunc = throttle(() => {
+            func.call(context, cache);
+            cache = [];
+        }, timeout);
 
     return function(changes) {
-        if(!timeoutId) {
-            timeoutId = setTimeout(() => {
-                func(cache);
-                clearCache();
-            }, timeout);
-        }
         if(Array.isArray(changes)) {
             cache.push(...changes);
         }
+        return throttleFunc(cache);
     };
 }
 
@@ -368,7 +383,8 @@ var utils = {
 
     keysEqual: keysEqual,
     ArrayHelper: ArrayHelper,
-    createAggregationFunc: createAggregationFunc,
+    accumulateDataWhileThrottle: accumulateDataWhileThrottle,
+    throttle: throttle,
     trivialPromise: trivialPromise,
     rejectedPromise: rejectedPromise,
 

@@ -1663,6 +1663,10 @@ QUnit.module("live update", {
                 }
             }, options));
         };
+        this.clock = sinon.useFakeTimers();
+    },
+    afterEach: function() {
+        this.clock.restore();
     }
 }, function() {
     QUnit.test("load is called when reshapeOnPush is enabled", function(assert) {
@@ -1673,6 +1677,22 @@ QUnit.module("live update", {
 
         dataSource.store().push(this.changes);
         assert.equal(this.loadSpy.callCount, 1);
+    });
+
+    QUnit.test("load is called with throttle when reshapeOnPush and pushAggregationTimeout are enabled", function(assert) {
+        var dataSource = this.initDataSource({
+            reshapeOnPush: true,
+            pushAggregationTimeout: 100
+        });
+        assert.equal(this.loadSpy.callCount, 0);
+
+        dataSource.store().push(this.changes);
+        dataSource.store().push(this.changes);
+        dataSource.store().push(this.changes);
+
+        assert.equal(this.loadSpy.callCount, 1);
+        this.clock.tick(100);
+        assert.equal(this.loadSpy.callCount, 2);
     });
 
     QUnit.test("load isn't called when reshapeOnPush is disabled", function(assert) {
@@ -1699,5 +1719,26 @@ QUnit.module("live update", {
         dataSource.on("changed", changedSpy);
         dataSource.store().push(this.changes);
         assert.equal(changedSpy.firstCall.args[0].changes.length, 1);
+    });
+
+    QUnit.test("changed is fired with throttle when pushAggregationTimeout is enabled", function(assert) {
+        var dataSource = this.initDataSource({
+            paginate: false,
+            pushAggregationTimeout: 100
+        });
+        var changedSpy = sinon.spy();
+        dataSource.on("changed", changedSpy);
+
+        assert.equal(changedSpy.callCount, 0);
+
+        dataSource.store().push(this.changes);
+        dataSource.store().push(this.changes);
+        dataSource.store().push(this.changes);
+
+        assert.equal(changedSpy.callCount, 1);
+        this.clock.tick(100);
+        assert.equal(changedSpy.callCount, 2);
+
+        assert.equal(changedSpy.lastCall.args[0].changes.length, 6);
     });
 });

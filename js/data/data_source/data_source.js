@@ -312,16 +312,21 @@ var DataSource = Class.inherit({
         this.reshapeOnPush = __isDefined(options.reshapeOnPush) ? options.reshapeOnPush : false;
 
         this._arrayHelper = new dataUtils.ArrayHelper(this.key(), this.store().keyOf.bind(this.store()));
-        let pushFunc = (changes) => {
-            this._arrayHelper.changeArrayByBatch(this.items(), changes);
-            this.fireEvent("changed", [{ changes: changes }]);
-        };
+
         /**
         * @name DataSourceOptions.pushAggregationTimeout
         * @type number
         * @default undefined
         */
-        this._pushFunc = options.pushAggregationTimeout ? dataUtils.createAggregationFunc(pushFunc, options.pushAggregationTimeout) : pushFunc;
+        this._pushAggregationTimeout = options.pushAggregationTimeout;
+
+        this._loadThrottle = this._pushAggregationTimeout ? dataUtils.throttle(this.load, this._pushAggregationTimeout) : this.load;
+
+        let push = (changes) => {
+            this._arrayHelper.changeArrayByBatch(this.items(), changes);
+            this.fireEvent("changed", [{ changes: changes }]);
+        };
+        this._pushThrottle = this._pushAggregationTimeout ? dataUtils.accumulateDataWhileThrottle(push, this._pushAggregationTimeout) : push;
 
         iteratorUtils.each(
             [
@@ -830,8 +835,7 @@ var DataSource = Class.inherit({
 
     _onPush: function(e) {
         if(this.reshapeOnPush) {
-            this._isLoaded = false;
-            this.load();
+            this._loadThrottle();
         } else {
             let changes = e.changes;
 
@@ -839,7 +843,7 @@ var DataSource = Class.inherit({
                 changes = changes.filter(item => item.type === "update");
             }
 
-            this._pushFunc(changes);
+            this._pushThrottle(changes);
         }
     },
 

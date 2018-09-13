@@ -295,7 +295,7 @@ var Store = Class.inherit({
         this.fireEvent("push", [{ changes }]);
     },
 
-    _pushImpl: abstract,
+    _pushImpl: function(changes) { },
 
     /**
     * @name StoreMethods.remove
