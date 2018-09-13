@@ -674,7 +674,7 @@ var ListBase = CollectionWidget.inherit({
         }
     },
 
-    _dataSourceChangedHandler: function(newItems, e) {
+    _dataSourceChangedHandler: function(newItems) {
         if(!this._shouldAppendItems() && windowUtils.hasWindow()) {
             this._scrollView && this._scrollView.scrollTo(0);
         }

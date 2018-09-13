@@ -8,6 +8,7 @@ var Class = require("../core/class"),
     storeHelper = require("./store_helper"),
     queryByOptions = storeHelper.queryByOptions,
     Deferred = require("../core/utils/deferred").Deferred,
+
     storeImpl = {};
 
 /**
