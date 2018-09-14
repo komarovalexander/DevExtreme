@@ -1689,11 +1689,10 @@ QUnit.module("live update", {
 
         dataSource.store().push(this.changes);
         dataSource.store().push(this.changes);
-        dataSource.store().push(this.changes);
 
-        assert.equal(this.loadSpy.callCount, 1);
+        assert.equal(this.loadSpy.callCount, 0);
         this.clock.tick(100);
-        assert.equal(this.loadSpy.callCount, 2);
+        assert.equal(this.loadSpy.callCount, 1);
     });
 
     QUnit.test("load isn't called when reshapeOnPush is disabled", function(assert) {
@@ -1734,12 +1733,11 @@ QUnit.module("live update", {
 
         dataSource.store().push(this.changes);
         dataSource.store().push(this.changes);
-        dataSource.store().push(this.changes);
 
-        assert.equal(changedSpy.callCount, 1);
+        assert.equal(changedSpy.callCount, 0);
 
         this.clock.tick(100);
-        assert.equal(changedSpy.callCount, 2);
+        assert.equal(changedSpy.callCount, 1);
         assert.equal(changedSpy.lastCall.args[0].changes.length, 6);
     });
 });

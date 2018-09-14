@@ -342,17 +342,14 @@ function Throttle(func, timeout) {
         lastArgs;
     this.execute = function() {
         const context = this;
+        lastArgs = arguments;
         if(!timeoutId) {
-            func.apply(context, arguments);
             timeoutId = setTimeout(() => {
                 timeoutId = undefined;
                 if(lastArgs) {
                     func.call(context, lastArgs);
-                    lastArgs = undefined;
                 }
             }, timeout);
-        } else {
-            lastArgs = arguments;
         }
     };
     this.dispose = function() {

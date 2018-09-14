@@ -119,11 +119,10 @@ QUnit.module("Throttling", {
         for(var i = 0; i < 10; i++) {
             throttle.execute([i]);
         }
-        assert.equal(spy.callCount, 1);
+        assert.equal(spy.callCount, 0);
         this.clock.tick(100);
-        assert.equal(spy.callCount, 2);
-        assert.equal(spy.firstCall.args[0].length, 1);
-        assert.equal(spy.secondCall.args[0].length, 9);
+        assert.equal(spy.callCount, 1);
+        assert.equal(spy.firstCall.args[0].length, 10);
     });
 
     QUnit.test("dispose", function(assert) {
@@ -132,9 +131,9 @@ QUnit.module("Throttling", {
         for(var i = 0; i < 10; i++) {
             throttle.execute([i]);
         }
-        assert.equal(spy.callCount, 1);
+        assert.equal(spy.callCount, 0);
         throttle.dispose();
         this.clock.tick(100);
-        assert.equal(spy.callCount, 1);
+        assert.equal(spy.callCount, 0);
     });
 });
