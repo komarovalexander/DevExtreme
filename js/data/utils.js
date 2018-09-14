@@ -347,7 +347,7 @@ function Throttle(func, timeout) {
             timeoutId = setTimeout(() => {
                 timeoutId = undefined;
                 if(lastArgs) {
-                    func.apply(context, lastArgs);
+                    func.call(context, lastArgs);
                     lastArgs = undefined;
                 }
             }, timeout);
@@ -365,18 +365,18 @@ function ThrottleWithAggregation(func, timeout) {
         this.execute = func;
         this.dispose = noop;
     } else {
-        const context = this;
         let cache = [],
-            throttle = new Throttle(() => {
-                func.call(context, cache);
+            throttle = new Throttle(function() {
+                func.call(this, cache);
                 cache = [];
             }, timeout);
 
         this.execute = function(changes) {
+            const context = this;
             if(Array.isArray(changes)) {
                 cache.push(...changes);
             }
-            throttle.execute(cache);
+            throttle.execute.call(context, cache);
         };
 
         this.dispose = function() {
