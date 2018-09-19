@@ -171,11 +171,6 @@ function mapDataRespectingGrouping(items, mapper, groupInfo) {
     return mapRecursive(items, groupInfo ? dataUtils.normalizeSortingInfo(groupInfo).length : 0);
 }
 
-function getPlainItems(groupedItems, level) {
-    var plainItems = groupedItems.map(item => level > 0 ? getPlainItems(item.items, level - 1) : item);
-    return [].concat.apply([], plainItems);
-}
-
 var DataSource = Class.inherit({
     /**
     * @name DataSourceMethods.ctor
@@ -845,11 +840,11 @@ var DataSource = Class.inherit({
             }
 
             if(group) {
-                let groupLevel = Array.isArray(group) ? group.length : 1;
-                items = getPlainItems(items, groupLevel);
+                items = dataUtils.getPlainItems(items, group);
             }
 
             dataUtils.arrayHelper.push(items, changes, this.store());
+
             this.fireEvent("changed", [{ changes: changes }]);
         }
     },

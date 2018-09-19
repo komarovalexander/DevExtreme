@@ -12,6 +12,7 @@ var $ = require("../../core/renderer"),
     Guid = require("../../core/guid"),
     domUtils = require("../../core/utils/dom"),
     dataUtils = require("../../core/utils/data"),
+    arrayHelper = require("../../data/utils").arrayHelper,
     Widget = require("../widget/ui.widget"),
     eventUtils = require("../../events/utils"),
     pointerEvents = require("../../events/pointer"),
@@ -518,6 +519,37 @@ var CollectionWidget = Widget.inherit({
         this._renderItem(this._renderedItemsCount + index, itemData, null, $item);
     },
 
+    _findChangesInItems: function(values, previousValues, id, fields) {
+        var result = {
+            updated: [],
+            inserted: [],
+            removed: []
+        };
+        values = values.slice();
+        previousValues = previousValues.slice();
+
+        for(var i = 0; i < values.length; i++) {
+            let value = values[i];
+            let previousValue = previousValues.filter(item => item[id] === value[id])[0];
+            if(previousValue) {
+                for(var j = 0; j < fields.length; j++) {
+                    if(value[fields[j]] !== previousValue[fields[j]]) {
+                        result.updated.push({ value: value, previousValue: previousValue });
+                        break;
+                    }
+                }
+                previousValues.splice(previousValues.indexOf(previousValue), 1);
+            } else {
+                result.inserted.push(value);
+            }
+        }
+
+        previousValues.forEach((value) => {
+            result.removed.push(value);
+        });
+        return result;
+    },
+
     _optionChanged: function(args) {
         if(args.name === "items") {
             var matches = args.fullName.match(ITEM_PATH_REGEX);
@@ -536,8 +568,20 @@ var CollectionWidget = Widget.inherit({
             case "items":
             case "_itemAttributes":
             case "itemTemplateProperty":
-                this._cleanRenderedItems();
-                this._invalidate();
+                var changes = this._findChangesInItems(args.value, args.previousValue, this.getDataSource().key(), ["text"]);
+                changes.updated.forEach((item, index) => {
+                    this._renderItem(index, item.value, null, this._findItemElementByItem(item.previousValue));
+                });
+                changes.removed.forEach((item) => {
+                    this._findItemElementByItem(item).remove();
+                    this._renderedItemsCount--;
+                });
+                changes.inserted.forEach((item) => {
+                    this._renderedItemsCount++;
+                    this._renderItem(this._renderedItemsCount, item);
+                });
+                /*this._cleanRenderedItems();
+                this._invalidate();*/
                 break;
             case "dataSource":
                 this.option("items", []);
@@ -603,19 +647,29 @@ var CollectionWidget = Widget.inherit({
         this._startIndexForAppendedItems = null;
     },
 
-    _dataSourceChangedHandler: function(newItems) {
+    _dataSourceChangedHandler: function(newItems, e) {
         var items = this.option("items");
-        if(this._initialized && items && this._shouldAppendItems()) {
-            this._renderedItemsCount = items.length;
-            if(!this._isLastPage() || this._startIndexForAppendedItems !== -1) {
-                this.option().items = items.concat(newItems.slice(this._startIndexForAppendedItems));
-            }
+        this._renderedItemsCount = items.length;
+        if(this._initialized && items) {
+            let hasChanges = e && e.changes;
+            if(hasChanges) {
+                items = extend(true, [], this.option("items"));
+                let store = this.getDataSource().store();
+                arrayHelper.push(items, e.changes, store);
+                this.option("items", items);
+            } else if(this._shouldAppendItems()) {
+                if(!this._isLastPage() || this._startIndexForAppendedItems !== -1) {
+                    this.option().items = items.concat(extend(true, [], newItems.slice(this._startIndexForAppendedItems)));
+                }
 
-            this._forgetNextPageLoading();
-            this._refreshContent();
-            this._renderFocusTarget();
+                this._forgetNextPageLoading();
+                this._refreshContent();
+                this._renderFocusTarget();
+            } else {
+                this.option("items", extend(true, [], newItems));
+            }
         } else {
-            this.option("items", newItems);
+            this.option("items", extend(true, [], newItems));
         }
     },
 

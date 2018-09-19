@@ -678,7 +678,7 @@ var ListBase = CollectionWidget.inherit({
             this._scrollView && this._scrollView.scrollTo(0);
         }
 
-        this.callBase(newItems);
+        this.callBase.apply(this, arguments);
     },
 
     _refreshContent: function() {
