@@ -636,6 +636,10 @@ var CollectionWidget = Widget.inherit({
         this._startIndexForAppendedItems = null;
     },
 
+    _deleteItemElement: function(item) {
+        this._findItemElementByItem(item).remove();
+    },
+
     _modifyByChanges: function(items, changes) {
         var dataSource = this.getDataSource(),
             store = dataSource.store(),
@@ -655,16 +659,20 @@ var CollectionWidget = Widget.inherit({
                     }
                     break;
                 case "insert":
-                    arrayHelper.insertItemToArray(items, change.data, store);
-                    this._renderedItemsCount++;
-                    this._renderItem(this._renderedItemsCount, change.data);
+                    arrayHelper.insertItemToArray(items, change.data, store).done(()=>{
+                        this._renderedItemsCount++;
+                        this._renderItem(this._renderedItemsCount, change.data);
+                    });
                     break;
                 case "remove":
                     let removedItem = items.filter(item => item[key] === change.key)[0];
+                    var index = items.indexOf(removedItem);
                     if(removedItem) {
-                        this._findItemElementByItem(removedItem).remove();
+                        let $removedItemElement = this._findItemElementByItem(removedItem),
+                            deletedActionArgs = this._extendActionArgs($removedItemElement);
                         arrayHelper.removeItemFromArray(items, change.key, store);
                         this._renderedItemsCount--;
+                        this._deleteItemElement($removedItemElement, index, deletedActionArgs);
                     }
                     break;
             }
