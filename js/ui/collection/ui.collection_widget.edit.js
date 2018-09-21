@@ -804,19 +804,22 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         this._selection.deselect([key]);
     },
 
-    _deleteItemElement: function($item, index, deletedActionArgs) {
-        var changingOption = this._dataSource ? "dataSource" : "items";
-        this._updateSelectionAfterDelete(index);
-        this._updateIndicesAfterIndex(index);
-        this._editStrategy.deleteItemAtIndex(index);
-        this._simulateOptionChange(changingOption);
+    _fireDeleted: function($item, deletedActionArgs) {
         this._itemEventHandler($item, "onItemDeleted", deletedActionArgs, {
             beforeExecute: function() {
                 $item.detach();
             },
             excludeValidators: ["disabled", "readOnly"]
         });
+    },
 
+    _deleteItemElement: function($item, deletedActionArgs, index) {
+        var changingOption = this._dataSource ? "dataSource" : "items";
+        this._updateSelectionAfterDelete(index);
+        this._updateIndicesAfterIndex(index);
+        this._editStrategy.deleteItemAtIndex(index);
+        this._simulateOptionChange(changingOption);
+        this._fireDeleted($item, deletedActionArgs);
         this._renderEmptyMessage();
     },
 
@@ -829,6 +832,7 @@ var CollectionWidget = BaseCollectionWidget.inherit({
     */
     deleteItem: function(itemElement) {
         var that = this,
+
             deferred = new Deferred(),
             $item = this._editStrategy.getItemElement(itemElement),
             index = this._editStrategy.getNormalizedIndex(itemElement),
@@ -839,7 +843,7 @@ var CollectionWidget = BaseCollectionWidget.inherit({
                 $item.addClass(itemResponseWaitClass);
                 var deletedActionArgs = that._extendActionArgs($item);
                 that._deleteItemFromDS($item).done(function() {
-                    that._deleteItemElement($item, index, deletedActionArgs);
+                    that._deleteItemElement($item, deletedActionArgs, index);
                     that._tryRefreshLastPage().done(function() {
                         deferred.resolveWith(that);
                     });

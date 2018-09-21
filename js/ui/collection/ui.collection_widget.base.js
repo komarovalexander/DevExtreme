@@ -12,7 +12,7 @@ var $ = require("../../core/renderer"),
     Guid = require("../../core/guid"),
     domUtils = require("../../core/utils/dom"),
     dataUtils = require("../../core/utils/data"),
-    arrayHelper = require("../../data/utils").arrayHelper,
+    arrayUtils = require("../../data/array_utils"),
     getPlainItems = require("../../data/utils").getPlainItems,
     Widget = require("../widget/ui.widget"),
     eventUtils = require("../../events/utils"),
@@ -636,8 +636,9 @@ var CollectionWidget = Widget.inherit({
         this._startIndexForAppendedItems = null;
     },
 
-    _deleteItemElement: function(item) {
-        this._findItemElementByItem(item).remove();
+    _deleteItemElement: function($item, deletedActionArgs) {
+        $item.remove();
+        this._fireDeleted($item, deletedActionArgs);
     },
 
     _modifyByChanges: function(items, changes) {
@@ -654,12 +655,13 @@ var CollectionWidget = Widget.inherit({
                 case "update":
                     let changedItem = items.filter(item => item[key] === change.key)[0];
                     if(changedItem) {
-                        arrayHelper.updateArrayItem(items, change.key, change.data, store);
-                        this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
+                        arrayUtils.update(items, change.key, change.data, store).done(() => {
+                            this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
+                        });
                     }
                     break;
                 case "insert":
-                    arrayHelper.insertItemToArray(items, change.data, store).done(()=>{
+                    arrayUtils.insert(items, change.data, store).done(()=>{
                         this._renderedItemsCount++;
                         this._renderItem(this._renderedItemsCount, change.data);
                     });
@@ -670,9 +672,10 @@ var CollectionWidget = Widget.inherit({
                     if(removedItem) {
                         let $removedItemElement = this._findItemElementByItem(removedItem),
                             deletedActionArgs = this._extendActionArgs($removedItemElement);
-                        arrayHelper.removeItemFromArray(items, change.key, store);
-                        this._renderedItemsCount--;
-                        this._deleteItemElement($removedItemElement, index, deletedActionArgs);
+                        arrayUtils.remove(items, change.key, store).done(() => {
+                            this._renderedItemsCount--;
+                            this._deleteItemElement($removedItemElement, deletedActionArgs, index);
+                        });
                     }
                     break;
             }
