@@ -212,8 +212,8 @@ var DataSource = Class.inherit({
         * @default undefined
         */
         var onPushHandler = options.pushAggregationTimeout
-            ? dataUtils.throttleChanges(this._onPush, options.pushAggregationTimeout).bind(this)
-            : this._onPush.bind(this);
+            ? dataUtils.throttleChanges(this._onPush, options.pushAggregationTimeout)
+            : this._onPush;
 
         this._onPushHandler = (changes) => {
             this._aggregationTimeoutId = onPushHandler.call(this, changes);
@@ -844,7 +844,7 @@ var DataSource = Class.inherit({
                 items = dataUtils.getPlainItems(items, group);
             }
 
-            arrayUtils.push(items, changes, this.store());
+            arrayUtils.applyBatch(this.store(), items, changes);
 
             this.fireEvent("changed", [{ changes: changes }]);
         }
