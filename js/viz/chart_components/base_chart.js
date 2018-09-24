@@ -607,7 +607,9 @@ var BaseChart = BaseWidget.inherit({
         that._renderer.stopAllAnimations(true);
         _setCanvasValues(that._canvas);
         that._cleanGroups();
+        const startTime = new Date();
         that._renderElements(drawOptions);
+        that._lastRenderingTime = new Date() - startTime;
     },
 
     _renderElements: function(drawOptions) {
@@ -1182,8 +1184,6 @@ var BaseChart = BaseWidget.inherit({
         }
         return drawElements;
     },
-
-    _resetZoom: noop,
 
     _dataIsReady: function() {
         // In order to support scenario when chart is created without "dataSource" and it is considered

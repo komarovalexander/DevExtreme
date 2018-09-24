@@ -45,9 +45,10 @@ class LessMetadataPreCompilerPlugin {
 }
 
 class LessMetadataPostCompilerPlugin {
-    constructor(compiledMetadata, swatchSelector) {
+    constructor(compiledMetadata, swatchSelector, colorScheme) {
         this._metadata = compiledMetadata;
         this.swatchSelector = swatchSelector;
+        this.colorScheme = colorScheme;
     }
 
     process(css) {
@@ -62,11 +63,13 @@ class LessMetadataPostCompilerPlugin {
         });
 
         if(this.swatchSelector) {
-            let escapedSelector = this.swatchSelector.replace(".", "\\.");
-            let customStylesRegex = new RegExp("(" + escapedSelector + "\\s+)(\\.dx-viewport\\.dx-theme-(?:.*?)\\s)", "g");
+            const escapedSelector = this.swatchSelector.replace(".", "\\.");
+            const customStylesRegex = new RegExp("(" + escapedSelector + "\\s+)(\\.dx-viewport\\.dx-theme-(?:.*?)\\s)", "g");
+            const themeMarkerRegex = /(\.dx-theme-marker\s*{\s*font-family:\s*['"]dx\..*?\.)(.*)(['"])/g;
             css = css
                 .replace(/\s\.dx-theme-(?:.*?)-typography/g, "")
-                .replace(customStylesRegex, "$2$1");
+                .replace(customStylesRegex, "$2$1")
+                .replace(themeMarkerRegex, "$1" + this.colorScheme + "$3");
 
         }
 
@@ -92,6 +95,7 @@ class LessTemplateLoader {
         this.readFile = config.reader;
         this.lessCompiler = config.lessCompiler;
         this.swatchSelector = config.makeSwatch ? SWATCH_SELECTOR_PREFIX + config.outColorScheme : "";
+        this.outColorScheme = config.outColorScheme;
         this.version = version;
     }
 
@@ -129,7 +133,7 @@ class LessTemplateLoader {
                     }
                 }, {
                     install: (less, pluginManager) => {
-                        pluginManager.addPostProcessor(new LessMetadataPostCompilerPlugin(compiledMetadata, this.swatchSelector));
+                        pluginManager.addPostProcessor(new LessMetadataPostCompilerPlugin(compiledMetadata, this.swatchSelector, this.outColorScheme));
                     }
                 }]
             }).then(output => {
@@ -216,10 +220,10 @@ class LessTemplateLoader {
             if(version === 3) {
                 this.compileLess(metadataVariables + customLessContent, {}, bootstrapMetadata).then(processDxTheme);
             } else if(version === 4) {
-                let defaultBootstrapVariablesUrl = "node_modules/bootstrap/scss/_variables.scss",
-                    defaultBootstrapFunctionsUrl = "node_modules/bootstrap/scss/_functions.scss";
+                let defaultBootstrapVariablesUrl = "bootstrap/scss/_variables.scss",
+                    defaultBootstrapFunctionsUrl = "bootstrap/scss/_functions.scss";
 
-                Promise.all([this.readFile(defaultBootstrapFunctionsUrl, true), this.readFile(defaultBootstrapVariablesUrl, true)])
+                Promise.all([this.readFile(defaultBootstrapFunctionsUrl), this.readFile(defaultBootstrapVariablesUrl)])
                     .then(files => {
                         this.compileScss(files[0] + customLessContent + files[1] + metadataVariables, bootstrapMetadata).then(processDxTheme);
                     }, () => {
@@ -235,7 +239,7 @@ class LessTemplateLoader {
     };
 
     _loadLessByFileName(fileName) {
-        return this.readFile(fileName, true);
+        return this.readFile("devextreme-themebuilder/" + fileName);
     };
 
     _makeInfoHeader() {

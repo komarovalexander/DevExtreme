@@ -12,9 +12,6 @@ var Class = require("../core/class"),
     XML_TAG = "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
     GROUP_SHEET_PR_XML = "<sheetPr><outlinePr summaryBelow=\"0\"/></sheetPr>",
     SINGLE_SHEET_PR_XML = "<sheetPr/>",
-    BASE_STYLE_XML1 = "<fonts count=\"2\"><font><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/><family val=\"2\"/>" +
-                     "<scheme val=\"minor\"/></font><font><b/><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/>" +
-                     "<family val=\"2\"/><scheme val=\"minor\"/></font></fonts>",
     BASE_STYLE_XML2 = "<borders count=\"1\"><border><left style=\"thin\"><color rgb=\"FFD3D3D3\"/></left><right style=\"thin\">" +
                      "<color rgb=\"FFD3D3D3\"/></right><top style=\"thin\"><color rgb=\"FFD3D3D3\"/></top><bottom style=\"thin\"><color rgb=\"FFD3D3D3\"/>" +
                      "</bottom></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>",
@@ -154,7 +151,7 @@ var ExcelCreator = Class.inherit({
 
     _prepareValue: function(rowIndex, cellIndex) {
         var dataProvider = this._dataProvider,
-            value = dataProvider.getCellValue(rowIndex, cellIndex),
+            { value, cellSourceData } = dataProvider.getCellData(rowIndex, cellIndex) || {},
             type = this._getDataType(dataProvider.getCellType(rowIndex, cellIndex));
 
         if(type === "d" && !typeUtils.isDate(value)) {
@@ -174,7 +171,8 @@ var ExcelCreator = Class.inherit({
 
         return {
             value: value,
-            type: type
+            type: type,
+            cellSourceData: cellSourceData
         };
     },
 
@@ -197,16 +195,19 @@ var ExcelCreator = Class.inherit({
             for(cellIndex = 0; cellIndex !== cellsLength; cellIndex++) {
                 cellData = that._prepareValue(rowIndex, cellIndex);
                 let cellStyleId = dataProvider.getStyleId(rowIndex, cellIndex);
-                const xlsxCell = {
-                    style: that._styleArray[cellStyleId],
-                };
-                if(dataProvider.customizeXlsxCell) {
-                    dataProvider.customizeXlsxCell({
-                        xlsxCell
+                if(dataProvider.onXlsxCellPrepared) {
+                    const xlsxCell = {
+                        style: extend(true, {}, that._styleArray[cellStyleId]),
+                        // value: cellData.value,
+                        // type: cellData.type,
+                        // xlsxFile
+                    };
+                    dataProvider.onXlsxCellPrepared({
+                        xlsxCell,
+                        cellSourceData: cellData.cellSourceData
                     });
+                    cellStyleId = this._xlsxFile.registerCellFormat(xlsxCell.style);
                 }
-                cellStyleId = this._xlsxFile.registerCellFormat(xlsxCell.style);
-
                 cellsArray.push({
                     style: cellStyleId,
                     value: cellData.value,
@@ -238,10 +239,17 @@ var ExcelCreator = Class.inherit({
             that._colsArray.push(that._calculateWidth(column.width));
         });
 
+        const fonts = [
+            { size: 11, color: { theme: 1 }, name: 'Calibri', family: 2, scheme: 'minor', bold: false },
+            { size: 11, color: { theme: 1 }, name: 'Calibri', family: 2, scheme: 'minor', bold: true }
+        ];
+        this._xlsxFile.registerFont(fonts[0]);
+        this._xlsxFile.registerFont(fonts[1]);
+
         styles.forEach(function(style) {
             const formatID = that._appendFormat(style.format, style.dataType);
             that._styleArray.push({
-                fontId: Number(!!style.bold),
+                font: fonts[Number(!!style.bold)],
                 numberFormatId: typeUtils.isDefined(formatID) ? Number(formatID) + CUSTOM_FORMAT_START_INDEX - 1 : 0,
                 alignment: {
                     vertical: "top",
@@ -310,7 +318,7 @@ var ExcelCreator = Class.inherit({
         }
 
         XML = XML + that._getXMLTag("numFmts", [{ name: "count", value: that._styleFormat.length }], that._styleFormat.join(""));
-        XML = XML + BASE_STYLE_XML1;
+        XML = XML + this._xlsxFile.generateFontsXml();
         XML = XML + this._xlsxFile.generateFillsXml();
         XML = XML + BASE_STYLE_XML2;
 
@@ -551,7 +559,7 @@ var ExcelCreator = Class.inherit({
 
     _checkZipState: function() {
         if(!this._zip) {
-            throw errors.Error("E1041");
+            throw errors.Error("E1041", "JSZip");
         }
     },
 
@@ -606,7 +614,6 @@ exports.__internals = {
     SHAREDSTRING_FILE_NAME: SHAREDSTRING_FILE_NAME,
     GROUP_SHEET_PR_XML: GROUP_SHEET_PR_XML,
     SINGLE_SHEET_PR_XML: SINGLE_SHEET_PR_XML,
-    BASE_STYLE_XML1: BASE_STYLE_XML1,
     BASE_STYLE_XML2: BASE_STYLE_XML2,
     XML_TAG: XML_TAG
 };
