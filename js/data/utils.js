@@ -275,7 +275,7 @@ function getPlainItems(groupedItems, group) {
             var plainItems = groupedItems.map(item => level > 0 ? getPlainItemsWithLevel(item.items, level - 1) : item);
             return [].concat.apply([], plainItems);
         };
-    return getPlainItemsWithLevel(groupedItems, groupLevel);
+    return getPlainItemsWithLevel(groupedItems, groupLevel - 1);
 }
 
 /**

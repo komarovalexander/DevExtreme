@@ -655,13 +655,13 @@ var CollectionWidget = Widget.inherit({
                 case "update":
                     let changedItem = items.filter(item => item[key] === change.key)[0];
                     if(changedItem) {
-                        arrayUtils.update(items, change.key, change.data, store).done(() => {
+                        arrayUtils.update(store, items, change.key, change.data).done(() => {
                             this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
                         });
                     }
                     break;
                 case "insert":
-                    arrayUtils.insert(items, change.data, store).done(()=>{
+                    arrayUtils.insert(store, items, change.data).done(()=>{
                         this._renderedItemsCount++;
                         this._renderItem(this._renderedItemsCount, change.data);
                     });
@@ -672,7 +672,7 @@ var CollectionWidget = Widget.inherit({
                     if(removedItem) {
                         let $removedItemElement = this._findItemElementByItem(removedItem),
                             deletedActionArgs = this._extendActionArgs($removedItemElement);
-                        arrayUtils.remove(items, change.key, store).done(() => {
+                        arrayUtils.remove(store, items, change.key).done(() => {
                             this._renderedItemsCount--;
                             this._deleteItemElement($removedItemElement, deletedActionArgs, index);
                         });
