@@ -53,7 +53,13 @@ QUnit.module("live update without grouping", {
 
     QUnit.test("update item when grouping is enabled", function(assert) {
         var store = this.createList({
-            load: () => [{ a: "Item 0", id: 0, type: "a" }, { a: "Item 1", id: 1, type: "b" }, { a: "Item 2", id: 0, type: "a" }],
+            load: () => [{
+                key: "a",
+                items: [{ a: "Item 0", id: 0, type: "a" }, { a: "Item 2", id: 0, type: "a" }]
+            }, {
+                key: "b",
+                items: [{ a: "Item 1", id: 1, type: "b" }]
+            }],
             group: "type"
         }).getDataSource().store();
         var updatedItem = { a: "Item 0 Updated", id: 0, type: "a" };
