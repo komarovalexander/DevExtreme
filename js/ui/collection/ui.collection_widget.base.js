@@ -5,7 +5,6 @@ var $ = require("../../core/renderer"),
     domAdapter = require("../../core/dom_adapter"),
     typeUtils = require("../../core/utils/type"),
     isPlainObject = typeUtils.isPlainObject,
-    isObject = typeUtils.isObject,
     when = require("../../core/utils/deferred").when,
     extend = require("../../core/utils/extend").extend,
     inArray = require("../../core/utils/array").inArray,
@@ -579,12 +578,7 @@ var CollectionWidget = Widget.inherit({
                     store = dataSource.store();
 
                 var getKey = function(item) {
-                    var key = store.keyOf(item);
-                    return key;
-                    if(isObject(key)) {
-                        key = JSON.stringify(key);
-                    }
-                    return key;
+                    return store.keyOf(item);
                 };
 
                 var isItemEquals = function(item1, item2) {
@@ -636,6 +630,7 @@ var CollectionWidget = Widget.inherit({
             case "selectOnFocus":
             case "loopItemFocus":
             case "focusOnSelectedItem":
+            case "updateChangesOnly":
                 break;
             case "focusedElement":
                 this._removeFocusedItem(args.previousValue);
@@ -687,22 +682,26 @@ var CollectionWidget = Widget.inherit({
         changes.forEach(change => {
             switch(change.type) {
                 case "update":
-                    let changedItem = items[arrayUtils.indexByKey(store, items, change.key)];
-                    if(changedItem) {
-                        arrayUtils.update(store, items, change.key, change.data).done(() => {
-                            this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(change.oldItem || changedItem));
-                        });
+                    if(change.oldItem) {
+                        this._renderItem(change.index, change.data, null, this._findItemElementByItem(change.oldItem));
+                    } else {
+                        let changedItem = items[arrayUtils.indexByKey(store, items, change.key)];
+                        if(changedItem) {
+                            arrayUtils.update(store, items, change.key, change.data).done(() => {
+                                this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
+                            });
+                        }
                     }
                     break;
                 case "insert":
-                    arrayUtils.insert(store, items, change.data).done(()=>{
+                    when(change.index || arrayUtils.insert(store, items, change.data)).done(()=>{
                         this._renderedItemsCount++;
                         this._renderItem(this._renderedItemsCount, change.data);
                     });
                     break;
                 case "remove":
-                    let index = arrayUtils.indexByKey(store, items, change.key),
-                        removedItem = items[index];
+                    let index = change.index || arrayUtils.indexByKey(store, items, change.key),
+                        removedItem = change.oldItem || items[index];
                     if(removedItem) {
                         let $removedItemElement = this._findItemElementByItem(removedItem),
                             deletedActionArgs = this._extendActionArgs($removedItemElement);

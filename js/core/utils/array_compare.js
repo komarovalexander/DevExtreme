@@ -1,3 +1,5 @@
+import { isObject } from "./type";
+
 var findChanges = function(oldItems, newItems, getKey, isItemEquals) {
     var oldIndexByKey = {},
         newIndexByKey = {},
@@ -5,20 +7,28 @@ var findChanges = function(oldItems, newItems, getKey, isItemEquals) {
         removeCount = 0,
         result = [];
 
-    oldItems.forEach(function(item, index) {
+    var getKeyWrapper = function(item) {
         var key = getKey(item);
+        if(isObject(key)) {
+            key = JSON.stringify(key);
+        }
+        return key;
+    };
+
+    oldItems.forEach(function(item, index) {
+        var key = getKeyWrapper(item);
         oldIndexByKey[key] = index;
     });
 
     newItems.forEach(function(item, index) {
-        var key = getKey(item);
+        var key = getKeyWrapper(item);
         newIndexByKey[key] = index;
     });
 
     var itemCount = Math.max(oldItems.length, newItems.length);
     for(var index = 0; index < itemCount + addedCount; index++) {
         var newItem = newItems[index],
-            key = getKey(newItem),
+            key = getKeyWrapper(newItem),
             oldIndex = oldIndexByKey[key],
             oldItem = oldItems[oldIndex],
             newIndex = index - addedCount + removeCount;
@@ -27,7 +37,7 @@ var findChanges = function(oldItems, newItems, getKey, isItemEquals) {
             if(oldItems[newIndex]) {
                 result.push({
                     type: "remove",
-                    key: getKey(oldItem),
+                    key: getKey(oldItems[newIndex]),
                     index: index,
                     oldItem: oldItems[newIndex]
                 });
@@ -46,20 +56,20 @@ var findChanges = function(oldItems, newItems, getKey, isItemEquals) {
                 result.push({
                     type: "update",
                     data: newItem,
-                    key: key,
+                    key: getKey(newItem),
                     index: index,
                     oldItem: oldItem
                 });
             }
         } else {
             oldItem = oldItems[newIndex];
-            key = getKey(oldItem);
+            key = getKeyWrapper(oldItem);
             newItem = newItems[newIndexByKey[key]];
 
             if(oldItem && !newItem) {
                 result.push({
                     type: "remove",
-                    key: key,
+                    key: getKey(oldItem),
                     index: index,
                     oldItem: oldItem
                 });
