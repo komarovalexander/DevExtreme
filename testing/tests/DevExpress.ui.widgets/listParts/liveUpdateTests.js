@@ -3,11 +3,11 @@ import { DataSource } from "data/data_source/data_source";
 
 import "ui/list";
 
-QUnit.module("live update", {
+QUnit.module("live update - push", {
     beforeEach: function() {
         this.itemRenderedSpy = sinon.spy();
         this.itemDeletedSpy = sinon.spy();
-        this.createList = (dataSourceOptions) => {
+        this.createList = (dataSourceOptions, updateChangesOnly) => {
             var dataSource = new DataSource($.extend({
                 paginate: false,
                 load: () => [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }],
@@ -16,6 +16,7 @@ QUnit.module("live update", {
 
             return $("#templated-list").dxList({
                 dataSource: dataSource,
+                updateChangesOnly: updateChangesOnly,
                 onContentReady: (e) => {
                     e.component.option("onItemRendered", this.itemRenderedSpy);
                     e.component.option("onItemDeleted", this.itemDeletedSpy);
@@ -100,4 +101,65 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData, pushData[0].data, "check first updated item");
         assert.deepEqual(this.itemRenderedSpy.lastCall.args[0].itemData, pushData[1].data, "check last updated item");
     });
+
+    QUnit.test("refreshChangesOnly, update item instance", function(assert) {
+        var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
+        var dataSource = this.createList({
+            load: () => data,
+            key: "id"
+        }, true).getDataSource();
+
+        data[0] = { a: "Item Updated", id: 0 };
+        dataSource.load();
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
+    });
+
+    QUnit.test("refreshChangesOnly, update item instance with composite key", function(assert) {
+        var data = [{ a: "Item 0", id: 0, key: 1 }, { a: "Item 1", id: 0, key: 0 }];
+        var dataSource = this.createList({
+            load: () => data,
+            key: ["id", "key"]
+        }, true).getDataSource();
+
+        data[0] = { a: "Item Updated", id: 0, key: 1 };
+        dataSource.load();
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
+    });
 });
+
+/*
+QUnit.module("live update - refreshChangesOnly", {
+    beforeEach: function() {
+        this.itemRenderedSpy = sinon.spy();
+        this.itemDeletedSpy = sinon.spy();
+        var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
+        this.createList = (dataSourceOptions) => {
+            var dataSource = new DataSource($.extend({
+                data: data,
+                key: "id"
+            }, dataSourceOptions));
+
+            return $("#templated-list").dxList({
+                dataSource: dataSource,
+                onContentReady: (e) => {
+                    e.component.option("onItemRendered", this.itemRenderedSpy);
+                    e.component.option("onItemDeleted", this.itemDeletedSpy);
+                }
+            }).dxList("instance");
+        };
+    }
+}, function() {
+    QUnit.test("update item", function(assert) {
+        var store = this.createList().getDataSource().store();
+
+        var pushData = [{ type: "update", data: { a: "Item 0 Updated", id: 0 }, key: 0 }];
+        store.push(pushData);
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after push");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData, pushData[0].data, "check updated item");
+    });
+}); */

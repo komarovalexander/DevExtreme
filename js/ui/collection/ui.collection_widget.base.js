@@ -3,7 +3,9 @@ var $ = require("../../core/renderer"),
     commonUtils = require("../../core/utils/common"),
     getPublicElement = require("../../core/utils/dom").getPublicElement,
     domAdapter = require("../../core/dom_adapter"),
-    isPlainObject = require("../../core/utils/type").isPlainObject,
+    typeUtils = require("../../core/utils/type"),
+    isPlainObject = typeUtils.isPlainObject,
+    isObject = typeUtils.isObject,
     when = require("../../core/utils/deferred").when,
     extend = require("../../core/utils/extend").extend,
     inArray = require("../../core/utils/array").inArray,
@@ -24,7 +26,8 @@ var $ = require("../../core/renderer"),
     holdEvent = require("../../events/hold"),
     clickEvent = require("../../events/click"),
     contextMenuEvent = require("../../events/contextmenu"),
-    BindableTemplate = require("../widget/bindable_template");
+    BindableTemplate = require("../widget/bindable_template"),
+    findChanges = require("../../core/utils/array_compare").findChanges;
 
 var COLLECTION_CLASS = "dx-collection",
     ITEM_CLASS = "dx-item",
@@ -106,6 +109,13 @@ var CollectionWidget = Widget.inherit({
             * @hidden
             */
             selectOnFocus: false,
+
+            /**
+            * @name CollectionWidgetOptions.updateChangesOnly
+            * @type boolean
+            * @hidden
+            */
+            updateChangesOnly: false,
 
             /**
             * @name CollectionWidgetOptions.loopItemFocus
@@ -563,6 +573,31 @@ var CollectionWidget = Widget.inherit({
                 this._itemOptionChanged(item, property, args.value, args.previousValue);
                 return;
             }
+
+            if(this.option("updateChangesOnly")) {
+                var dataSource = this.getDataSource(),
+                    store = dataSource.store();
+
+                var getKey = function(item) {
+                    var key = store.keyOf(item);
+                    return key;
+                    if(isObject(key)) {
+                        key = JSON.stringify(key);
+                    }
+                    return key;
+                };
+
+                var isItemEquals = function(item1, item2) {
+                    return JSON.stringify(item1) === JSON.stringify(item2);
+                };
+
+                var result = findChanges(args.previousValue, args.value.slice(), getKey, isItemEquals);
+
+                if(result) {
+                    this._modifyByChanges(this.option("items"), result);
+                    return;
+                }
+            }
         }
 
         switch(args.name) {
@@ -644,7 +679,6 @@ var CollectionWidget = Widget.inherit({
     _modifyByChanges: function(items, changes) {
         var dataSource = this.getDataSource(),
             store = dataSource.store(),
-            key = dataSource.key(),
             group = dataSource.group();
 
         if(group) {
@@ -653,10 +687,10 @@ var CollectionWidget = Widget.inherit({
         changes.forEach(change => {
             switch(change.type) {
                 case "update":
-                    let changedItem = items.filter(item => item[key] === change.key)[0];
+                    let changedItem = items[arrayUtils.indexByKey(store, items, change.key)];
                     if(changedItem) {
                         arrayUtils.update(store, items, change.key, change.data).done(() => {
-                            this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
+                            this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(change.oldItem || changedItem));
                         });
                     }
                     break;
@@ -667,8 +701,8 @@ var CollectionWidget = Widget.inherit({
                     });
                     break;
                 case "remove":
-                    let removedItem = items.filter(item => item[key] === change.key)[0];
-                    var index = items.indexOf(removedItem);
+                    let index = arrayUtils.indexByKey(store, items, change.key),
+                        removedItem = items[index];
                     if(removedItem) {
                         let $removedItemElement = this._findItemElementByItem(removedItem),
                             deletedActionArgs = this._extendActionArgs($removedItemElement);
