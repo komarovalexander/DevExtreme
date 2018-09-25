@@ -529,37 +529,6 @@ var CollectionWidget = Widget.inherit({
         this._renderItem(this._renderedItemsCount + index, itemData, null, $item);
     },
 
-    _findChangesInItems: function(values, previousValues, id, fields) {
-        var result = {
-            updated: [],
-            inserted: [],
-            removed: []
-        };
-        values = values.slice();
-        previousValues = previousValues.slice();
-
-        for(var i = 0; i < values.length; i++) {
-            let value = values[i];
-            let previousValue = previousValues.filter(item => item[id] === value[id])[0];
-            if(previousValue) {
-                for(var j = 0; j < fields.length; j++) {
-                    if(value[fields[j]] !== previousValue[fields[j]]) {
-                        result.updated.push({ value: value, previousValue: previousValue });
-                        break;
-                    }
-                }
-                previousValues.splice(previousValues.indexOf(previousValue), 1);
-            } else {
-                result.inserted.push(value);
-            }
-        }
-
-        previousValues.forEach((value) => {
-            result.removed.push(value);
-        });
-        return result;
-    },
-
     _optionChanged: function(args) {
         if(args.name === "items") {
             var matches = args.fullName.match(ITEM_PATH_REGEX);
