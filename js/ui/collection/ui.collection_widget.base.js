@@ -576,20 +576,21 @@ var CollectionWidget = Widget.inherit({
             if(this.option("repaintChangesOnly")) {
                 var dataSource = this.getDataSource(),
                     store = dataSource.store();
+                if(store) {
+                    var getKey = function(item) {
+                        return store.keyOf(item);
+                    };
 
-                var getKey = function(item) {
-                    return store.keyOf(item);
-                };
+                    var isItemEquals = function(item1, item2) {
+                        return JSON.stringify(item1) === JSON.stringify(item2);
+                    };
 
-                var isItemEquals = function(item1, item2) {
-                    return JSON.stringify(item1) === JSON.stringify(item2);
-                };
+                    var result = findChanges(args.previousValue, args.value.slice(), getKey, isItemEquals);
 
-                var result = findChanges(args.previousValue, args.value.slice(), getKey, isItemEquals);
-
-                if(result) {
-                    this._modifyByChanges(this.option("items"), result);
-                    return;
+                    if(result) {
+                        this._modifyByChanges(this.option("items"), result);
+                        return;
+                    }
                 }
             }
         }
@@ -602,7 +603,6 @@ var CollectionWidget = Widget.inherit({
                 this._invalidate();
                 break;
             case "dataSource":
-                this.option("items", []);
                 this._refreshDataSource();
                 this._renderEmptyMessage();
                 break;
