@@ -110,11 +110,11 @@ var CollectionWidget = Widget.inherit({
             selectOnFocus: false,
 
             /**
-            * @name CollectionWidgetOptions.updateChangesOnly
+            * @name CollectionWidgetOptions.refreshChangesOnly
             * @type boolean
             * @hidden
             */
-            updateChangesOnly: false,
+            refreshChangesOnly: false,
 
             /**
             * @name CollectionWidgetOptions.loopItemFocus
@@ -573,7 +573,7 @@ var CollectionWidget = Widget.inherit({
                 return;
             }
 
-            if(this.option("updateChangesOnly")) {
+            if(this.option("refreshChangesOnly")) {
                 var dataSource = this.getDataSource(),
                     store = dataSource.store();
 
@@ -630,7 +630,7 @@ var CollectionWidget = Widget.inherit({
             case "selectOnFocus":
             case "loopItemFocus":
             case "focusOnSelectedItem":
-            case "updateChangesOnly":
+            case "refreshChangesOnly":
                 break;
             case "focusedElement":
                 this._removeFocusedItem(args.previousValue);

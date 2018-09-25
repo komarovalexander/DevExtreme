@@ -7,7 +7,7 @@ QUnit.module("live update", {
     beforeEach: function() {
         this.itemRenderedSpy = sinon.spy();
         this.itemDeletedSpy = sinon.spy();
-        this.createList = (dataSourceOptions, updateChangesOnly) => {
+        this.createList = (dataSourceOptions, refreshChangesOnly) => {
             var dataSource = new DataSource($.extend({
                 paginate: false,
                 load: () => [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }],
@@ -16,7 +16,7 @@ QUnit.module("live update", {
 
             return $("#templated-list").dxList({
                 dataSource: dataSource,
-                updateChangesOnly: updateChangesOnly,
+                refreshChangesOnly: refreshChangesOnly,
                 onContentReady: (e) => {
                     e.component.option("onItemRendered", this.itemRenderedSpy);
                     e.component.option("onItemDeleted", this.itemDeletedSpy);
