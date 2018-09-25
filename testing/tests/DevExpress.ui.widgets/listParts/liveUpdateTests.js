@@ -7,7 +7,7 @@ QUnit.module("live update", {
     beforeEach: function() {
         this.itemRenderedSpy = sinon.spy();
         this.itemDeletedSpy = sinon.spy();
-        this.createList = (dataSourceOptions, refreshChangesOnly) => {
+        this.createList = (dataSourceOptions, repaintChangesOnly) => {
             var dataSource = new DataSource($.extend({
                 paginate: false,
                 load: () => [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }],
@@ -16,7 +16,7 @@ QUnit.module("live update", {
 
             return $("#templated-list").dxList({
                 dataSource: dataSource,
-                refreshChangesOnly: refreshChangesOnly,
+                repaintChangesOnly: repaintChangesOnly,
                 onContentReady: (e) => {
                     e.component.option("onItemRendered", this.itemRenderedSpy);
                     e.component.option("onItemDeleted", this.itemDeletedSpy);
@@ -102,7 +102,7 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemRenderedSpy.lastCall.args[0].itemData, pushData[1].data, "check last updated item");
     });
 
-    QUnit.test("refreshChangesOnly, update item instance", function(assert) {
+    QUnit.test("repaintChangesOnly, update item instance", function(assert) {
         var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
         var dataSource = this.createList({
             load: () => data,
@@ -116,7 +116,7 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
     });
 
-    QUnit.test("refreshChangesOnly, delete item", function(assert) {
+    QUnit.test("repaintChangesOnly, delete item", function(assert) {
         var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
         var dataSource = this.createList({
             load: () => data,
@@ -131,7 +131,7 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemDeletedSpy.firstCall.args[0].itemData.a, "Item 0", "check deleted item");
     });
 
-    QUnit.test("refreshChangesOnly, add item", function(assert) {
+    QUnit.test("repaintChangesOnly, add item", function(assert) {
         var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
         var dataSource = this.createList({
             load: () => data,
@@ -145,7 +145,7 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item 2", "check appended item");
     });
 
-    QUnit.test("refreshChangesOnly, update item instance with composite key", function(assert) {
+    QUnit.test("repaintChangesOnly, update item instance with composite key", function(assert) {
         var data = [{ a: "Item 0", id: 0, key: 1 }, { a: "Item 1", id: 0, key: 0 }];
         var dataSource = this.createList({
             load: () => data,
