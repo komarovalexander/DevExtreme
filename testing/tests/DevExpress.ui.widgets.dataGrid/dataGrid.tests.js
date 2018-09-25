@@ -2276,7 +2276,7 @@ QUnit.test("Last column width should be reseted during column resizing to left w
 
     // assert
     assert.strictEqual(instance.columnOption(0, "width"), 80);
-    assert.strictEqual(instance.columnOption(0, "visibleWidth"), undefined);
+    assert.strictEqual(instance.columnOption(0, "visibleWidth"), null);
     assert.strictEqual(instance.columnOption(1, "width"), 100);
     assert.strictEqual(instance.columnOption(1, "visibleWidth"), undefined);
     assert.strictEqual(instance.columnOption(2, "width"), 100);
@@ -2332,7 +2332,7 @@ QUnit.test("Last column width should not be reseted during column resizing to ri
 
     // assert
     assert.strictEqual(instance.columnOption(0, "width"), 120);
-    assert.strictEqual(instance.columnOption(0, "visibleWidth"), undefined);
+    assert.strictEqual(instance.columnOption(0, "visibleWidth"), null);
     assert.strictEqual(instance.columnOption(1, "width"), 100);
     assert.strictEqual(instance.columnOption(1, "visibleWidth"), undefined);
     assert.strictEqual(instance.columnOption(2, "width"), 100);
@@ -3952,6 +3952,38 @@ QUnit.testInActiveWindow("Focus search textbox after change search text", functi
     var $search = $($(dataGrid.$element()).find(".dx-datagrid-search-panel"));
 
     assert.ok($search.hasClass("dx-state-focused"));
+    clock.restore();
+});
+
+QUnit.testInActiveWindow("Focus component with focusedRowEnabled and focusedRowIndex should focus the focused row", function(assert) {
+    // arrange
+    var clock = sinon.useFakeTimers(),
+        focusedRowElement,
+        dataGrid = createDataGrid({
+            loadingTimeout: undefined,
+            dataSource: {
+                store: [
+                    { field1: "1", field2: "2" },
+                    { field1: "2", field2: "3" },
+                    { field1: "4", field2: "5" }
+                ]
+            },
+            focusedRowEnabled: true,
+            focusedRowIndex: 1
+        });
+
+    clock.tick();
+
+    // act
+    dataGrid.focus();
+    clock.tick();
+
+    // assert
+    focusedRowElement = dataGrid.getView("rowsView").getRow(1);
+    assert.ok(focusedRowElement.hasClass("dx-row-focused"), "Focused row is row 1");
+    assert.equal(focusedRowElement.attr("tabindex"), 0, "Focused row has tabindex");
+    assert.ok(focusedRowElement.is(":focus"), "Focused row has focus");
+
     clock.restore();
 });
 
@@ -5632,6 +5664,42 @@ QUnit.test("Scroll to third page if expanded grouping is enabled and scrolling m
     assert.strictEqual(dataGrid.getVisibleRows()[0].data.key, 1);
     assert.strictEqual(dataGrid.getVisibleRows()[40].data.key, 21);
     assert.strictEqual(dataGrid.getVisibleRows()[80].data.key, 41);
+});
+
+QUnit.test("Resize command column", function(assert) {
+    // arrange
+    var dataGrid = $("#dataGrid").dxDataGrid({
+            width: 470,
+            selection: { mode: "multiple", showCheckBoxesMode: "always" },
+            commonColumnSettings: {
+                allowResizing: true
+            },
+            loadingTimeout: undefined,
+            dataSource: [{}, {}, {}, {}],
+            columns: [{ type: "selection" }, { dataField: "firstName", width: 100 }, { dataField: "lastName", width: 100 }, { dataField: "room", width: 100 }, { dataField: "birthDay", width: 100 }]
+        }),
+        instance = dataGrid.dxDataGrid("instance"),
+        headersCols,
+        resizeController;
+
+    // act
+    resizeController = instance.getController("columnsResizer");
+    resizeController._isResizing = true;
+    resizeController._targetPoint = { columnIndex: 0 };
+    resizeController._setupResizingInfo(-9930);
+    resizeController._moveSeparator({
+        event: {
+            data: resizeController,
+            type: "mousemove",
+            pageX: -9850,
+            preventDefault: commonUtils.noop
+        }
+    });
+
+    // assert
+    headersCols = $(".dx-datagrid-headers" + " col");
+    assert.equal($(headersCols[0]).css("width"), "150px", "width of the first column - headers view");
+    assert.equal($(headersCols[1]).css("width"), "20px", "width of the second column - headers view");
 });
 
 QUnit.module("Virtual row rendering");
@@ -10406,7 +10474,7 @@ QUnit.test("Repaint rows", function(assert) {
     assert.strictEqual($(dataGrid.getCellElement(2, 0)).text(), "test6", "third row - value of the first cell");
 });
 
-QUnit.test("Repaint with changesOnly", function(assert) {
+QUnit.test("Refresh with changesOnly", function(assert) {
     // arrange
     var $cellElements,
         $updatedCellElements,
@@ -10446,7 +10514,7 @@ QUnit.test("Repaint with changesOnly", function(assert) {
     assert.strictEqual($(dataGrid.getCellElement(0, 1)).text(), "test5", "cell value is updated");
 });
 
-QUnit.test("Repaint with changesOnly and cellTemplate", function(assert) {
+QUnit.test("Refresh with changesOnly and cellTemplate", function(assert) {
     // arrange
     var $cellElements,
         $updatedCellElements,
@@ -10493,6 +10561,50 @@ QUnit.test("Repaint with changesOnly and cellTemplate", function(assert) {
     assert.ok($updatedCellElements.eq(0).is($cellElements.eq(0)), "first cell isn't updated");
     assert.ok(!$updatedCellElements.eq(1).is($cellElements.eq(1)), "second cell is updated");
     assert.strictEqual($(dataGrid.getCellElement(0, 1)).text(), "test5", "cell value is updated");
+});
+
+QUnit.test("Refresh with changesOnly and summary", function(assert) {
+    // arrange
+    var $cellElements,
+        $updatedCellElements,
+        dataSource = new DataSource({
+            store: {
+                type: "array",
+                key: "id",
+                data: [
+                    { id: 1, value: 100 },
+                    { id: 2, value: 100 },
+                    { id: 3, value: 100 },
+                    { id: 4, value: 100 }
+                ]
+            }
+        }),
+        dataGrid = createDataGrid({
+            loadingTimeout: undefined,
+            dataSource: dataSource,
+            summary: {
+                totalItems: [{
+                    column: "value",
+                    summaryType: "sum"
+                }]
+            },
+            columns: ["id", "value"]
+        });
+
+    dataSource.store().update(1, { value: 200 });
+
+    // assert
+    $cellElements = $(dataGrid.$element()).find(".dx-datagrid-total-footer .dx-row").first().children();
+
+    // act
+    dataGrid.refresh(true);
+
+    // assert
+    $updatedCellElements = $(dataGrid.$element()).find(".dx-datagrid-total-footer .dx-row").first().children();
+    assert.equal($updatedCellElements.length, 2, "count cell");
+    assert.ok($updatedCellElements.eq(0).is($cellElements.eq(0)), "first cell isn't changed");
+    assert.ok($updatedCellElements.eq(1).is($cellElements.eq(1)), "second cell isn't changed");
+    assert.strictEqual($updatedCellElements.eq(1).text(), "Sum: 500", "cell value is updated");
 });
 
 // T443177
@@ -10862,7 +10974,7 @@ QUnit.test("rowTemplate via dxTemplate should works with masterDetail template",
     $rowElements = $($(dataGrid.$element()).find(".dx-datagrid-rowsview").find("table > tbody").find(".dx-row"));
     assert.strictEqual($rowElements.length, 5, "row element count");
     assert.strictEqual($rowElements.eq(0).text(), "Row Content More info", "row 0 content");
-    assert.strictEqual($rowElements.eq(1).children().eq(1).text(), "Test Details", "row 1 content");
+    assert.strictEqual($rowElements.eq(1).children().first().text(), "Test Details", "row 1 content");
     assert.strictEqual($rowElements.eq(2).text(), "Row Content More info", "row 2 content");
     assert.strictEqual($rowElements.eq(3).text(), "Row Content More info", "row 3 content");
 });
@@ -11065,9 +11177,9 @@ QUnit.test("Detail cell should not have width and max-width styles", function(as
 
     // assert
     assert.equal($(dataGrid.getCellElement(0, 1)).get(0).style.width, "100px", "width style is defined for data cell");
-    assert.equal($(dataGrid.getCellElement(1, 1)).get(0).style.width, "", "width style is not defined for detail cell");
+    assert.equal($(dataGrid.getCellElement(1, 0)).get(0).style.width, "", "width style is not defined for detail cell");
     // T650963
-    assert.equal($(dataGrid.getCellElement(1, 1)).css("maxWidth"), "none", "max width style for detail cell");
+    assert.equal($(dataGrid.getCellElement(1, 0)).css("maxWidth"), "none", "max width style for detail cell");
 });
 
 // T661361

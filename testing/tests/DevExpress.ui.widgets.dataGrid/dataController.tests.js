@@ -18,7 +18,7 @@ var createDataSource = function(data, storeOptions, dataSourceOptions) {
 };
 
 var setupModule = function() {
-    setupDataGridModules(this, ['data', 'virtualScrolling', 'columns', 'filterRow', 'search', 'editing', 'grouping', 'headerFilter', 'masterDetail', 'editorFactory', 'keyboardNavigation']);
+    setupDataGridModules(this, ['data', 'virtualScrolling', 'columns', 'filterRow', 'search', 'editing', 'grouping', 'headerFilter', 'masterDetail', 'editorFactory', 'keyboardNavigation', 'summary']);
 
     this.applyOptions = function(options) {
         $.extend(this.options, options);
@@ -4882,6 +4882,36 @@ QUnit.test("column filter for column with calculateFilterExpression using functi
     // act
     this.columnsController.columnOption(3, 'calculateFilterExpression', function(text, operation) {
         return [function(data) { return data.name + " " + data.age; }, operation || 'contains', text];
+    });
+    this.columnsController.columnOption(3, 'filterValue', '9');
+
+    // assert
+    assert.equal(loadingCount, 0, "no loading because cache enabled");
+    assert.equal(this.dataController.items().length, 1);
+    assert.equal(this.dataController.items()[0].data.age, 19);
+
+    // act
+    this.columnsController.columnOption(3, 'filterValue', 'Ale');
+
+    // assert
+    assert.equal(loadingCount, 0, "no loading because cache enabled");
+    assert.equal(this.dataController.items().length, 1);
+    assert.equal(this.dataController.items()[0].data.name, 'Alex');
+});
+
+QUnit.test("column filter for column with calculateFilterExpression using function selector as filter function", function(assert) {
+    this.setupFilterableData();
+
+    var loadingCount = 0;
+    this.dataSource.store().on("loading", function() {
+        loadingCount++;
+    });
+
+    // act
+    this.columnsController.columnOption(3, 'calculateFilterExpression', function(text, operation) {
+        return [function(data) {
+            return !!(data.name + " " + data.age).match(text);
+        }, '=', true];
     });
     this.columnsController.columnOption(3, 'filterValue', '9');
 
@@ -10545,6 +10575,40 @@ QUnit.test("column hiding", function(assert) {
     assert.deepEqual(items[0].values, [1, "Alex"]);
     assert.strictEqual(changedArgs.changeType, 'refresh');
     assert.strictEqual(changedArgs.repaintChangesOnly, undefined, "full repaint");
+});
+
+QUnit.test("update one cell when summary values are changed", function(assert) {
+    this.options = {
+        summary: {
+            totalItems: [{
+                column: "age",
+                summaryType: "max"
+            }]
+        }
+    };
+    this.setupModules();
+
+    var changedArgs;
+
+    this.dataController.changed.add(function(args) {
+        changedArgs = args;
+    });
+
+    // act
+    this.array[0].age = 31;
+
+    this.dataController.refresh(true);
+
+    // assert
+    var items = this.dataController.items();
+    assert.deepEqual(items[0].values, [1, 'Alex', 31]);
+    assert.strictEqual(changedArgs.repaintChangesOnly, true);
+    assert.deepEqual(changedArgs.changeType, 'update');
+    assert.deepEqual(changedArgs.changeTypes, ['update']);
+    assert.deepEqual(changedArgs.rowIndices, [0]);
+    assert.deepEqual(changedArgs.columnIndices, [[2]]);
+    assert.deepEqual(changedArgs.totalColumnIndices, [2]);
+    assert.strictEqual(this.dataController.footerItems()[0].summaryCells[2][0].value, 31, "summaryValue is updated");
 });
 
 QUnit.module("Using DataSource instance", {

@@ -641,27 +641,6 @@ module.exports = {
                     }
                 },
 
-                _updateCells: function($rowElement, $newRowElement, columnIndices) {
-                    var $cells = $rowElement.children(),
-                        $newCells = $newRowElement.children();
-
-                    columnIndices.forEach(function(columnIndex, index) {
-                        var $cell = $cells.eq(columnIndex),
-                            $newCell = $newCells.eq(index),
-                            $newContent = $newCell.contents();
-
-                        if($newContent.length) {
-                            $cell.contents().remove();
-                            $cell.append($newContent);
-
-                            $cell.get(0).className = $newCell.get(0).className;
-                            $cell.get(0).style.cssText = $newCell.get(0).style.cssText;
-                        } else {
-                            $cell.replaceWith($newCell);
-                        }
-                    });
-                },
-
                 _createEmptyRow: function(isFixed) {
                     var that = this,
                         i,
@@ -759,8 +738,19 @@ module.exports = {
                         } }, e, item));
                 },
 
+                _getColumnsCountBeforeGroups: function(columns) {
+                    for(var i = 0; i < columns.length; i++) {
+                        if(columns[i].type === "groupExpand") {
+                            return i;
+                        }
+                    }
+
+                    return 0;
+                },
+
                 _getGroupCellOptions: function(options) {
-                    var columnIndex = (options.row.groupIndex || 0) + options.columnsCountBeforeGroups;
+                    var columnsCountBeforeGroups = this._getColumnsCountBeforeGroups(options.columns),
+                        columnIndex = (options.row.groupIndex || 0) + columnsCountBeforeGroups;
 
                     return {
                         columnIndex: columnIndex,
@@ -837,21 +827,10 @@ module.exports = {
 
                 _renderRows: function($table, options) {
                     var that = this,
-                        i,
-                        columns = options.columns,
-                        columnsCountBeforeGroups = 0,
                         scrollingMode = that.option("scrolling.mode");
 
-                    for(i = 0; i < columns.length; i++) {
-                        if(columns[i].command === "expand") {
-                            columnsCountBeforeGroups = i;
-                            break;
-                        }
-                    }
-
                     that.callBase($table, extend({
-                        scrollingMode: scrollingMode,
-                        columnsCountBeforeGroups: columnsCountBeforeGroups
+                        scrollingMode: scrollingMode
                     }, options));
 
                     that._checkRowKeys(options.change);
