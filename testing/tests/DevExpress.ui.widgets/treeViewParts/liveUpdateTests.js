@@ -6,7 +6,6 @@ import "ui/tree_view";
 QUnit.module("live update", {
     beforeEach: function() {
         this.itemRenderedSpy = sinon.spy();
-        this.itemDeletedSpy = sinon.spy();
         this.data = [{
             id: 1,
             text: "1",
@@ -37,7 +36,6 @@ QUnit.module("live update", {
                 repaintChangesOnly: repaintChangesOnly,
                 onContentReady: (e) => {
                     e.component.option("onItemRendered", this.itemRenderedSpy);
-                    e.component.option("onItemDeleted", this.itemDeletedSpy);
                 }
             }).dxTreeView("instance");
         };

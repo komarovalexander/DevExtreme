@@ -661,6 +661,8 @@ var CollectionWidget = Widget.inherit({
         this._fireDeleted($item, deletedActionArgs);
     },
 
+    _getWrapperElement: commonUtils.noop,
+
     _modifyByChanges: function(items, changes) {
         var dataSource = this.getDataSource(),
             store = dataSource.store(),
@@ -673,12 +675,12 @@ var CollectionWidget = Widget.inherit({
             switch(change.type) {
                 case "update":
                     if(change.oldItem) {
-                        this._renderItem(change.index, change.data, null, this._findItemElementByKey(change.key));
+                        this._renderItem(change.index, change.data, this._getWrapperElement(), this._findItemElementByKey(change.key));
                     } else {
                         let changedItem = items[arrayUtils.indexByKey(store, items, change.key)];
                         if(changedItem) {
                             arrayUtils.update(store, items, change.key, change.data).done(() => {
-                                this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
+                                this._renderItem(items.indexOf(changedItem), changedItem, this._getWrapperElement(), this._findItemElementByItem(changedItem));
                             });
                         }
                     }
@@ -686,7 +688,7 @@ var CollectionWidget = Widget.inherit({
                 case "insert":
                     when(change.index || arrayUtils.insert(store, items, change.data)).done(()=>{
                         this._renderedItemsCount++;
-                        this._renderItem(this._renderedItemsCount, change.data);
+                        this._renderItem(this._renderedItemsCount, change.data, this._getWrapperElement());
                     });
                     break;
                 case "remove":

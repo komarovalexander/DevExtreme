@@ -328,6 +328,10 @@ var Tabs = CollectionWidget.inherit({
         }
     },
 
+    _getWrapperElement: function() {
+        return this.$element().children("." + TABS_WRAPPER_CLASS);
+    },
+
     _renderWrapper: function() {
         this.$element().wrapInner($("<div>").addClass(TABS_WRAPPER_CLASS));
     },
