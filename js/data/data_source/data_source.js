@@ -835,16 +835,18 @@ var DataSource = Class.inherit({
             this.load();
         } else {
             let group = this.group(),
-                items = this.items();
+                items = this.items(),
+                groupLevel = 0;
+
             if(this.paginate() || group) {
                 changes = changes.filter(item => item.type === "update");
             }
 
             if(group) {
-                items = dataUtils.getPlainItems(items, group);
+                groupLevel = Array.isArray(group) ? group.length : 1;
             }
 
-            arrayUtils.applyBatch(this.store(), items, changes);
+            arrayUtils.applyBatch(this.store(), items, changes, groupLevel);
 
             this.fireEvent("changed", [{ changes: changes }]);
         }
