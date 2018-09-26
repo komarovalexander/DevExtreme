@@ -101,6 +101,12 @@ var Tabs = CollectionWidget.inherit({
             */
 
             /**
+            * @name dxTabsOptions.repaintChangesOnly
+            * @type boolean
+            * @hidden false
+            */
+
+            /**
             * @name dxTabsOptions.selectedItems
             * @type Array<string,number,Object>
             */

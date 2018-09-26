@@ -159,6 +159,12 @@ var ListBase = CollectionWidget.inherit({
             bounceEnabled: true,
 
             /**
+            * @name dxListOptions.repaintChangesOnly
+            * @type boolean
+            * @hidden false
+            */
+
+            /**
             * @name dxListOptions.scrollByContent
             * @type boolean
             * @default true
