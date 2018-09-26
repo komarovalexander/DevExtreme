@@ -269,6 +269,15 @@ function throttleChanges(func, timeout) {
     };
 }
 
+function getPlainItems(groupedItems, group) {
+    let groupLevel = Array.isArray(group) ? group.length : 1,
+        getPlainItemsWithLevel = function(groupedItems, level) {
+            var plainItems = groupedItems.map(item => level > 0 ? getPlainItemsWithLevel(item.items, level - 1) : item);
+            return [].concat.apply([], plainItems);
+        };
+    return getPlainItemsWithLevel(groupedItems, groupLevel);
+}
+
 /**
 * @name Utils
 */
@@ -280,6 +289,7 @@ var utils = {
     errorMessageFromXhr: errorMessageFromXhr,
     aggregators: aggregators,
 
+    getPlainItems: getPlainItems,
     keysEqual: keysEqual,
     throttleChanges: throttleChanges,
     trivialPromise: trivialPromise,
