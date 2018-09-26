@@ -15,7 +15,6 @@ var $ = require("../../core/renderer"),
     coreDataUtils = require("../../core/utils/data"),
     arrayUtils = require("../../data/array_utils"),
     dataUtils = require("../../data/utils"),
-    getPlainItems = dataUtils.getPlainItems,
     keysEqual = dataUtils.keysEqual,
     Widget = require("../widget/ui.widget"),
     eventUtils = require("../../events/utils"),
@@ -53,6 +52,16 @@ var FOCUS_UP = "up",
     FOCUS_PAGE_DOWN = "pagedown",
     FOCUS_LAST = "last",
     FOCUS_FIRST = "first";
+
+
+function getPlainItems(groupedItems, group) {
+    let groupLevel = Array.isArray(group) ? group.length : 1,
+        getPlainItemsWithLevel = function(groupedItems, level) {
+            var plainItems = groupedItems.map(item => level > 0 ? getPlainItemsWithLevel(item.items, level - 1) : item);
+            return [].concat.apply([], plainItems);
+        };
+    return getPlainItemsWithLevel(groupedItems, groupLevel);
+}
 
 /**
 * @name CollectionWidget
@@ -577,15 +586,13 @@ var CollectionWidget = Widget.inherit({
                         };
                     var oldItems = this._itemsCache,
                         newItems = args.value.slice();
-                    if(group) {
-                        oldItems = getPlainItems(oldItems, group);
-                        newItems = getPlainItems(newItems, group);
-                    }
-                    var result = findChanges(oldItems, newItems, getKey, isItemEquals);
-                    this._setItemsCache(args.value);
-                    if(result) {
-                        this._modifyByChanges(this.option("items"), result);
-                        return;
+                    if(!group) {
+                        var result = findChanges(oldItems, newItems, getKey, isItemEquals);
+                        this._setItemsCache(args.value);
+                        if(result) {
+                            this._modifyByChanges(this.option("items"), result);
+                            return;
+                        }
                     }
                 }
             }
