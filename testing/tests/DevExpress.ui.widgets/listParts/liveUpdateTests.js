@@ -116,6 +116,53 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
     });
 
+    QUnit.test("repaintChangesOnly, update item field", function(assert) {
+        var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
+        var dataSource = this.createList({
+            load: () => data,
+            key: "id"
+        }, true).getDataSource();
+
+        data[0].a = "Item Updated";
+        dataSource.load();
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
+    });
+
+    QUnit.test("repaintChangesOnly, update dataSource", function(assert) {
+        var data = [{ a: "Item 0", id: 0 }, { a: "Item Updated", id: 1 }];
+        var list = this.createList({
+            load: () => [data[0]],
+            key: "id"
+        }, true);
+
+        var dataSource = new DataSource({
+            paginate: false,
+            load: () => data,
+            key: "id"
+        });
+        list.option("dataSource", dataSource);
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
+    });
+
+    QUnit.test("repaintChangesOnly, update store item", function(assert) {
+        var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
+        var dataSource = this.createList({
+            load: () => data,
+            key: "id",
+            update: (key, value) => data[0].a = value.a
+        }, true).getDataSource();
+
+        dataSource.store().update(0, { a: "Item Updated", id: 0 });
+        dataSource.load();
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
+    });
+
     QUnit.test("repaintChangesOnly, delete item", function(assert) {
         var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
         var dataSource = this.createList({

@@ -12,9 +12,11 @@ var $ = require("../../core/renderer"),
     Action = require("../../core/action"),
     Guid = require("../../core/guid"),
     domUtils = require("../../core/utils/dom"),
-    dataUtils = require("../../core/utils/data"),
+    coreDataUtils = require("../../core/utils/data"),
     arrayUtils = require("../../data/array_utils"),
-    getPlainItems = require("../../data/utils").getPlainItems,
+    dataUtils = require("../../data/utils"),
+    getPlainItems = dataUtils.getPlainItems,
+    keysEqual = dataUtils.keysEqual,
     Widget = require("../widget/ui.widget"),
     eventUtils = require("../../events/utils"),
     pointerEvents = require("../../events/pointer"),
@@ -509,6 +511,22 @@ var CollectionWidget = Widget.inherit({
         return result;
     },
 
+    _findItemElementByKey: function(key) {
+        var result = $(),
+            that = this,
+            store = this.getDataSource().store();
+
+        this.itemElements().each(function() {
+            var $item = $(this);
+            if(keysEqual(store.key(), store.keyOf($item.data(that._itemDataKey())), key)) {
+                result = $item;
+                return false;
+            }
+        });
+
+        return result;
+    },
+
     _getIndexByItem: function(item) {
         return this.option("items").indexOf(item);
     },
@@ -529,6 +547,10 @@ var CollectionWidget = Widget.inherit({
         this._renderItem(this._renderedItemsCount + index, itemData, null, $item);
     },
 
+    _setItemsCache: function(items) {
+        this._itemsCache = extend(true, [], items);
+    },
+
     _optionChanged: function(args) {
         if(args.name === "items") {
             var matches = args.fullName.match(ITEM_PATH_REGEX);
@@ -543,19 +565,18 @@ var CollectionWidget = Widget.inherit({
             }
 
             if(this.option("repaintChangesOnly")) {
-                var dataSource = this.getDataSource(),
-                    store = dataSource.store();
-                if(store) {
-                    var getKey = function(item) {
-                        return store.keyOf(item);
-                    };
+                var dataSource = this.getDataSource();
+                if(dataSource) {
+                    var store = dataSource.store(),
+                        getKey = function(item) {
+                            return store.keyOf(item);
+                        },
+                        isItemEquals = function(item1, item2) {
+                            return JSON.stringify(item1) === JSON.stringify(item2);
+                        };
 
-                    var isItemEquals = function(item1, item2) {
-                        return JSON.stringify(item1) === JSON.stringify(item2);
-                    };
-
-                    var result = findChanges(args.previousValue, args.value.slice(), getKey, isItemEquals);
-
+                    var result = findChanges(this._itemsCache, args.value.slice(), getKey, isItemEquals);
+                    this._setItemsCache(args.value);
                     if(result) {
                         this._modifyByChanges(this.option("items"), result);
                         return;
@@ -652,7 +673,7 @@ var CollectionWidget = Widget.inherit({
             switch(change.type) {
                 case "update":
                     if(change.oldItem) {
-                        this._renderItem(change.index, change.data, null, this._findItemElementByItem(change.oldItem));
+                        this._renderItem(change.index, change.data, null, this._findItemElementByKey(change.key));
                     } else {
                         let changedItem = items[arrayUtils.indexByKey(store, items, change.key)];
                         if(changedItem) {
@@ -672,7 +693,7 @@ var CollectionWidget = Widget.inherit({
                     let index = change.index || arrayUtils.indexByKey(store, items, change.key),
                         removedItem = change.oldItem || items[index];
                     if(removedItem) {
-                        let $removedItemElement = this._findItemElementByItem(removedItem),
+                        let $removedItemElement = this._findItemElementByKey(change.key),
                             deletedActionArgs = this._extendActionArgs($removedItemElement);
                         arrayUtils.remove(store, items, change.key).done(() => {
                             this._renderedItemsCount--;
@@ -710,6 +731,9 @@ var CollectionWidget = Widget.inherit({
             }
         } else {
             this.option("items", newItems.slice());
+            if(this.option("repaintChangesOnly")) {
+                this._setItemsCache(newItems);
+            }
         }
     },
 
@@ -1053,7 +1077,7 @@ var CollectionWidget = Widget.inherit({
             },
             fieldGetter: function(field) {
                 var expr = that.option(field + "Expr"),
-                    getter = dataUtils.compileGetter(expr);
+                    getter = coreDataUtils.compileGetter(expr);
 
                 return getter;
             }
