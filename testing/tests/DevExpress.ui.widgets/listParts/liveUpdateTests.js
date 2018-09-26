@@ -130,6 +130,27 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
     });
 
+    QUnit.test("repaintChangesOnly, grouping, update item field", function(assert) {
+        var data = [{
+            key: "a",
+            items: [{ a: "Item 0", id: 0, type: "a" }, { a: "Item 2", id: 1, type: "a" }]
+        }, {
+            key: "b",
+            items: [{ a: "Item 1", id: 2, type: "b" }]
+        }];
+        var dataSource = this.createList({
+            load: () => data,
+            key: "id",
+            group: "type"
+        }, true).getDataSource();
+
+        data[0].items[0].a = "Item Updated";
+        dataSource.load();
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
+    });
+
     QUnit.test("repaintChangesOnly, update dataSource", function(assert) {
         var data = [{ a: "Item 0", id: 0 }, { a: "Item Updated", id: 1 }];
         var list = this.createList({

@@ -568,14 +568,20 @@ var CollectionWidget = Widget.inherit({
                 var dataSource = this.getDataSource();
                 if(dataSource) {
                     var store = dataSource.store(),
+                        group = dataSource.group(),
                         getKey = function(item) {
                             return store.keyOf(item);
                         },
                         isItemEquals = function(item1, item2) {
                             return JSON.stringify(item1) === JSON.stringify(item2);
                         };
-
-                    var result = findChanges(this._itemsCache, args.value.slice(), getKey, isItemEquals);
+                    var oldItems = this._itemsCache,
+                        newItems = args.value.slice();
+                    if(group) {
+                        oldItems = getPlainItems(oldItems, group);
+                        newItems = getPlainItems(newItems, group);
+                    }
+                    var result = findChanges(oldItems, newItems, getKey, isItemEquals);
                     this._setItemsCache(args.value);
                     if(result) {
                         this._modifyByChanges(this.option("items"), result);
