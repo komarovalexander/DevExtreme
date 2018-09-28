@@ -54,6 +54,25 @@ QUnit.module("live update", {
         assert.deepEqual(this.itemDeletedSpy.firstCall.args[0].itemData.id, pushData[0].key, "check removed item key");
     });
 
+    QUnit.test("remove two items", function(assert) {
+        var store = this.createList({
+            dataSource: {
+                paginate: false,
+                pushAggregationTimeout: 0,
+                load: () => [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }, { a: "Item 3", id: 2 }],
+                key: "id"
+            }
+        }).getDataSource().store();
+
+        var pushData = [{ type: "remove", key: 0 }, { type: "update", data: { a: "Item 2 Updated", id: 2 }, key: 2 }];
+        store.push(pushData);
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "items are not refreshed after remove");
+        assert.deepEqual(this.itemDeletedSpy.callCount, 1, "check removed items count");
+        assert.deepEqual(this.itemDeletedSpy.firstCall.args[0].itemData.id, pushData[0].key, "check removed item key");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.id, pushData[1].key, "check updated item key");
+    });
+
     QUnit.test("update item when grouping is enabled", function(assert) {
         var store = this.createList({
             dataSource: {
@@ -157,13 +176,15 @@ QUnit.module("live update", {
                 key: "id",
                 group: "type"
             },
+            grouped: true,
             repaintChangesOnly: true
         }).getDataSource();
 
         data[0].items[0].a = "Item Updated";
         dataSource.load();
 
-        assert.equal(this.itemRenderedSpy.callCount, 2, "all item is updated after reload");
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is updated after reload");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item Updated", "check updated item");
     });
 
     QUnit.test("repaintChangesOnly, update dataSource", function(assert) {
@@ -296,6 +317,24 @@ QUnit.module("live update", {
         }).getDataSource();
 
         data.push({ a: "Item 2", id: 2 });
+        dataSource.load();
+
+        assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is rendered after append");
+        assert.deepEqual(this.itemRenderedSpy.firstCall.args[0].itemData.a, "Item 2", "check appended item");
+    });
+
+    QUnit.test("repaintChangesOnly, add item in the beginning", function(assert) {
+        var data = [{ a: "Item 0", id: 0 }, { a: "Item 1", id: 1 }];
+        var dataSource = this.createList({
+            dataSource: {
+                load: () => data,
+                key: "id",
+                pushAggregationTimeout: 0
+            },
+            repaintChangesOnly: true
+        }).getDataSource();
+
+        data.unshift({ a: "Item 2", id: 2 });
         dataSource.load();
 
         assert.equal(this.itemRenderedSpy.callCount, 1, "only one item is rendered after append");

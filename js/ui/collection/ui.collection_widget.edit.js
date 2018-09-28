@@ -607,28 +607,18 @@ var CollectionWidget = BaseCollectionWidget.inherit({
             return;
         }
 
-        if(args.name === "items") {
-            if(this.option("repaintChangesOnly")) {
-                var isItemEquals = function(item1, item2) {
-                    return JSON.stringify(item1) === JSON.stringify(item2);
-                };
-                var oldItems = this._itemsCache,
-                    newItems = args.value.slice();
-                var result = findChanges(oldItems, newItems, this.keyOf.bind(this), isItemEquals);
-                this._refreshItemsCache();
-                if(result) {
-                    this._modifyByChanges(result);
-                    return;
-                }
-            }
-        }
-
         switch(args.name) {
             case "selectionMode":
                 if(args.value === "multi") {
                     this._showDeprecatedSelectionMode();
                 } else {
                     this._invalidate();
+                }
+                break;
+            case "items":
+                var isItemsUpdated = this._partialRefresh(args.value);
+                if(!isItemsUpdated) {
+                    this.callBase(args);
                 }
                 break;
             case "dataSource":
@@ -666,6 +656,20 @@ var CollectionWidget = BaseCollectionWidget.inherit({
             default:
                 this.callBase(args);
         }
+    },
+
+    _partialRefresh: function(newItems) {
+        if(this.option("repaintChangesOnly")) {
+            var oldItems = this._itemsCache,
+                isItemEquals = (item1, item2) => JSON.stringify(item1) === JSON.stringify(item2),
+                result = findChanges(oldItems, this._editStrategy.itemsGetter(), this.keyOf.bind(this), isItemEquals);
+            this._refreshItemsCache();
+            if(result) {
+                this._modifyByChanges(result);
+                return true;
+            }
+        }
+        return false;
     },
 
     _clearSelectedItems: function() {
@@ -788,7 +792,7 @@ var CollectionWidget = BaseCollectionWidget.inherit({
 
     _refreshItemsCache: function() {
         if(this.option("repaintChangesOnly")) {
-            this._itemsCache = extend(true, [], this.option("items"));
+            this._itemsCache = extend(true, [], this._editStrategy.itemsGetter());
         }
     },
 
@@ -806,14 +810,14 @@ var CollectionWidget = BaseCollectionWidget.inherit({
     },
 
     _insertByChange: function(keyInfo, items, change) {
-        when(change.index || arrayUtils.insert(keyInfo, items, change.data)).done(()=>{
+        when(isDefined(change.index) || arrayUtils.insert(keyInfo, items, change.data)).done(()=>{
             this._renderedItemsCount++;
             this._renderItem(this._renderedItemsCount, change.data);
         });
     },
 
     _removeByChange: function(keyInfo, items, change) {
-        let index = change.index || arrayUtils.indexByKey(keyInfo, items, change.key),
+        let index = isDefined(change.index) ? change.index : arrayUtils.indexByKey(keyInfo, items, change.key),
             removedItem = change.oldItem || items[index];
         if(removedItem) {
             let $removedItemElement = this._findItemElementByKey(change.key),
