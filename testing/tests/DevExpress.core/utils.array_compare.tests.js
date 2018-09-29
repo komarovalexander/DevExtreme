@@ -48,7 +48,7 @@ QUnit.module("findChanges", {
     QUnit.test("remove(end), insert(beginning), update", function(assert) {
         this.newItems.pop();
         this.newItems.unshift({ a: "Item 2", id: 2 });
-        this.newItems[1].a = "Item 1 updated";
+        this.newItems[1].a = "Item 0 updated";
 
         var changes = this.findChanges();
 
@@ -58,5 +58,17 @@ QUnit.module("findChanges", {
         assert.equal(changes[1].data.id, 0);
         assert.equal(changes[2].type, "remove");
         assert.equal(changes[2].key, 1);
+    });
+
+    QUnit.test("remove(end), update(beginning)", function(assert) {
+        this.newItems.pop();
+        this.newItems[0].a = "Item 0 updated";
+
+        var changes = this.findChanges();
+
+        assert.equal(changes[0].type, "update");
+        assert.equal(changes[0].data.id, 0);
+        assert.equal(changes[1].type, "remove");
+        assert.equal(changes[1].key, 1);
     });
 });

@@ -663,10 +663,11 @@ var CollectionWidget = BaseCollectionWidget.inherit({
             var oldItems = this._itemsCache,
                 isItemEquals = (item1, item2) => JSON.stringify(item1) === JSON.stringify(item2),
                 result = findChanges(oldItems, this._editStrategy.itemsGetter(), this.keyOf.bind(this), isItemEquals);
-            this._refreshItemsCache();
             if(result) {
-                this._modifyByChanges(result);
+                this._modifyByChanges(result, true);
                 return true;
+            } else {
+                this._refreshItemsCache();
             }
         }
         return false;
@@ -796,44 +797,46 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         }
     },
 
-    _updateByChange: function(keyInfo, items, change) {
-        if(change.oldItem) {
+    _updateByChange: function(keyInfo, items, change, isPartialRefresh) {
+        if(isPartialRefresh) {
             this._renderItem(change.index, change.data, null, this._findItemElementByKey(change.key));
         } else {
             let changedItem = items[arrayUtils.indexByKey(keyInfo, items, change.key)];
             if(changedItem) {
                 arrayUtils.update(keyInfo, items, change.key, change.data).done(() => {
-                    this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByItem(changedItem));
+                    this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByKey(change.key));
                 });
             }
         }
     },
 
-    _insertByChange: function(keyInfo, items, change) {
-        when(isDefined(change.index) || arrayUtils.insert(keyInfo, items, change.data)).done(()=>{
+    _insertByChange: function(keyInfo, items, change, isPartialRefresh) {
+        when(isPartialRefresh || arrayUtils.insert(keyInfo, items, change.data, change.index)).done(() => {
             this._renderedItemsCount++;
-            this._renderItem(this._renderedItemsCount, change.data);
+            this._renderItem(isDefined(change.index) ? change.index : items.length, change.data);
         });
     },
 
-    _removeByChange: function(keyInfo, items, change) {
-        let index = isDefined(change.index) ? change.index : arrayUtils.indexByKey(keyInfo, items, change.key),
-            removedItem = change.oldItem || items[index];
+    _removeByChange: function(keyInfo, items, change, isPartialRefresh) {
+        let index = isPartialRefresh ? change.index : arrayUtils.indexByKey(keyInfo, items, change.key),
+            removedItem = isPartialRefresh ? change.oldItem : items[index];
         if(removedItem) {
-            let $removedItemElement = this._findItemElementByKey(change.key),
+            let key = change.key,
+                $removedItemElement = this._findItemElementByKey(key),
                 deletedActionArgs = this._extendActionArgs($removedItemElement);
-            arrayUtils.remove(keyInfo, items, change.key).done(() => {
+            when(isPartialRefresh || arrayUtils.remove(keyInfo, items, key)).done(() => {
                 this._renderedItemsCount--;
                 this._deleteItemElement($removedItemElement, deletedActionArgs, index);
             });
         }
     },
 
-    _modifyByChanges: function(changes) {
+    _modifyByChanges: function(changes, isPartialRefresh) {
         const items = this._editStrategy.itemsGetter(),
             keyInfo = { key: this.key.bind(this), keyOf: this.keyOf.bind(this) };
-        changes.forEach(change => this[`_${change.type}ByChange`](keyInfo, items, change));
+        changes.forEach(change => this[`_${change.type}ByChange`](keyInfo, items, change, isPartialRefresh));
         this._renderedItemsCount = items.length;
+        this._refreshItemsCache();
     },
 
     /**
