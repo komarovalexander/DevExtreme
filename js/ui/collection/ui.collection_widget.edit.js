@@ -812,7 +812,6 @@ var CollectionWidget = BaseCollectionWidget.inherit({
 
     _insertByChange: function(keyInfo, items, change, isPartialRefresh) {
         when(isPartialRefresh || arrayUtils.insert(keyInfo, items, change.data, change.index)).done(() => {
-            this._renderedItemsCount++;
             this._renderItem(isDefined(change.index) ? change.index : items.length, change.data);
         });
     },
@@ -825,7 +824,6 @@ var CollectionWidget = BaseCollectionWidget.inherit({
                 $removedItemElement = this._findItemElementByKey(key),
                 deletedActionArgs = this._extendActionArgs($removedItemElement);
             when(isPartialRefresh || arrayUtils.remove(keyInfo, items, key)).done(() => {
-                this._renderedItemsCount--;
                 this._deleteItemElement($removedItemElement, deletedActionArgs, index);
             });
         }

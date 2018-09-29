@@ -959,7 +959,8 @@ var CollectionWidget = Widget.inherit({
         if($itemToReplace && $itemToReplace.length) {
             $itemToReplace.replaceWith($itemFrame);
         } else {
-            $itemFrame.appendTo($container);
+            var nextSiblingElement = $container.children().get(index);
+            domAdapter.insertElement($container.get(0), $itemFrame.get(0), nextSiblingElement);
         }
 
         return $itemFrame;
