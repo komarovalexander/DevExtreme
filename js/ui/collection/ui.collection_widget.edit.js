@@ -184,6 +184,14 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         }
 
         this._refreshItemsCache();
+
+        this._customizeStoreLoadOptions = (e) => {
+            if(this._correctionIndex && e.storeLoadOptions) {
+                e.storeLoadOptions.skip += this._correctionIndex;
+            }
+        },
+
+        this._dataSource && this._dataSource.on("customizeStoreLoadOptions", this._customizeStoreLoadOptions);
     },
 
     _initKeyGetter: function() {
@@ -797,6 +805,13 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         }
     },
 
+    _dispose: function() {
+        this._dataSource && this._dataSource.off("customizeStoreLoadOptions", this._customizeStoreLoadOptions);
+        this.callBase();
+    },
+
+    _correctionIndex: 0,
+
     _updateByChange: function(keyInfo, items, change, isPartialRefresh) {
         if(isPartialRefresh) {
             this._renderItem(change.index, change.data, null, this._findItemElementByKey(change.key));
@@ -813,6 +828,7 @@ var CollectionWidget = BaseCollectionWidget.inherit({
     _insertByChange: function(keyInfo, items, change, isPartialRefresh) {
         when(isPartialRefresh || arrayUtils.insert(keyInfo, items, change.data, change.index)).done(() => {
             this._renderItem(isDefined(change.index) ? change.index : items.length, change.data);
+            this._correctionIndex++;
         });
     },
 
@@ -825,6 +841,7 @@ var CollectionWidget = BaseCollectionWidget.inherit({
                 deletedActionArgs = this._extendActionArgs($removedItemElement);
             when(isPartialRefresh || arrayUtils.remove(keyInfo, items, key)).done(() => {
                 this._deleteItemElement($removedItemElement, deletedActionArgs, index);
+                this._correctionIndex--;
             });
         }
     },
