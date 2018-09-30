@@ -603,11 +603,8 @@ var CollectionWidget = Widget.inherit({
         this._startIndexForAppendedItems = null;
     },
 
-    _modifyByChanges: commonUtils.noop,
-
     _dataSourceChangedHandler: function(newItems) {
         var items = this.option("items");
-
         if(this._initialized && items && this._shouldAppendItems()) {
             this._renderedItemsCount = items.length;
             if(!this._isLastPage() || this._startIndexForAppendedItems !== -1) {

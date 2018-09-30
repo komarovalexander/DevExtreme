@@ -160,7 +160,6 @@ module.exports = gridCore.Controller.inherit((function() {
             if(!fromStore) {
                 var groupCount = gridCore.normalizeSortingInfo(this.group()).length;
                 arrayUtils.applyBatch(store, this._items, changes, groupCount, true);
-
             }
         },
         _handlePush: function(changes) {
