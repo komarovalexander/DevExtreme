@@ -605,32 +605,21 @@ var CollectionWidget = Widget.inherit({
 
     _modifyByChanges: commonUtils.noop,
 
-    _dataSourceChangedHandler: function(newItems, e) {
+    _dataSourceChangedHandler: function(newItems) {
         var items = this.option("items");
 
-        if(this._initialized && items) {
-            let changes = e && e.changes;
-            if(changes) {
-                this._modifyByChanges(changes);
-            } else if(this._shouldAppendItems()) {
-                this._appendNewItems(items, newItems);
-            } else {
-                this.option("items", newItems.slice());
+        if(this._initialized && items && this._shouldAppendItems()) {
+            this._renderedItemsCount = items.length;
+            if(!this._isLastPage() || this._startIndexForAppendedItems !== -1) {
+                this.option().items = items.concat(newItems.slice(this._startIndexForAppendedItems));
             }
+
+            this._forgetNextPageLoading();
+            this._refreshContent();
+            this._renderFocusTarget();
         } else {
             this.option("items", newItems.slice());
         }
-    },
-
-    _appendNewItems: function(items, newItems) {
-        this._renderedItemsCount = items.length;
-        if(!this._isLastPage() || this._startIndexForAppendedItems !== -1) {
-            this.option().items = items.concat(newItems.slice(this._startIndexForAppendedItems));
-        }
-
-        this._forgetNextPageLoading();
-        this._refreshContent();
-        this._renderFocusTarget();
     },
 
     _refreshContent: function() {

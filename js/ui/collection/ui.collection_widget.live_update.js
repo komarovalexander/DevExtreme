@@ -51,6 +51,14 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
         return result;
     },
 
+    _dataSourceChangedHandler: function(newItems, e) {
+        if(this._initialized && e && e.changes && this.option("items")) {
+            this._modifyByChanges(e.changes);
+        } else {
+            this.callBase(newItems, e);
+        }
+    },
+
     _partialRefresh: function(newItems) {
         if(this.option("repaintChangesOnly")) {
             var oldItems = this._itemsCache,
