@@ -144,4 +144,4 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
     }
 });
 
-module.exports = CollectionWidgetLiveUpdate;
+export default CollectionWidgetLiveUpdate;
