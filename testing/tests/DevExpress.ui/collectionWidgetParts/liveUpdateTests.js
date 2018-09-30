@@ -24,19 +24,7 @@ const TestComponent = CollectionWidget.inherit({
         return this.$element();
     },
 
-    key: () => "id",
-
-    keyOf: item => item.id,
-
     _shouldAppendItems: () => true,
-
-    ctor() {
-        this.callBase.apply(this, arguments);
-
-        this._editStrategy = {
-            itemsGetter: () => this.option("items")
-        };
-    },
 
     loadNextPage() {
         const dataSource = this._dataSource;
