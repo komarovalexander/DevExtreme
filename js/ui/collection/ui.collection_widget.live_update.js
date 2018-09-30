@@ -1,5 +1,5 @@
 var $ = require("../../core/renderer"),
-    BaseCollectionWidget = require("./ui.collection_widget.base"),
+    CollectionWidget = require("./ui.collection_widget.edit"),
     extend = require("../../core/utils/extend").extend,
     isDefined = require("../../core/utils/type").isDefined,
     arrayUtils = require("../../data/array_utils"),
@@ -9,7 +9,7 @@ var $ = require("../../core/renderer"),
     when = deferredUtils.when,
     findChanges = require("../../core/utils/array_compare").findChanges;
 
-var CollectionWidget = BaseCollectionWidget.inherit({
+const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
     _getDefaultOptions: function() {
         return extend(this.callBase(), {
             /**
@@ -144,4 +144,4 @@ var CollectionWidget = BaseCollectionWidget.inherit({
     }
 });
 
-module.exports = CollectionWidget;
+module.exports = CollectionWidgetLiveUpdate;

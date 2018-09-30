@@ -20,7 +20,7 @@ var $ = require("../../core/renderer"),
     windowUtils = require("../../core/utils/window"),
     ScrollView = require("../scroll_view"),
     deviceDependentOptions = require("../scroll_view/ui.scrollable").deviceDependentOptions,
-    CollectionWidget = require("../collection/ui.collection_widget.edit"),
+    CollectionWidget = require("../collection/ui.collection_widget.live_update"),
     BindableTemplate = require("../widget/bindable_template"),
     Deferred = require("../../core/utils/deferred").Deferred;
 

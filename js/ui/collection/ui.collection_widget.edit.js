@@ -1,6 +1,6 @@
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
-    LiveUpdateCollectionWidget = require("./ui.collection_widget.live_update"),
+    BaseCollectionWidget = require("./ui.collection_widget.base"),
     errors = require("../widget/ui.errors"),
     extend = require("../../core/utils/extend").extend,
     each = require("../../core/utils/iterator").each,
@@ -21,7 +21,7 @@ var indexExists = function(index) {
     return index !== NOT_EXISTING_INDEX;
 };
 
-var CollectionWidget = LiveUpdateCollectionWidget.inherit({
+var CollectionWidget = BaseCollectionWidget.inherit({
 
     _setOptionsByReference: function() {
         this.callBase();
