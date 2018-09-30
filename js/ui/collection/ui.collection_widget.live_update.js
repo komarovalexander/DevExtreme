@@ -38,9 +38,8 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
     _findItemElementByKey: function(key) {
         let result = $();
         this.itemElements().each((_, item) => {
-            let $item = $(item);
-            if(keysEqual(this.key(), this.keyOf(this._getItemData($item)), key)) {
-                result = $item;
+            if(keysEqual(this.key(), this.keyOf(this._getItemData(item)), key)) {
+                result = item;
                 return false;
             }
         });
