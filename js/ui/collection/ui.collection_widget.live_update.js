@@ -125,7 +125,7 @@ export default CollectionWidget.inherit({
     },
 
     _appendItemToContainer: function($container, $itemFrame, index) {
-        let nextSiblingElement = $container.children().get(index + 1);
+        let nextSiblingElement = $container.children(this._itemSelector()).get(index);
         insertElement($container.get(0), $itemFrame.get(0), nextSiblingElement);
     },
 
