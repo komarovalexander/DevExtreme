@@ -45,12 +45,12 @@ function getItems(keyInfo, items, key, groupCount) {
 }
 
 
-function applyBatch(keyInfo, array, batchData, groupCount) {
+function applyBatch(keyInfo, array, batchData, groupCount, useInsertIndex) {
     batchData.forEach(item => {
         var items = item.type === "insert" ? array : getItems(keyInfo, array, item.key, groupCount);
         switch(item.type) {
             case "update": update(keyInfo, items, item.key, item.data, true); break;
-            case "insert": insert(keyInfo, items, item.data, isDefined(item.index) ? item.index : -1, true); break;
+            case "insert": insert(keyInfo, items, item.data, useInsertIndex && isDefined(item.index) ? item.index : -1, true); break;
             case "remove": remove(keyInfo, items, item.key, true); break;
         }
     });
