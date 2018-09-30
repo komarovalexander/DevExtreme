@@ -106,13 +106,10 @@ export default CollectionWidget.inherit({
         let index = isPartialRefresh ? change.index : arrayUtils.indexByKey(keyInfo, items, change.key),
             removedItem = isPartialRefresh ? change.oldItem : items[index];
         if(removedItem) {
-            let key = change.key,
-                $removedItemElement = this._findItemElementByKey(key),
+            let $removedItemElement = this._findItemElementByKey(change.key),
                 deletedActionArgs = this._extendActionArgs($removedItemElement);
-            when(isPartialRefresh || arrayUtils.remove(keyInfo, items, key)).done(() => {
-                this._deleteItemElement($removedItemElement, deletedActionArgs, index);
-                this._correctionIndex--;
-            });
+            this._deleteItemElement($removedItemElement, deletedActionArgs, index);
+            this._correctionIndex--;
         }
     },
 

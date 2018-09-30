@@ -75,12 +75,14 @@ QUnit.module("live update", {
     });
 
     QUnit.test("remove one item", function(assert) {
-        var store = this.createList().getDataSource().store();
+        var list = this.createList(),
+            store = list.getDataSource().store();
 
         var pushData = [{ type: "remove", key: 0 }];
         store.push(pushData);
 
         assert.equal(this.itemRenderedSpy.callCount, 0, "items are not refreshed after remove");
+        assert.equal(list.option("items").length, 1);
         assert.deepEqual(this.itemDeletedSpy.callCount, 1, "check removed items count");
         assert.deepEqual(this.itemDeletedSpy.firstCall.args[0].itemData.id, pushData[0].key, "check removed item key");
     });

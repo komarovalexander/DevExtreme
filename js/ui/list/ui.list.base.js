@@ -1163,9 +1163,9 @@ var ListBase = CollectionWidget.inherit({
     * @publicName reload()
     */
     reload: function() {
+        this.callBase();
         this.scrollTo(0);
         this._pullDownHandler();
-        this.callBase();
     },
 
     repaint: function() {

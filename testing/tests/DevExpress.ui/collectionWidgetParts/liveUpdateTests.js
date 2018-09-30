@@ -26,6 +26,13 @@ const TestComponent = CollectionWidget.inherit({
 
     _shouldAppendItems: () => true,
 
+    reload() {
+        this.callBase();
+        this.option("items", []);
+        this._dataSource.pageIndex(0);
+        this._dataSource.reload();
+    },
+
     loadNextPage() {
         const dataSource = this._dataSource;
         dataSource.pageIndex(1 + dataSource.pageIndex());
@@ -69,12 +76,22 @@ export const run = function() {
             assert.equal(this.items()[4].id, 3);
         });
 
+        QUnit.test("correct index after push 'remove'", function(assert) {
+            this.store.push([{ type: "remove", key: 0 }]);
+            this.instance.loadNextPage();
+            assert.equal(this.items().length, 3);
+            assert.equal(this.items()[0].id, 1);
+            assert.equal(this.items()[2].id, 3);
+        });
+
         QUnit.test("refresh correct index after reload", function(assert) {
             this.store.push([{ type: "insert", data: { id: 200, text: "text " + 200 }, index: 0 }]);
             assert.equal(this.items().length, 3);
             this.instance.reload();
             assert.equal(this.items()[0].id, 200);
             assert.equal(this.items()[1].id, 0);
+            assert.equal(this.items().length, 2);
+            assert.equal(this.instance.itemElements().length, 2);
         });
     });
 };

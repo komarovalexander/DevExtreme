@@ -847,11 +847,8 @@ var DataSource = Class.inherit({
                 items = this.items(),
                 groupLevel = 0;
 
-            if(this.paginate() || group) {
-                changes = changes.filter(item => item.type === "update" || typeUtils.isDefined(item.index));
-            }
-
             if(group) {
+                changes = changes.filter(item => item.type === "update");
                 groupLevel = Array.isArray(group) ? group.length : 1;
             }
 
