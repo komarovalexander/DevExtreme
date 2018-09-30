@@ -1,13 +1,11 @@
-var $ = require("../../core/renderer"),
-    CollectionWidget = require("./ui.collection_widget.edit"),
-    extend = require("../../core/utils/extend").extend,
-    isDefined = require("../../core/utils/type").isDefined,
-    arrayUtils = require("../../data/array_utils"),
-    dataUtils = require("../../data/utils"),
-    keysEqual = dataUtils.keysEqual,
-    deferredUtils = require("../../core/utils/deferred"),
-    when = deferredUtils.when,
-    findChanges = require("../../core/utils/array_compare").findChanges;
+import $ from "../../core/renderer";
+import CollectionWidget from "./ui.collection_widget.edit";
+import { extend } from "../../core/utils/extend";
+import { isDefined } from "../../core/utils/type";
+import arrayUtils from "../../data/array_utils";
+import { keysEqual } from "../../data/utils";
+import { when } from "../../core/utils/deferred";
+import { findChanges } from "../../core/utils/array_compare";
 
 const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
     _getDefaultOptions: function() {
@@ -39,31 +37,25 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
     },
 
     _findItemElementByKey: function(key) {
-        var result = $();
-        this.itemElements().each(function(_, item) {
-            var $item = $(item);
+        let result = $();
+        this.itemElements().each((_, item) => {
+            let $item = $(item);
             if(keysEqual(this.key(), this.keyOf(this._getItemData($item)), key)) {
                 result = $item;
                 return false;
             }
-        }.bind(this));
-
+        });
         return result;
     },
 
     _dataSourceChangedHandler: function(newItems, e) {
-        if(this._initialized && e && e.changes && this.option("items")) {
-            this._modifyByChanges(e.changes);
-        } else {
-            this.callBase(newItems, e);
-        }
+        e && e.changes ? this._modifyByChanges(e.changes) : this.callBase(newItems, e);
     },
 
-    _partialRefresh: function(newItems) {
+    _partialRefresh: function() {
         if(this.option("repaintChangesOnly")) {
-            var oldItems = this._itemsCache,
-                isItemEquals = (item1, item2) => JSON.stringify(item1) === JSON.stringify(item2),
-                result = findChanges(oldItems, this._editStrategy.itemsGetter(), this.keyOf.bind(this), isItemEquals);
+            let isItemEquals = (item1, item2) => JSON.stringify(item1) === JSON.stringify(item2),
+                result = findChanges(this._itemsCache, this._editStrategy.itemsGetter(), this.keyOf.bind(this), isItemEquals);
             if(result) {
                 this._modifyByChanges(result, true);
                 return true;
@@ -122,7 +114,7 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
     },
 
     _modifyByChanges: function(changes, isPartialRefresh) {
-        const items = this._editStrategy.itemsGetter(),
+        let items = this._editStrategy.itemsGetter(),
             keyInfo = { key: this.key.bind(this), keyOf: this.keyOf.bind(this) };
         changes.forEach(change => this[`_${change.type}ByChange`](keyInfo, items, change, isPartialRefresh));
         this._renderedItemsCount = items.length;
