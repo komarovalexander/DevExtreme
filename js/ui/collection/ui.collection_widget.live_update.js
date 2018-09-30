@@ -13,7 +13,6 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
             /**
             * @name CollectionWidgetOptions.repaintChangesOnly
             * @type boolean
-            * @hidden
             */
             repaintChangesOnly: false
         });
