@@ -6,6 +6,7 @@ import arrayUtils from "../../data/array_utils";
 import { keysEqual } from "../../data/utils";
 import { when } from "../../core/utils/deferred";
 import { findChanges } from "../../core/utils/array_compare";
+import { insertElement } from "../../core/dom_adapter";
 
 export default CollectionWidget.inherit({
     _getDefaultOptions: function() {
@@ -30,9 +31,14 @@ export default CollectionWidget.inherit({
         this._dataSource && this._dataSource.on("customizeStoreLoadOptions", this._customizeStoreLoadOptions);
     },
 
+    reload: function() {
+        this._correctionIndex = 0;
+    },
+
     _init: function() {
         this.callBase();
         this._refreshItemsCache();
+        this._correctionIndex = 0;
     },
 
     _findItemElementByKey: function(key) {
@@ -76,8 +82,6 @@ export default CollectionWidget.inherit({
         this.callBase();
     },
 
-    _correctionIndex: 0,
-
     _updateByChange: function(keyInfo, items, change, isPartialRefresh) {
         if(isPartialRefresh) {
             this._renderItem(change.index, change.data, null, this._findItemElementByKey(change.key));
@@ -118,6 +122,11 @@ export default CollectionWidget.inherit({
         changes.forEach(change => this[`_${change.type}ByChange`](keyInfo, items, change, isPartialRefresh));
         this._renderedItemsCount = items.length;
         this._refreshItemsCache();
+    },
+
+    _appendItemToContainer: function($container, $itemFrame, index) {
+        let nextSiblingElement = $container.children().get(index);
+        insertElement($container.get(0), $itemFrame.get(0), nextSiblingElement);
     },
 
     _optionChanged: function(args) {

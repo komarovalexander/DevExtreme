@@ -937,6 +937,10 @@ var CollectionWidget = Widget.inherit({
         $(args.container).addClass(classes.join(" "));
     },
 
+    _appendItemToContainer: function($container, $itemFrame, index) {
+        $itemFrame.appendTo($container);
+    },
+
     _renderItemFrame: function(index, itemData, $container, $itemToReplace) {
         var $itemFrame = $("<div>");
         new (this.constructor.ItemClass)($itemFrame, this._itemOptions(), itemData || {});
@@ -944,7 +948,7 @@ var CollectionWidget = Widget.inherit({
         if($itemToReplace && $itemToReplace.length) {
             $itemToReplace.replaceWith($itemFrame);
         } else {
-            $itemFrame.appendTo($container);
+            this._appendItemToContainer.call(this, $container, $itemFrame, index);
         }
 
         return $itemFrame;
