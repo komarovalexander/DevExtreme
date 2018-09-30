@@ -1,6 +1,6 @@
 var $ = require("../../core/renderer"),
     eventsEngine = require("../../events/core/events_engine"),
-    BaseCollectionWidget = require("./ui.collection_widget.base"),
+    LiveUpdateCollectionWidget = require("./ui.collection_widget.live_update"),
     errors = require("../widget/ui.errors"),
     extend = require("../../core/utils/extend").extend,
     each = require("../../core/utils/iterator").each,
@@ -10,13 +10,9 @@ var $ = require("../../core/renderer"),
     compileGetter = require("../../core/utils/data").compileGetter,
     DataSource = require("../../data/data_source/data_source").DataSource,
     Selection = require("../selection/selection"),
-    arrayUtils = require("../../data/array_utils"),
-    dataUtils = require("../../data/utils"),
-    keysEqual = dataUtils.keysEqual,
     deferredUtils = require("../../core/utils/deferred"),
     when = deferredUtils.when,
-    Deferred = deferredUtils.Deferred,
-    findChanges = require("../../core/utils/array_compare").findChanges;
+    Deferred = deferredUtils.Deferred;
 
 var ITEM_DELETING_DATA_KEY = "dxItemDeleting",
     NOT_EXISTING_INDEX = -1;
@@ -25,7 +21,7 @@ var indexExists = function(index) {
     return index !== NOT_EXISTING_INDEX;
 };
 
-var CollectionWidget = BaseCollectionWidget.inherit({
+var CollectionWidget = LiveUpdateCollectionWidget.inherit({
 
     _setOptionsByReference: function() {
         this.callBase();
@@ -153,14 +149,7 @@ var CollectionWidget = BaseCollectionWidget.inherit({
             * @action
             * @hidden
             */
-            onItemDeleted: null,
-
-            /**
-            * @name CollectionWidgetOptions.repaintChangesOnly
-            * @type boolean
-            * @hidden
-            */
-            repaintChangesOnly: false
+            onItemDeleted: null
         });
     },
 
@@ -182,16 +171,6 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         if(this.option("selectionMode") === "multi") {
             this._showDeprecatedSelectionMode();
         }
-
-        this._refreshItemsCache();
-
-        this._customizeStoreLoadOptions = (e) => {
-            if(this._correctionIndex && e.storeLoadOptions) {
-                e.storeLoadOptions.skip += this._correctionIndex;
-            }
-        },
-
-        this._dataSource && this._dataSource.on("customizeStoreLoadOptions", this._customizeStoreLoadOptions);
     },
 
     _initKeyGetter: function() {
@@ -242,19 +221,6 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         }
 
         return key;
-    },
-
-    _findItemElementByKey: function(key) {
-        var result = $();
-        this.itemElements().each(function(_, item) {
-            var $item = $(item);
-            if(keysEqual(this.key(), this.keyOf(this._getItemData($item)), key)) {
-                result = $item;
-                return false;
-            }
-        }.bind(this));
-
-        return result;
     },
 
     _initSelectionModule: function() {
@@ -623,19 +589,9 @@ var CollectionWidget = BaseCollectionWidget.inherit({
                     this._invalidate();
                 }
                 break;
-            case "items":
-                var isItemsUpdated = this._partialRefresh(args.value);
-                if(!isItemsUpdated) {
-                    this.callBase(args);
-                }
-                break;
             case "dataSource":
                 if(!args.value || Array.isArray(args.value) && !args.value.length) {
                     this.option("selectedItemKeys", []);
-                }
-
-                if(!this.option("repaintChangesOnly") || !args.value) {
-                    this.option("items", []);
                 }
 
                 this.callBase(args);
@@ -659,26 +615,10 @@ var CollectionWidget = BaseCollectionWidget.inherit({
             case "onItemDeleted":
             case "onItemReordered":
             case "maxFilterLengthInRequest":
-            case "repaintChangesOnly":
                 break;
             default:
                 this.callBase(args);
         }
-    },
-
-    _partialRefresh: function(newItems) {
-        if(this.option("repaintChangesOnly")) {
-            var oldItems = this._itemsCache,
-                isItemEquals = (item1, item2) => JSON.stringify(item1) === JSON.stringify(item2),
-                result = findChanges(oldItems, this._editStrategy.itemsGetter(), this.keyOf.bind(this), isItemEquals);
-            if(result) {
-                this._modifyByChanges(result, true);
-                return true;
-            } else {
-                this._refreshItemsCache();
-            }
-        }
-        return false;
     },
 
     _clearSelectedItems: function() {
@@ -797,61 +737,6 @@ var CollectionWidget = BaseCollectionWidget.inherit({
         }
 
         this._optionChangedAction({ name: optionName, fullName: optionName, value: optionValue });
-    },
-
-    _refreshItemsCache: function() {
-        if(this.option("repaintChangesOnly")) {
-            this._itemsCache = extend(true, [], this._editStrategy.itemsGetter());
-        }
-    },
-
-    _dispose: function() {
-        this._dataSource && this._dataSource.off("customizeStoreLoadOptions", this._customizeStoreLoadOptions);
-        this.callBase();
-    },
-
-    _correctionIndex: 0,
-
-    _updateByChange: function(keyInfo, items, change, isPartialRefresh) {
-        if(isPartialRefresh) {
-            this._renderItem(change.index, change.data, null, this._findItemElementByKey(change.key));
-        } else {
-            let changedItem = items[arrayUtils.indexByKey(keyInfo, items, change.key)];
-            if(changedItem) {
-                arrayUtils.update(keyInfo, items, change.key, change.data).done(() => {
-                    this._renderItem(items.indexOf(changedItem), changedItem, null, this._findItemElementByKey(change.key));
-                });
-            }
-        }
-    },
-
-    _insertByChange: function(keyInfo, items, change, isPartialRefresh) {
-        when(isPartialRefresh || arrayUtils.insert(keyInfo, items, change.data, change.index)).done(() => {
-            this._renderItem(isDefined(change.index) ? change.index : items.length, change.data);
-            this._correctionIndex++;
-        });
-    },
-
-    _removeByChange: function(keyInfo, items, change, isPartialRefresh) {
-        let index = isPartialRefresh ? change.index : arrayUtils.indexByKey(keyInfo, items, change.key),
-            removedItem = isPartialRefresh ? change.oldItem : items[index];
-        if(removedItem) {
-            let key = change.key,
-                $removedItemElement = this._findItemElementByKey(key),
-                deletedActionArgs = this._extendActionArgs($removedItemElement);
-            when(isPartialRefresh || arrayUtils.remove(keyInfo, items, key)).done(() => {
-                this._deleteItemElement($removedItemElement, deletedActionArgs, index);
-                this._correctionIndex--;
-            });
-        }
-    },
-
-    _modifyByChanges: function(changes, isPartialRefresh) {
-        const items = this._editStrategy.itemsGetter(),
-            keyInfo = { key: this.key.bind(this), keyOf: this.keyOf.bind(this) };
-        changes.forEach(change => this[`_${change.type}ByChange`](keyInfo, items, change, isPartialRefresh));
-        this._renderedItemsCount = items.length;
-        this._refreshItemsCache();
     },
 
     /**
