@@ -10,15 +10,6 @@ var $ = require("../../core/renderer"),
     findChanges = require("../../core/utils/array_compare").findChanges;
 
 var CollectionWidget = BaseCollectionWidget.inherit({
-
-    _setOptionsByReference: function() {
-        this.callBase();
-
-        extend(this._optionsByReference, {
-            selectedItem: true
-        });
-    },
-
     _getDefaultOptions: function() {
         return extend(this.callBase(), {
             /**
@@ -43,8 +34,8 @@ var CollectionWidget = BaseCollectionWidget.inherit({
     },
 
     _init: function() {
-        this._refreshItemsCache();
         this.callBase();
+        this._refreshItemsCache();
     },
 
     _findItemElementByKey: function(key) {
