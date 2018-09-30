@@ -7,7 +7,7 @@ import { keysEqual } from "../../data/utils";
 import { when } from "../../core/utils/deferred";
 import { findChanges } from "../../core/utils/array_compare";
 
-const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
+export default CollectionWidget.inherit({
     _getDefaultOptions: function() {
         return extend(this.callBase(), {
             /**
@@ -142,5 +142,3 @@ const CollectionWidgetLiveUpdate = CollectionWidget.inherit({
         }
     }
 });
-
-export default CollectionWidgetLiveUpdate;
