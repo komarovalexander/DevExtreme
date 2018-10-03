@@ -31,6 +31,7 @@ var ROWS_VIEW_CLASS = "rowsview",
     ROW_ALTERNATION_CLASS = "dx-row-alt",
     LAST_ROW_BORDER = "dx-last-row-border",
     EMPTY_CLASS = "dx-empty",
+    ROW_INSERTED_CLASS = "dx-row-inserted-animation",
 
     LOADPANEL_HIDE_TIMEOUT = 200;
 
@@ -621,22 +622,11 @@ module.exports = {
                                                 $newRowElement.insertAfter($rowsElement.last());
                                             }
                                             if(change.isLiveUpdate) {
-                                                $newRowElement.addClass("dx-row-inserting");
-                                                setTimeout(()=>{
-                                                    $newRowElement.addClass("dx-row-inserting-animation");
-                                                }, 0);
+                                                $newRowElement.addClass(ROW_INSERTED_CLASS);
                                             }
                                             break;
                                         case "remove":
-                                            if(change.isLiveUpdate) {
-                                                $rowElement.addClass("dx-row-removing");
-                                                setTimeout(()=>{
-                                                    $rowElement.addClass("dx-row-removing-animation");
-                                                }, 0);
-                                                setTimeout(()=>$rowElement.remove(), 2000);
-                                            } else {
-                                                $rowElement.remove();
-                                            }
+                                            $rowElement.remove();
                                             break;
                                     }
                                 });
@@ -730,7 +720,7 @@ module.exports = {
                 _getRowElements: function(tableElement) {
                     var $rows = this.callBase(tableElement);
 
-                    return $rows && $rows.not("." + FREE_SPACE_CLASS).not(".dx-row-removing");
+                    return $rows && $rows.not("." + FREE_SPACE_CLASS);
                 },
 
                 _getFreeSpaceRowElements: function($table) {

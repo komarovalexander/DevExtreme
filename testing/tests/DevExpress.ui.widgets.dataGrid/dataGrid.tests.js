@@ -10535,7 +10535,7 @@ QUnit.test("Refresh with changesOnly", function(assert) {
     assert.strictEqual($(dataGrid.getCellElement(0, 1)).text(), "test5", "cell value is updated");
 });
 
-QUnit.test("Refresh with changesOnly and cellTemplate", function(assert) {
+QUnit.test("Refresh with changesOnly and cellTemplate and check oldValue", function(assert) {
     // arrange
     var $cellElements,
         $updatedCellElements,

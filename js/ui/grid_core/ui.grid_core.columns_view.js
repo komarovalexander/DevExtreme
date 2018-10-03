@@ -27,6 +27,7 @@ var SCROLL_CONTAINER_CLASS = "scroll-container",
     GROUP_ROW_CLASS = "dx-group-row",
     DETAIL_ROW_CLASS = "dx-master-detail-row",
     FILTER_ROW_CLASS = "filter-row",
+    CELL_UPDATED_CLASS = "dx-cell-updated-animation",
 
     HIDDEN_COLUMNS_WIDTH = "0.0001px",
 
@@ -511,7 +512,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
         var $cells = $rowElement.children(),
             $newCells = $newRowElement.children();
 
-        columnIndices.forEach(function(columnIndex, index) {
+        columnIndices.forEach((columnIndex, index) => {
             var $cell = $cells.eq(columnIndex),
                 $newCell = $newCells.eq(index),
                 $newContent = $newCell.contents();
@@ -525,8 +526,12 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
             } else {
                 $cell.replaceWith($newCell);
             }
-            $cell.addClass("dx-cell-updating");
-            setTimeout(()=>$cell.addClass("dx-cell-updating-animation"), 0);
+            if($cell.hasClass(CELL_UPDATED_CLASS)) {
+                // fix for css animation
+                $cell.removeClass(CELL_UPDATED_CLASS);
+                $cell.width();
+            }
+            $cell.addClass(CELL_UPDATED_CLASS);
         });
     },
 
