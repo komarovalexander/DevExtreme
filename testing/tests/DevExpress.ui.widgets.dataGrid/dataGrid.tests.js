@@ -10558,7 +10558,7 @@ QUnit.test("Refresh with changesOnly and cellTemplate", function(assert) {
                 dataField: "field1",
                 cellTemplate: function(container, options) {
                     setTimeout(function() {
-                        $(container).text(options.text);
+                        $(container).text(options.text + (options.oldValue ? " old:" + options.oldValue : ""));
                     });
                 }
             }]
@@ -10581,7 +10581,7 @@ QUnit.test("Refresh with changesOnly and cellTemplate", function(assert) {
     assert.equal($updatedCellElements.length, 2, "count cell");
     assert.ok($updatedCellElements.eq(0).is($cellElements.eq(0)), "first cell isn't updated");
     assert.ok(!$updatedCellElements.eq(1).is($cellElements.eq(1)), "second cell is updated");
-    assert.strictEqual($(dataGrid.getCellElement(0, 1)).text(), "test5", "cell value is updated");
+    assert.strictEqual($(dataGrid.getCellElement(0, 1)).text(), "test5 old:test1", "cell value is updated");
 });
 
 QUnit.test("Refresh with changesOnly and summary", function(assert) {
