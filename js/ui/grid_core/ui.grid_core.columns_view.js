@@ -496,7 +496,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
         for(i = 0; i < columns.length; i++) {
             if(!options.columnIndices || options.columnIndices.indexOf(i) >= 0) {
-                that._renderCell($row, extend({ column: columns[i], columnIndex: columnIndex, value: row.values && row.values[columnIndex] }, options));
+                that._renderCell($row, extend({ column: columns[i], columnIndex: columnIndex, value: row.values && row.values[columnIndex], oldValue: row.oldValues && row.oldValues[columnIndex] }, options));
             }
 
             if(columns[i].colspan > 1) {
@@ -525,6 +525,8 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
             } else {
                 $cell.replaceWith($newCell);
             }
+            $cell.addClass("dx-cell-updating");
+            setTimeout(()=>$cell.addClass("dx-cell-updating-animation"), 0);
         });
     },
 

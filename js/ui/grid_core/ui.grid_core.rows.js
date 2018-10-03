@@ -620,9 +620,23 @@ module.exports = {
                                             } else {
                                                 $newRowElement.insertAfter($rowsElement.last());
                                             }
+                                            if(change.isLiveUpdate) {
+                                                $newRowElement.addClass("dx-row-inserting");
+                                                setTimeout(()=>{
+                                                    $newRowElement.addClass("dx-row-inserting-animation");
+                                                }, 0);
+                                            }
                                             break;
                                         case "remove":
-                                            $rowElement.remove();
+                                            if(change.isLiveUpdate) {
+                                                $rowElement.addClass("dx-row-removing");
+                                                setTimeout(()=>{
+                                                    $rowElement.addClass("dx-row-removing-animation");
+                                                }, 0);
+                                                setTimeout(()=>$rowElement.remove(), 2000);
+                                            } else {
+                                                $rowElement.remove();
+                                            }
                                             break;
                                     }
                                 });
@@ -716,7 +730,7 @@ module.exports = {
                 _getRowElements: function(tableElement) {
                     var $rows = this.callBase(tableElement);
 
-                    return $rows && $rows.not("." + FREE_SPACE_CLASS);
+                    return $rows && $rows.not("." + FREE_SPACE_CLASS).not(".dx-row-removing");
                 },
 
                 _getFreeSpaceRowElements: function($table) {
@@ -921,6 +935,7 @@ module.exports = {
 
                     parameters = this.callBase(options);
                     parameters.value = value;
+                    parameters.oldValue = options.oldValue;
                     parameters.displayValue = displayValue;
                     parameters.row = row;
                     parameters.key = row.key;

@@ -778,6 +778,7 @@ module.exports = {
                                 items.push(newItem);
                                 this._items[index] = newItem;
                                 newItem.cells = oldItem.cells;
+                                newItem.oldValues = oldItem.values;
                                 columnIndices.push(this._getChangedColumnIndices(oldItem, newItem, index, true));
                                 break;
                             case "insert":
@@ -803,6 +804,9 @@ module.exports = {
                     change.columnIndices = columnIndices;
                     change.changeTypes = changeTypes;
                     change.items = items;
+                    if(oldItems.length) {
+                        change.isLiveUpdate = true;
+                    }
 
                     this._correctRowIndices(function getRowIndexCorrection(rowIndex) {
                         var oldItem = oldItems[rowIndex],
