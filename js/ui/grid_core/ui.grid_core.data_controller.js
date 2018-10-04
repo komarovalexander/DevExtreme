@@ -280,6 +280,7 @@ module.exports = {
                     switch(args.name) {
                         case "cacheEnabled":
                         case "repaintChangesOnly":
+                        case "highlightChanges":
                         case "loadingTimeout":
                         case "remoteOperations":
                             handled();
