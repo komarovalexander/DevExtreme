@@ -214,3 +214,16 @@
         }
     }
 }
+
+.dx-cell-updated-animation  {
+    animation: dx-cell-updated-animation-keyframe 1s;
+}
+
+@keyframes dx-cell-updated-animation-keyframe {
+    from {
+        background-color: fade(@treelist-base-color, 6%);
+    }
+    50% {
+        background-color: fade(@treelist-base-color, 6%);
+    }
+}

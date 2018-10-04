@@ -523,7 +523,6 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
                 $cell.contents().remove();
                 $cell.append($newContent);
 
-                $cell.get(0).className = "";
                 $cell.get(0).className = $newCell.get(0).className;
                 $cell.get(0).style.cssText = $newCell.get(0).style.cssText;
                 hasClass && $cell.width(); // forse animation stop
