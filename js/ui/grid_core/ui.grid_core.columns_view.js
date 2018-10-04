@@ -513,7 +513,7 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
             $newCells = $newRowElement.children(),
             highlightChanges = this.option("highlightChanges");
 
-        columnIndices.forEach((columnIndex, index) => {
+        columnIndices.forEach(function(columnIndex, index) {
             var $cell = $cells.eq(columnIndex),
                 $newCell = $newCells.eq(index),
                 $newContent = $newCell.contents();
