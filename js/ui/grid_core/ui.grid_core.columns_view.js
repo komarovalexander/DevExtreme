@@ -27,7 +27,7 @@ var SCROLL_CONTAINER_CLASS = "scroll-container",
     GROUP_ROW_CLASS = "dx-group-row",
     DETAIL_ROW_CLASS = "dx-master-detail-row",
     FILTER_ROW_CLASS = "filter-row",
-    CELL_UPDATED_CLASS = "dx-cell-updated-animation",
+    CELL_UPDATED_ANIMATION_CLASS = "dx-cell-updated-animation",
 
     HIDDEN_COLUMNS_WIDTH = "0.0001px",
 
@@ -510,7 +510,8 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
 
     _updateCells: function($rowElement, $newRowElement, columnIndices) {
         var $cells = $rowElement.children(),
-            $newCells = $newRowElement.children();
+            $newCells = $newRowElement.children(),
+            highlightChanges = this.option("highlightChanges");
 
         columnIndices.forEach((columnIndex, index) => {
             var $cell = $cells.eq(columnIndex),
@@ -518,20 +519,22 @@ exports.ColumnsView = modules.View.inherit(columnStateMixin).inherit({
                 $newContent = $newCell.contents();
 
             if($newContent.length) {
+                let hasClass = $cell.hasClass(CELL_UPDATED_ANIMATION_CLASS);
                 $cell.contents().remove();
                 $cell.append($newContent);
 
+                $cell.get(0).className = "";
                 $cell.get(0).className = $newCell.get(0).className;
                 $cell.get(0).style.cssText = $newCell.get(0).style.cssText;
+                hasClass && $cell.width(); // forse animation stop
             } else {
                 $cell.replaceWith($newCell);
+                $cell = $newCell;
             }
-            if($cell.hasClass(CELL_UPDATED_CLASS)) {
-                // fix for css animation
-                $cell.removeClass(CELL_UPDATED_CLASS);
-                $cell.width();
+            if(highlightChanges) {
+                $cell.addClass(CELL_UPDATED_ANIMATION_CLASS);
             }
-            $cell.addClass(CELL_UPDATED_CLASS);
+
         });
     },
 

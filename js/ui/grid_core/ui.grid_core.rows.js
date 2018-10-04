@@ -31,7 +31,7 @@ var ROWS_VIEW_CLASS = "rowsview",
     ROW_ALTERNATION_CLASS = "dx-row-alt",
     LAST_ROW_BORDER = "dx-last-row-border",
     EMPTY_CLASS = "dx-empty",
-    ROW_INSERTED_CLASS = "dx-row-inserted-animation",
+    ROW_INSERTED_ANIMATION_CLASS = "dx-row-inserted-animation",
 
     LOADPANEL_HIDE_TIMEOUT = 200;
 
@@ -587,7 +587,8 @@ module.exports = {
                         tableElement = that._getTableElement(),
                         contentElement = that._findContentElement(),
                         changeType = change && change.changeType,
-                        executors = [];
+                        executors = [],
+                        highlightChanges = this.option("highlightChanges");
 
                     switch(changeType) {
                         case "update":
@@ -621,8 +622,8 @@ module.exports = {
                                             } else {
                                                 $newRowElement.insertAfter($rowsElement.last());
                                             }
-                                            if(change.isLiveUpdate) {
-                                                $newRowElement.addClass(ROW_INSERTED_CLASS);
+                                            if(highlightChanges && change.isLiveUpdate) {
+                                                $newRowElement.addClass(ROW_INSERTED_ANIMATION_CLASS);
                                             }
                                             break;
                                         case "remove":

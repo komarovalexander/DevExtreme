@@ -38,6 +38,12 @@ module.exports = {
              */
             repaintChangesOnly: false,
             /**
+             * @name GridBaseOptions.highlightChanges
+             * @type boolean
+             * @default true
+             */
+            highlightChanges: true,
+            /**
              * @name GridBaseOptions.onDataErrorOccurred
              * @extends Action
              * @type function(e)
