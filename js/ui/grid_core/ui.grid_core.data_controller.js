@@ -40,9 +40,9 @@ module.exports = {
             /**
              * @name GridBaseOptions.highlightChanges
              * @type boolean
-             * @default true
+             * @default false
              */
-            highlightChanges: true,
+            highlightChanges: false,
             /**
              * @name GridBaseOptions.onDataErrorOccurred
              * @extends Action
