@@ -471,7 +471,8 @@ var Scheduler = Widget.inherit({
                 allowDeleting: true,
                 allowDragging: true,
                 allowResizing: true,
-                allowUpdating: true
+                allowUpdating: true,
+                refreshMode: "full"
             },
 
             /**
@@ -498,6 +499,11 @@ var Scheduler = Widget.inherit({
                 * @name dxSchedulerOptions.editing.allowDragging
                 * @type boolean
                 * @default true
+                */
+            /**
+                * @name dxSchedulerOptions.editing.refreshMode
+                * @type Enums.SchedulerEditRefreshMode
+                * @default "full"
                 */
 
             /**
@@ -2591,7 +2597,7 @@ var Scheduler = Widget.inherit({
                 try {
                     this._updatedAppointment = appointment;
                     this._appointmentModel
-                        .update(target, appointment)
+                        .update(target, appointment, this.option("editing.refreshMode"))
                         .always((function(e) {
                             this._executeActionWhenOperationIsCompleted(this._actions["onAppointmentUpdated"], appointment, e);
                         }).bind(this))
@@ -2953,7 +2959,7 @@ var Scheduler = Widget.inherit({
                 this._appointmentModel.add(appointment, {
                     value: this._getTimezoneOffsetByOption(),
                     clientOffset: this.fire("getClientTimezoneOffset")
-                }).always((function(e) {
+                }, this.option("editing.refreshMode")).always((function(e) {
                     this._executeActionWhenOperationIsCompleted(this._actions["onAppointmentAdded"], appointment, e);
                 }).bind(this));
             }
@@ -2985,7 +2991,7 @@ var Scheduler = Widget.inherit({
 
         this._processActionResult(deletingOptions, function(canceled) {
             if(!canceled) {
-                this._appointmentModel.remove(appointment).always((function(e) {
+                this._appointmentModel.remove(appointment, this.option("editing.refreshMode")).always((function(e) {
                     this._executeActionWhenOperationIsCompleted(this._actions["onAppointmentDeleted"], appointment, e);
                 }).bind(this));
             }

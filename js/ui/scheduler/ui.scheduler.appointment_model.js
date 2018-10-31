@@ -480,28 +480,28 @@ var AppointmentModel = Class.inherit({
         }).bind(this);
     },
 
-    add: function(data, tz) {
+    add: function(data, tz, refreshMode) {
         if(tz && tz.value !== undefined) {
             this._mapDateFieldsDependOnTZ(data, tz);
         }
         return this._dataSource.store().insert(data).done((function() {
-            this._dataSource.load();
+            refreshMode === "repaint" ? this._dataSource.store().push([{ type: "insert", data: data }]) : this._dataSource.load();
         }).bind(this));
     },
 
-    update: function(target, data) {
+    update: function(target, data, refreshMode) {
         var key = this._getStoreKey(target);
 
         return this._dataSource.store().update(key, data).done((function() {
-            this._dataSource.load();
+            refreshMode === "repaint" ? this._dataSource.store().push([{ type: "update", data: data, key: key }]) : this._dataSource.load();
         }).bind(this));
     },
 
-    remove: function(target) {
+    remove: function(target, refreshMode) {
         var key = this._getStoreKey(target);
 
         return this._dataSource.store().remove(key).done((function() {
-            this._dataSource.load();
+            refreshMode === "repaint" ? this._dataSource.store().push([{ type: "remove", key: key }]) : this._dataSource.load();
         }).bind(this));
     }
 });

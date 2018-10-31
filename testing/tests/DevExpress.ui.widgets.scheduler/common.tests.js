@@ -336,6 +336,36 @@ QUnit.testStart(function() {
         assert.ok(this.instance.option("dataSource").items().length === 3, "new item is added");
     });
 
+    QUnit.test("Add new item, refreshMode = 'repaint'", function(assert) {
+        var data = new DataSource({
+            store: this.tasks,
+            paginate: false,
+            pushAggregationTimeout: 0
+        });
+
+        this.createInstance({
+            currentDate: new Date(2015, 1, 9),
+            editing: {
+                refreshMode: "repaint"
+            },
+            dataSource: data
+        });
+
+        this.clock.tick();
+
+        var newTask = { startDate: new Date(2015, 1, 9, 16), endDate: new Date(2015, 1, 9, 17), text: "caption" };
+
+        var dataSourceChangedSpy = sinon.spy();
+        data.on("changed", dataSourceChangedSpy);
+        this.instance.addAppointment(newTask);
+        this.clock.tick();
+
+        assert.equal(this.instance.option("dataSource").items().length, 3, "new item is added");
+        assert.deepEqual(this.instance.option("dataSource").items()[2], newTask, "check new item");
+        assert.equal(dataSourceChangedSpy.callCount, 1, "changed called once after insert appointment");
+        assert.deepEqual(dataSourceChangedSpy.args[0][0].changes, [{ type: "insert", data: newTask }], "check changes");
+    });
+
     QUnit.test("Add new item with empty text", function(assert) {
         var data = new DataSource({
             store: this.tasks
@@ -504,6 +534,35 @@ QUnit.testStart(function() {
         this.clock.tick();
 
         assert.deepEqual(this.instance.option("dataSource").items()[0], newTask, "item is updated");
+    });
+
+    QUnit.test("Update item, refreshMode = 'repaint'", function(assert) {
+        var data = new DataSource({
+            store: this.tasks,
+            paginate: false,
+            pushAggregationTimeout: 0
+        });
+
+        this.createInstance({
+            currentDate: new Date(2015, 1, 9),
+            editing: {
+                refreshMode: "repaint"
+            },
+            dataSource: data
+        });
+
+        this.clock.tick();
+
+        var newTask = { startDate: new Date(2015, 1, 9, 16), endDate: new Date(2015, 1, 9, 17), text: "caption" };
+
+        var dataSourceChangedSpy = sinon.spy();
+        data.on("changed", dataSourceChangedSpy);
+        this.instance.updateAppointment(this.tasks[0], newTask);
+        this.clock.tick();
+
+        assert.deepEqual(this.instance.option("dataSource").items()[0], newTask, "item is updated");
+        assert.equal(dataSourceChangedSpy.callCount, 1, "changed called once after update appointment");
+        assert.deepEqual(dataSourceChangedSpy.args[0][0].changes, [{ type: "update", key: this.tasks[0], data: newTask }], "check changes");
     });
 
     QUnit.test("Updated item should be rerendered", function(assert) {
@@ -694,6 +753,35 @@ QUnit.testStart(function() {
         this.instance.deleteAppointment(this.tasks[0]);
         this.clock.tick();
         assert.deepEqual(this.instance.option("dataSource").items(), [lastTask], "Task is removed");
+    });
+
+    QUnit.test("Remove item, refreshMode = 'repaint'", function(assert) {
+        var data = new DataSource({
+            store: this.tasks,
+            paginate: false,
+            pushAggregationTimeout: 0
+        });
+
+        this.createInstance({
+            currentDate: new Date(2015, 1, 9),
+            editing: {
+                refreshMode: "repaint"
+            },
+            dataSource: data
+        });
+
+        this.clock.tick();
+
+        var lastTask = this.tasks[1];
+
+        var dataSourceChangedSpy = sinon.spy();
+        data.on("changed", dataSourceChangedSpy);
+        var removedTask = this.tasks[0];
+        this.instance.deleteAppointment(removedTask);
+        this.clock.tick();
+        assert.deepEqual(this.instance.option("dataSource").items(), [lastTask], "Task is removed");
+        assert.equal(dataSourceChangedSpy.callCount, 1, "changed called once after delete appointment");
+        assert.deepEqual(dataSourceChangedSpy.args[0][0].changes, [{ type: "remove", key: removedTask }], "check changes");
     });
 
     QUnit.test("Other appointments should not be rerendered after remove appointment", function(assert) {
@@ -1675,7 +1763,14 @@ QUnit.testStart(function() {
     });
 
     QUnit.test("Editing default option value", function(assert) {
-        var defaultEditing = { allowAdding: true, allowUpdating: true, allowDeleting: true, allowResizing: true, allowDragging: true };
+        var defaultEditing = {
+            allowAdding: true,
+            allowUpdating: true,
+            allowDeleting: true,
+            allowResizing: true,
+            allowDragging: true,
+            refreshMode: "full"
+        };
 
         if(devices.real().platform !== "generic") {
             defaultEditing.allowDragging = false;

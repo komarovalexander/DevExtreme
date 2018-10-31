@@ -596,6 +596,11 @@
  */
 
 /**
+ * @typedef {string} Enums.SchedulerEditRefreshMode
+ * @enum {'full'|'repaint'}
+ */
+
+/**
  * @typedef {string} Enums.MaxAppointmentsPerCell
  * @enum {'auto'|'unlimited'}
  */
