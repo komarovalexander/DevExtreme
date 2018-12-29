@@ -1,10 +1,17 @@
-var $ = require("jquery");
+import $ from "jquery";
+import fields from "../../../helpers/filterBuilderTestData.js";
 
-var FILTER_BUILDER_ITEM_VALUE_CLASS = "dx-filterbuilder-item-value",
-    FILTER_BUILDER_ITEM_VALUE_TEXT_CLASS = "dx-filterbuilder-item-value-text",
-    fields = require("../../../helpers/filterBuilderTestData.js");
+import {
+    FILTER_BUILDER_ITEM_OPERATION_CLASS,
+    FILTER_BUILDER_ITEM_VALUE_CLASS,
+    FILTER_BUILDER_ITEM_VALUE_TEXT_CLASS
+} from "./constants.js";
 
-require("ui/filter_builder/filter_builder");
+import {
+    clickByButtonAndSelectMenuItem
+} from "./helpers.js";
+
+import "ui/filter_builder/filter_builder";
 
 QUnit.module("Events", function() {
     QUnit.test("onEditorPreparing", function(assert) {
@@ -149,6 +156,43 @@ QUnit.module("Events", function() {
         assert.strictEqual(spy.callCount, 1, "onValueChanged is called");
         assert.deepEqual(args.previousValue, ["Zipcode", "=", "666"], "previous value");
         assert.deepEqual(args.value, ["CompanyName", "=", "DevExpress"], "current value");
+    });
+
+    // T701542
+    QUnit.test("Skip onValueChanged after change operation of invalid condition to other invalid condition ", function(assert) {
+        // arrange
+        var spy = sinon.spy(),
+            container = $("#container");
+
+        container.dxFilterBuilder({
+            value: ["NumberField", "=", ""],
+            fields: fields,
+            onValueChanged: spy
+        });
+
+        // act
+        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
+        clickByButtonAndSelectMenuItem($operationButton, 1);
+        // assert
+        assert.strictEqual(spy.callCount, 0, "onValueChanged is not called"); // operation has invalid condition and before it was invalid
+
+        // act
+        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
+        clickByButtonAndSelectMenuItem($operationButton, 6);
+        // assert
+        assert.strictEqual(spy.callCount, 1, "onValueChanged is called"); // isblank has a valid condition
+
+        // act
+        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
+        clickByButtonAndSelectMenuItem($operationButton, 7);
+        // assert
+        assert.strictEqual(spy.callCount, 2, "onValueChanged is called"); // is not blank has a valid condition
+
+        // act
+        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
+        clickByButtonAndSelectMenuItem($operationButton, 1);
+        // assert
+        assert.strictEqual(spy.callCount, 3, "onValueChanged is called"); // operation has invalid condition but before it was a valid
     });
 
     QUnit.test("onInitialized", function(assert) {

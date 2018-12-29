@@ -775,8 +775,10 @@ var FilterBuilder = Widget.inherit({
                     },
                     onItemClick: function(e) {
                         if(currentOperation !== e.itemData) {
+                            let isValidOld = utils.isValidCondition(condition);
                             currentOperation = e.itemData;
                             utils.updateConditionByOperation(condition, currentOperation.value, that._customOperations);
+                            let isValidNew = utils.isValidCondition(condition);
                             var $valueButton = $operationButton.siblings().filter("." + FILTER_BUILDER_ITEM_VALUE_CLASS);
                             if(that._hasValueButton(condition)) {
                                 if($valueButton.length !== 0) {
@@ -787,7 +789,9 @@ var FilterBuilder = Widget.inherit({
                                 $valueButton.remove();
                             }
                             $operationButton.html(currentOperation.text);
-                            that._updateFilter();
+                            if(isValidOld !== isValidNew || (isValidOld && isValidNew)) {
+                                that._updateFilter();
+                            }
                         }
                     },
                     cssClass: FILTER_BUILDER_FILTER_OPERATIONS_CLASS
