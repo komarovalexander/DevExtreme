@@ -221,6 +221,12 @@ QUnit.module("Events", function() {
         // assert
         assert.strictEqual($fieldButton.text(), "Company Name");
         assert.strictEqual(spy.callCount, 0, "onValueChanged is not called");
+
+        // act
+        clickByButtonAndSelectMenuItem($fieldButton, 6);
+        // assert
+        assert.strictEqual($fieldButton.text(), "Caption of Object Field");
+        assert.strictEqual(spy.callCount, 1, "onValueChanged is called"); // Object field has a valid condition by default
     });
 
     QUnit.test("Clear keyup & dxpointerdown events after dispose", function(assert) {
