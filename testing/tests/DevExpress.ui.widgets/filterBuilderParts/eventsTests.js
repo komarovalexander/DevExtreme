@@ -3,12 +3,14 @@ import fields from "../../../helpers/filterBuilderTestData.js";
 
 import {
     FILTER_BUILDER_ITEM_OPERATION_CLASS,
+    FILTER_BUILDER_ITEM_FIELD_CLASS,
     FILTER_BUILDER_ITEM_VALUE_CLASS,
     FILTER_BUILDER_ITEM_VALUE_TEXT_CLASS
 } from "./constants.js";
 
 import {
-    clickByButtonAndSelectMenuItem
+    clickByButtonAndSelectMenuItem,
+    clickByValue
 } from "./helpers.js";
 
 import "ui/filter_builder/filter_builder";
@@ -159,7 +161,7 @@ QUnit.module("Events", function() {
     });
 
     // T701542
-    QUnit.test("Skip onValueChanged after change operation of invalid condition to other invalid condition ", function(assert) {
+    QUnit.test("Skip the onValueChanged after change operation of an invalid condition to another invalid condition ", function(assert) {
         // arrange
         var spy = sinon.spy(),
             container = $("#container");
@@ -174,25 +176,91 @@ QUnit.module("Events", function() {
         var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
         clickByButtonAndSelectMenuItem($operationButton, 1);
         // assert
-        assert.strictEqual(spy.callCount, 0, "onValueChanged is not called"); // operation has invalid condition and before it was invalid
+        assert.strictEqual($operationButton.text(), "Does not equal");
+        assert.strictEqual(spy.callCount, 0, "onValueChanged is not called"); // operation has invalid condition and it was invalid before
 
         // act
-        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
         clickByButtonAndSelectMenuItem($operationButton, 6);
         // assert
+        assert.strictEqual($operationButton.text(), "Is blank");
         assert.strictEqual(spy.callCount, 1, "onValueChanged is called"); // isblank has a valid condition
 
         // act
-        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
         clickByButtonAndSelectMenuItem($operationButton, 7);
         // assert
+        assert.strictEqual($operationButton.text(), "Is not blank");
         assert.strictEqual(spy.callCount, 2, "onValueChanged is called"); // is not blank has a valid condition
 
         // act
-        var $operationButton = container.find("." + FILTER_BUILDER_ITEM_OPERATION_CLASS);
         clickByButtonAndSelectMenuItem($operationButton, 1);
         // assert
-        assert.strictEqual(spy.callCount, 3, "onValueChanged is called"); // operation has invalid condition but before it was a valid
+        assert.strictEqual($operationButton.text(), "Does not equal");
+        assert.strictEqual(spy.callCount, 3, "onValueChanged is called"); // operation has invalid condition but it was a valid before
+    });
+
+    QUnit.test("Skip the onValueChanged after change field", function(assert) {
+        // arrange
+        var spy = sinon.spy(),
+            container = $("#container");
+
+        container.dxFilterBuilder({
+            value: ["NumberField", "=", ""],
+            fields: fields,
+            onValueChanged: spy
+        });
+
+        // act
+        var $fieldButton = container.find("." + FILTER_BUILDER_ITEM_FIELD_CLASS);
+        clickByButtonAndSelectMenuItem($fieldButton, 3);
+        // assert
+        assert.strictEqual($fieldButton.text(), "Zipcode");
+        assert.strictEqual(spy.callCount, 0, "onValueChanged is not called");
+
+        // act
+        clickByButtonAndSelectMenuItem($fieldButton, 0);
+        // assert
+        assert.strictEqual($fieldButton.text(), "Company Name");
+        assert.strictEqual(spy.callCount, 0, "onValueChanged is not called");
+    });
+
+    QUnit.test("Clear keyup & dxpointerdown events after dispose", function(assert) {
+        // arrange
+        let dxPointerDownSpy = sinon.spy(),
+            keyUpSpy = sinon.spy(),
+            container = $("#container");
+
+        const filterBuilder = container.dxFilterBuilder({
+            value: ["NumberField", "=", ""],
+            fields: fields
+        }).dxFilterBuilder("instance");
+
+        filterBuilder._addDocumentClick = function() {
+            $(document).on("dxpointerdown", dxPointerDownSpy);
+        };
+        filterBuilder._addDocumentKeyUp = function() {
+            $(document).on("keyup", keyUpSpy);
+        };
+
+        // act
+        clickByValue();
+        // assert
+        assert.strictEqual(dxPointerDownSpy.callCount, 0);
+        assert.strictEqual(keyUpSpy.callCount, 0);
+
+        // act
+        $(document).trigger("dxpointerdown");
+        $(document).trigger("keyup");
+        // assert
+        assert.strictEqual(dxPointerDownSpy.callCount, 1);
+        assert.strictEqual(keyUpSpy.callCount, 1);
+
+        // act
+        container.remove();
+        $(document).trigger("dxpointerdown");
+        $(document).trigger("keyup");
+        // assert
+        assert.strictEqual(dxPointerDownSpy.callCount, 1);
+        assert.strictEqual(keyUpSpy.callCount, 1);
     });
 
     QUnit.test("onInitialized", function(assert) {
